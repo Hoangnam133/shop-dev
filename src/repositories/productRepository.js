@@ -8,8 +8,16 @@ const cartModel = require('../models/cartModel')
 const userModel = require('../models/userModel')
 const inventoryModel = require('../models/inventoryModel')
 const {toObjectId} = require('../utils/index')
+const {isDuplicateNameOnCreate} = require('../utils/index')
+const { model } = require('mongoose')
 const createProduct = async(payload)=>{
-    const {category_id} = payload
+    const {category_id, product_name} = payload
+    if(product_name) {
+        const isDuplicate = await isDuplicateNameOnCreate({model: productModel, fieldName: 'product_name',name: product_name})
+        if(isDuplicate){
+            throw new BadRequestError('Duplicate product name')
+        }
+    }
     const findcategory = await categoryModel.findById(category_id)
     if(!findcategory){
         throw new NotFoundError('Category not found')
