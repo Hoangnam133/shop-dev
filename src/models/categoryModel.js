@@ -2,11 +2,11 @@ const {model, Schema} = require('mongoose')
 const DOCUMENT_NAME = 'Category'
 const COLLECTION_NAME = 'Categories'
 const categoryShema = new Schema({
-    meals:{
+    category_name:{
         type: String,
         required: true,
     },
-    draft:{
+    isPublished:{
         type: Boolean,
         default: true
     },

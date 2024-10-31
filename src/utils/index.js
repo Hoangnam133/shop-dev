@@ -67,7 +67,36 @@ const updateNestedObjectParser = obj =>{
     })
     return final
 }
+const isDuplicateNameOnCreate = async ({model, fieldName, name}) => {
+    const sanitizedInputName = name.replace(/\s+/g, '') // Loại bỏ dấu cách trong tên nhập vào
+    const query = {
+        [fieldName]: { $regex: new RegExp(`^${sanitizedInputName}$`, 'i') }
+    };
 
+    // Tìm kiếm sản phẩm có tên trùng khớp (không phân biệt hoa thường và bỏ qua dấu cách)
+    const existingRecords = await model.find().lean()
+    const isDuplicate = existingRecords.some(record => {
+        const sanitizedRecordName = record[fieldName].replace(/\s+/g, '') // Loại bỏ dấu cách trong tên lưu trữ
+        return sanitizedRecordName.toLowerCase() === sanitizedInputName.toLowerCase()
+    });
+
+    return isDuplicate;
+}
+const isDuplicateUpdateField = async ({ model, fieldName, value, excludeId }) => {
+    // Loại bỏ khoảng trắng và chuyển về chữ thường trong giá trị cần kiểm tra
+    const sanitizedValue = value.replace(/\s+/g, '').toLowerCase()
+
+    // Lấy tất cả các bản ghi để duyệt và so sánh theo tiêu chí loại bỏ khoảng trắng, không phân biệt hoa thường
+    const records = await model.find(excludeId ? { _id: { $ne: excludeId } } : {}).lean()
+
+    // Kiểm tra từng bản ghi xem có trùng với giá trị đã làm sạch hay không
+    const isDuplicate = records.some(record => {
+        const sanitizedRecordValue = record[fieldName].replace(/\s+/g, '').toLowerCase()
+        return sanitizedRecordValue === sanitizedValue
+    })
+
+    return isDuplicate; // Trả về true nếu có trùng lặp
+}
 module.exports = {
     getInfoData,
     getSelectData,
@@ -77,5 +106,7 @@ module.exports = {
     convertIoToObjectId,
     unGetSelectListData,
     getSelectListData,
-    toObjectId
+    toObjectId,
+    isDuplicateNameOnCreate,
+    isDuplicateUpdateField
 }
