@@ -5,24 +5,35 @@ const router = express.Router()
 const productController = require('../../controllers/productController')
 const { asynHandler } = require('../../utils/handler')
 
-
-
-router.get('/category/:Category_id', asynHandler(productController.findProductsByLargeCategory))
-router.get('/subcategory/:subCategory_id', asynHandler(productController.findProductsBySubCategory))
+// Tạo sản phẩm mới
+router.post('/create', asynHandler(productController.createProduct))
+// Cập nhật sản phẩm
+router.put('/update/:product_id', asynHandler(productController.updateProduct))
+// Xóa sản phẩm
+router.delete('/delete/:product_id', asynHandler(productController.deleteProduct))
+// công khai sản phẩm
+router.post('/publish/:product_id', asynHandler(productController.publishProduct))
+// Lấy tất cả sản phẩm
+router.get('/', asynHandler(productController.getAllProducts))
+// Lấy tất cả sản phẩm theo ID của shop
+router.get('/shop/:shop_id', asynHandler(productController.getAllProductsByShopId))
+// Lấy thông tin sản phẩm theo ID
+router.get('/:product_id', asynHandler(productController.getProductById))
+// Lấy sản phẩm theo danh mục
+router.get('/category', asynHandler(productController.getProductsByCategory))
+// Tìm kiếm sản phẩm
 router.get('/search', asynHandler(productController.searchProductByUser))
-router.get('/all', asynHandler(productController.findAllProduct))
-
-const {authentication, authorizeRoles} = require('../../auth/authUtils')
-
-router.use(authentication)
-router.get('/find/:product_id', asynHandler(productController.findProductById))
-router.post('/create', authorizeRoles('ADMIN'), asynHandler(productController.createProduct))
-router.patch('/update/:productId', authorizeRoles('ADMIN'), asynHandler(productController.updateProduct))
-router.delete('/delete/:productId', authorizeRoles('ADMIN'), asynHandler(productController.deleteProduct))
-router.patch('/publish/:product_id', authorizeRoles('ADMIN'), asynHandler(productController.publishProduct))
-
-router.get('/deleted', authorizeRoles('ADMIN'),asynHandler(productController.findDeletedProducts))
-router.get('/draft', authorizeRoles('ADMIN'),asynHandler(productController.findDraftProducts))
-
+// Lấy sản phẩm đã xuất bản
+router.get('/published', asynHandler(productController.getPublishedProducts))
+// Lấy sản phẩm đã xóa
+router.get('/deleted', asynHandler(productController.getDeletedProducts))
+// Lấy sản phẩm theo đánh giá giảm dần
+router.get('/sorted/rating', asynHandler(productController.getProductsSortedByRatingDesc))
+// Lấy sản phẩm theo giá
+router.get('/sorted/price', asynHandler(productController.getProductsSortedByPrice))
+// Lấy sản phẩm mới nhất
+router.get('/latest', asynHandler(productController.getLatestProducts))
+// Lấy sản phẩm theo số lượng bán
+router.get('/sorted/sales_count/shop/:shop_id', asynHandler(productController.getProductsSortedBysales_count))
 
 module.exports = router

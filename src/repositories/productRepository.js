@@ -2,54 +2,71 @@ const productModel = require('../models/productModel')
 const categoryModel = require('../models/categoryModel')
 const {BadRequestError, NotFoundError} = require('../core/errorResponse')
 const {removeUndefinedObject} = require('../utils/index')
-const cartModel = require('../models/cartModel')
-const shopModel = require('../models/shopModel')
 const userModel = require('../models/userModel')
+const shopModel = require('../models/shopModel')
+const cartModel = require('../models/cartModel')
+const userModel = require('../models/userModel')
+const inventoryModel = require('../models/inventoryModel')
 const {toObjectId} = require('../utils/index')
-const slugify = require('slugify')
-const { find } = require('lodash')
-const createProduct = async({body})=>{
-    const {product_name, product_thumb,
-        product_description, product_price, ingredients, serving_size
-        , subCategory_id, product_ratingAverage, isDraft = true, isPublished = false,
-        preparation_time, product_usage} = body
-        const foundSubCategory = await subCategoryModel.find({
-            _id: subCategory_id,
-            publish: true,
-            draft: false,
-            isDelete: false
-        })
-        if(!foundSubCategory){
-            throw new NotFoundError('not found Sub Category')
-        }
-        const foundProduct = await productModel.findOne({
-            product_name: { $regex: new RegExp(`^${product_name}$`, 'i') }
-        });
-        
-        if (foundProduct) {
-            throw new BadRequestError('This product name already exists')
-        }
-        const newProduct = await productModel.create({
-            product_name,
-            product_thumb,
-            product_description,
-            product_price,
-            product_ratingAverage,
-            product_usage,
-            product_thumb,
-            isDraft,
-            isPublished,
-            preparation_time,
-            subCategory_id,
-            serving_size,
-            ingredients
-        })
+const createProduct = async(payload)=>{
+    const {category_id} = payload
+    const findcategory = await categoryModel.findById(category_id)
+    if(!findcategory){
+        throw new NotFoundError('Category not found')
+    }
+    const getAllShop = await shopModel.find({},'_id')
+    if(!getAllShop || getAllShop.length === 0){
+        throw new NotFoundError('No shop found')
+    }
+    const shopIds = getAllShop.map(shop=>shop._id)
+    const newProduct = await productModel.create({
+        category_id,
+        ...payload,
+        shop_id: shopIds
+    })
+    if(!newProduct){
+        throw new BadRequestError('Failed to create product')
+    }
     return newProduct
 }
-const findAllProduct = async({limit, sort, page, filter})=>{
+const getLatestProducts = async(limit = 10)=>{
+    const products = await productModel.find({isPublished: true})
+    .sort({createdAt: -1})
+    .limit(limit)
+    if(!products){
+        throw new NotFoundError(' not found products')
+    }
+}
+const getProductsSortedBysales_count = async({shop_id})=>{
+    const products = await productModel.find({isPublished: true, shop_id})
+    .sort({sales_count: -1})
+    if(!products){
+        throw new NotFoundError(' not found products')
+    }
+    return products
+}
+const getProductsSortedByPrice = async({sortOrder = 'asc', page = 1, limit = 10, shop_id})=>{
+    const products = await productModel.find({isPublished: true, shop_id})
+    .sort({product_price: sortOrder === 'asc'? 1 : -1})
+    .limit(limit)
+    .skip((page - 1) * limit)
+    if(!products){
+        throw new NotFoundError(' not found products')
+    }
+}
+const getProductsSortedByRatingDesc = async({sortOrder = 'asc', page = 1, limit = 10, shop_id})=>{
+    const products = await productModel.find({isPublished: true, shop_id})
+    .sort({product_ratingAverage: sortOrder === 'asc'? -1 : 1})
+    .limit(limit)
+    .skip((page - 1) * limit)
+    if(!products){
+        throw new NotFoundError(' not found products')
+    }
+}
+const getAllProduct = async({limit, sort, page, filter})=>{
     const skip = (page - 1)*limit
     const sortBy  = sort === 'ctime' ? {_id: -1} : {_id: 1}
-    const products = await productModel.find(filter)
+    const products = await productModel.find({filter})
     .sort(sortBy)
     .skip(skip)
     .limit(limit)
@@ -59,9 +76,22 @@ const findAllProduct = async({limit, sort, page, filter})=>{
     }
     return products
 }
-const findProductsBySubCategory = async ({ subCategory_id, limit, page }) => {
+const getAllProductsByShopId = async({limit, sort, page, shop_id})=>{
+    const skip = (page - 1)*limit
+    const sortBy  = sort === 'ctime' ? {_id: -1} : {_id: 1}
+    const products = await productModel.find({shop_id, isDelete: true, isDelete: false})
+    .sort(sortBy)
+    .skip(skip)
+    .limit(limit)
+    .lean()
+    if(!products){
+        throw new NotFoundError(' not found products')
+    }
+    return products
+}
+const getProductsByCategory = async ({ category_id, limit, page }) => {
     const skip = (page - 1) * limit
-    const products = await productModel.find({ subCategory_id })
+    const products = await productModel.find(category_id)
         .skip(skip)
         .limit(limit)
         .lean()
@@ -70,18 +100,7 @@ const findProductsBySubCategory = async ({ subCategory_id, limit, page }) => {
     }
     return products
 }
-const findDraftProducts = async ({ limit , page }) => {
-    const skip = (page - 1) * limit
-    const products = await productModel.find({ isDraft: true })
-        .skip(skip)
-        .limit(limit)
-        .lean()
-    if(!products){
-        throw new NotFoundError(' not found products')
-    }
-    return products
-}
-const findPublishedProducts = async ({ limit , page  }) => {
+const getPublishedProducts = async ({ limit , page  }) => {
     const skip = (page - 1) * limit;
     const products = await productModel.find({ isPublished: true })
         .skip(skip)
@@ -92,7 +111,7 @@ const findPublishedProducts = async ({ limit , page  }) => {
     }
     return products
 }
-const findDeletedProducts = async ({ limit , page  }) => {
+const getDeletedProducts = async ({ limit , page  }) => {
     const skip = (page - 1) * limit;
     const products = await productModel.find({ isDeleted: true })
         .skip(skip)
@@ -103,29 +122,10 @@ const findDeletedProducts = async ({ limit , page  }) => {
     }
     return products
 }
-const findProductsByLargeCategory = async ({Category_id, limit, page}) => {
-    const largeCategory = await categoryModel.findOne({ _id: Category_id, publish: true, draft: false, isDelete: false }).lean()
-    if (!largeCategory) {
-        throw new NotFoundError('not found caterogry')
-    }
-    const subCategories = await subCategoryModel.find({ parentCategory: largeCategory._id, publish: true, draft: false, isDelete: false }).lean()
-    const subCategoryIds = subCategories.map(cat => cat._id)
-    const skip = (page - 1) * limit;
-    const products = await productModel.find({ subCategory_id: { $in: subCategoryIds } })
-        .skip(skip)
-        .limit(limit)
-        .lean();
-    if(!products){
-        throw new NotFoundError(' not found products')
-    }
-    return products
-}
 const updatePublishProduct = async(product_id)=>{
     const updateProduct = await productModel.findByIdAndUpdate(product_id,{
         $set:{
-            isPublished: true,
-            isDraft: false,
-            isDelete: false
+            isPublished: true
         }
     },{
         new: true,
@@ -136,12 +136,12 @@ const updatePublishProduct = async(product_id)=>{
     }
     return updateProduct
 }
-const updateProduct = async({user,productId, updateData})=>{
+const updateProduct = async({user, productId, updateData})=>{
     if (!user) {
         throw new BadRequestError('User not found')
     }
-    const foundShop = await shopModel.findOne({ shop_owner: user._id }).lean()
-    if (!foundShop) throw new NotFoundError('Shop not found')
+    const findUser = await userModel.findById(user._id)
+    if (!findUser) throw new NotFoundError('User not found')
     if (updateData.product_name && updateData.product_name.trim() !== '') {
         const existingProduct= await productModel.findOne({
             meals: { $regex: new RegExp(`^${updateData.product_name}$`, 'i') },
@@ -196,7 +196,8 @@ const processProductUnPublishOrDeleteFromAdmin = async(product_id)=>{
 const updateDeleteProduct = async(product_id)=>{
     const updateProduct = await productModel.findByIdAndUpdate(product_id,{
         $set:{
-            isDelete: true
+            isDelete: true,
+            isPublished: false
         }
     },{
         new: true,
@@ -230,17 +231,19 @@ const getProductById = async(product_id)=>{
     return await productModel.findById(product_id)
 }
 module.exports = {
-   createProduct,
-   getProductById,
-   updateProduct,
-   updateDeleteProduct,
-   updatePublishProduct,
-   findAllProduct,
-   findDeletedProducts,
-   findDraftProducts,
-   findProductsByLargeCategory,
-   findProductsBySubCategory,
-   findPublishedProducts,
-   searchProductByUser
-
+    getProductById,
+    createProduct,
+    updateProduct,
+    updateDeleteProduct,
+    updatePublishProduct,
+    getAllProduct,
+    getAllProductsByShopId,
+    getProductsSortedByRatingDesc,
+    getPublishedProducts,
+    getDeletedProducts,
+    getProductsByCategory,
+    searchProductByUser,
+    getProductsSortedByPrice,
+    getLatestProducts,
+    getProductsSortedBysales_count
 }

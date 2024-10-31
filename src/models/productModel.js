@@ -23,7 +23,7 @@
             type: String,
             required: true,
         },
-        subCategory_id: {
+        category_id: {
             type: Schema.Types.ObjectId,
             ref: 'Category',
             required: true,
@@ -86,7 +86,6 @@
         sideDish_id:[{
             type: Schema.Types.ObjectId,
             ref: 'SideDish',
-            required: true,
         }]
     },
     {
