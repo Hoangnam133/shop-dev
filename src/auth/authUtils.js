@@ -80,14 +80,30 @@ const handleRefreshToken = asynHandler(async (req, res, next) => {
 
     const findKeyStore = await keyTokenService.findByUserId(decoded.userId);
     if (!findKeyStore) {
-      throw new NotFoundError("KeyStore not found for this user");
+        throw new NotFoundError("KeyStore not found for this user");
+      }
+  
+      req.keyStore = findKeyStore;
+      req.refreshToken = token;
+      req.userId = decoded.userId;
+  
+      next();
+    } catch (error) {
+      console.log("Authentication error:", error);
+      throw new Unauthorized("Invalid refresh token");
     }
+}
+)
 
-
-    }
-    next();
-  };
+const authorizeRoles = (...roles) => {
+    return (req, res, next) => {
+      if (!roles.includes(req.user.roles)) {
+        return next(new Unauthorized("forbidden"));
+      }
+      next();
+    };
 };
+
 module.exports = {
   createTokenPair,
   authentication,
