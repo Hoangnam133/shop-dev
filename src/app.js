@@ -7,12 +7,7 @@ app.use(cors())
 app.use(express.json())
 app.use("/uploads", express.static("uploads"));// init mongodb
 require('./configs/initMongodb')
-// const initRedis = require('./configs/initRedis')
-// const {syncProductsToRedis} = require('./configs/syncDataToRedis')
-// initRedis.initRedis()
-// syncProductsToRedis()
-// init middlewares
-// init router
+
 app.use('/',require('./routers/index'))
 // handler error
 app.use((req, res, next)=>{

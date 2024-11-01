@@ -1,7 +1,7 @@
 const inventoryModel = require('../models/inventoryModel')
 const {BadRequestError} = require('../core/errorResponse')
 const updateInventoryByProduct = async({productId, quantity})=>{
-    const update = await inventoryModel.findOneAndUpdate(
+const update = await inventoryModel.findOneAndUpdate(
         { inven_productId: productId },
         { $inc: { inven_stock: -quantity } },
         { new: true }
@@ -10,8 +10,8 @@ const updateInventoryByProduct = async({productId, quantity})=>{
         throw new BadRequestError('update inventory error')
     }
 }
-const getInventoryByProductId = async (productId) => {
-    const inventory = await inventoryModel.findOne({ inven_productId: productId }).populate('inven_productId').lean()
+const getInventoryByProductId = async (product_id) => {
+    const inventory = await inventoryModel.findOne({ inven_productId: product_id }).populate('inven_productId').lean()
     if (!inventory) throw new NotFoundError('Product not found in inventory')
     return inventory
 }
@@ -29,17 +29,30 @@ const getAllOutOfStockInventories = async () => {
         return inventories
     
 }
-const updateInventoryStock = async (productId, newStock) => {
+const updateInventoryStock = async ({product_id, newStock}) => {
 
         const updatedInventory = await inventoryModel.findOneAndUpdate(
-            { inven_productId: productId }, 
+            { inven_productId: product_id }, 
             { inven_stock: newStock },       
             { new: true, lean: true }      
         )
         if (!updatedInventory) throw new NotFoundError('update Inventory fail')
         return updatedInventory
 }
-
+const getProductminStockLevel = async () => {
+    const lowerStock = await inventoryModel.find({
+        $expr:{
+            $lte: [ "$inven_stock", "$minStockLevel"]
+        }
+    }).populate('inven_productId').lean()
+    if (!lowerStock || lowerStock.length === 0) throw new NotFoundError('No inventory found')
+    return lowerStock
+}
 module.exports = {
-    updateInventoryByProduct
+    updateInventoryByProduct,
+    getInventoryByProductId,
+    getAllInventoriesWithStock,
+    getAllOutOfStockInventories,
+    updateInventoryStock,
+    getProductminStockLevel,
 }
