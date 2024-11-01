@@ -13,6 +13,10 @@ const inventorySchema = new Schema({
     shop_id:{
         type: Schema.Types.ObjectId,
         ref: 'Shop'
+    },
+    minStockLevel:{
+        type: Number,
+        required: true
     }
 },{ 
     timestamps: true,
