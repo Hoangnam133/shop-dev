@@ -36,7 +36,7 @@ const getLatestProducts = async (limit = 10) => {
   if (!products) {
     throw new NotFoundError(" not found products");
   }
-};
+}
 const getProductsSortedBysales_count = async ({ shop_id }) => {
   const products = await productModel
     .find({ isPublished: true, shop_id })

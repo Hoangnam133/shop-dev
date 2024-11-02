@@ -17,6 +17,7 @@ const favoriteSchema = new Schema({
     timestamps: true,
     collection: COLLECTION_NAME
 })
-favoriteSchema.index({ user: 1, product: 1 }, { unique: true })
+favoriteSchema.index({ user_id: 1, product_id: 1 }, { unique: true });
+
 
 module.exports = model(DOCUMENT_NAME, favoriteSchema);
