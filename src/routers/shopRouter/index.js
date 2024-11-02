@@ -13,8 +13,8 @@ router.post(
   asynHandler(shopController.createShop)
 );
 router.patch(
-  "/update",
-  authorizeRoles("ADMIN"),
+  "/update/:shop_id",
+  authorizeRoles(roles.ADMIN, roles.BRANCH_MANAGER),
   asynHandler(shopController.updateShop)
 );
 module.exports = router;
