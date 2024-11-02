@@ -66,6 +66,24 @@ const updateNestedObjectParser = (obj) => {
   });
   return final;
 };
+const isDuplicateNameOnCreate = async ({ model, fieldName, name }) => {
+  const existing = await model.findOne({ [fieldName]: name });
+  return !!existing;
+};
+
+const isDuplicateUpdateField = async ({
+  model,
+  fieldName,
+  excludeId,
+  value,
+}) => {
+  // Tìm kiếm một tài liệu có trường fieldName trùng với giá trị value và ID khác với excludeId
+  const existing = await model.findOne({
+    [fieldName]: value,
+    _id: { $ne: excludeId },
+  });
+  return !!existing; // Trả về true nếu có bản ghi trùng lặp, ngược lại là false
+};
 
 module.exports = {
   getInfoData,
@@ -77,4 +95,6 @@ module.exports = {
   unGetSelectListData,
   getSelectListData,
   toObjectId,
+  isDuplicateNameOnCreate,
+  isDuplicateUpdateField,
 };

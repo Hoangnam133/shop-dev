@@ -5,7 +5,6 @@ const { removeUndefinedObject } = require("../utils/index");
 const userModel = require("../models/userModel");
 const shopModel = require("../models/shopModel");
 const cartModel = require("../models/cartModel");
-const userModel = require("../models/userModel");
 const inventoryModel = require("../models/inventoryModel");
 const { toObjectId } = require("../utils/index");
 const createProduct = async (payload) => {
