@@ -15,6 +15,7 @@ const HEADER = {
   REFRESHTOKEN: "x_rtoken_id",
 };
 const { toObjectId } = require("../utils/index");
+const { isNull } = require("lodash");
 const createTokenPair = async (payload, publicKey, privateKey) => {
   try {
     const accessToken = JWT.sign(payload, publicKey, { expiresIn: "2 days" });
@@ -51,13 +52,17 @@ const authentication = asynHandler(async (req, res, next) => {
     if (!findKeyStore) {
       throw new NotFoundError("KeyStore not found for this user");
     }
-    const findShop = await shopModel.findById(decoded.shop_id);
-    if (!findShop) {
-      throw new NotFoundError("Not found shop");
-    }
-    req.shop_id = findShop._id;
-    console.log("ccccccccccccccccccccccccccccccccccccccccccc" + req.shop_id);
 
+    let shop = "";
+    if (decoded.shop_id && mongoose.Types.ObjectId.isValid(decoded.shop_id)) {
+      const findShop = await shopModel.findById(decoded.shop_id);
+      if (!findShop) {
+        throw new NotFoundError("Not found shop");
+      }
+      shop = findShop;
+    }
+
+    req.shop = shop;
     req.keyStore = findKeyStore;
     req.user = existingUser;
 
@@ -67,6 +72,7 @@ const authentication = asynHandler(async (req, res, next) => {
     throw new Unauthorized("Invalid access token");
   }
 });
+
 const handleRefreshToken = asynHandler(async (req, res, next) => {
   const refreshToken = req.headers[HEADER.REFRESHTOKEN];
   if (!refreshToken)
@@ -80,28 +86,27 @@ const handleRefreshToken = asynHandler(async (req, res, next) => {
 
     const findKeyStore = await keyTokenService.findByUserId(decoded.userId);
     if (!findKeyStore) {
-        throw new NotFoundError("KeyStore not found for this user");
-      }
-  
-      req.keyStore = findKeyStore;
-      req.refreshToken = token;
-      req.userId = decoded.userId;
-  
-      next();
-    } catch (error) {
-      console.log("Authentication error:", error);
-      throw new Unauthorized("Invalid refresh token");
+      throw new NotFoundError("KeyStore not found for this user");
     }
-}
-)
+
+    req.keyStore = findKeyStore;
+    req.refreshToken = token;
+    req.userId = decoded.userId;
+
+    next();
+  } catch (error) {
+    console.log("Authentication error:", error);
+    throw new Unauthorized("Invalid refresh token");
+  }
+});
 
 const authorizeRoles = (...roles) => {
-    return (req, res, next) => {
-      if (!roles.includes(req.user.roles)) {
-        return next(new Unauthorized("forbidden"));
-      }
-      next();
-    };
+  return (req, res, next) => {
+    if (!roles.includes(req.user.roles)) {
+      return next(new Unauthorized("forbidden"));
+    }
+    next();
+  };
 };
 
 module.exports = {
