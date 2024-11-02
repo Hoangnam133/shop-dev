@@ -1,9 +1,9 @@
-// utils/roles.js
+const dotenv = require('dotenv')
+dotenv.config()
 const roles = {
-  ADMIN: "101",
-  USER: "102",
-  EMPLOYEE: "103",
-  BRANCH_MANAGER: "104",
-};
-
-module.exports = roles;
+  ADMIN: process.env.ROLES_ADMIN,
+  USER: process.env.ROLES_USER,
+  EMPLOYEE: process.env.ROLES_EMPLOYEE,
+  BRANCH_MANAGER: process.env.ROLES_BRANCH_MANAGER,
+}
+module.exports = roles

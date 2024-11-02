@@ -3,12 +3,12 @@ const COLLECTION_NAME = 'Favorites'
 const DOCUMENT_NAME = 'Favorite'
 /// khó
 const favoriteSchema = new Schema({
-    user:{
+    user_id:{
         type: Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    product: {
+    product_id: {
         type: Schema.Types.ObjectId,
         ref: 'Product',
         required: true

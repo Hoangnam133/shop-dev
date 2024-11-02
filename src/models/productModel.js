@@ -37,11 +37,6 @@
             default: 0,
             min: [0, 'Sales count cannot be negative'],
         },
-        shop_id:[{
-            type: Schema.Types.ObjectId,
-            ref: 'Shop',
-            required: true,
-        }],
         product_ratingAverage: {
             type: Number,
             default: 4.5,
