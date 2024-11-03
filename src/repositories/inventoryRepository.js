@@ -15,6 +15,9 @@ const getInventoryByProductId = async (product_id) => {
     if (!inventory) throw new NotFoundError('Product not found in inventory')
     return inventory
 }
+const NumberOfProductInStock = async (product_id) => {
+    
+}
 const getAllInventoriesWithStock = async () => {
   
         const inventories = await inventoryModel.find({ inven_stock: { $gt: 0 } }).populate('inven_productId').lean()

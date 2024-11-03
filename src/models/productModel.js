@@ -32,11 +32,6 @@
             type: String,
             unique: true,
         },
-        sales_count:{
-            type: Number,
-            default: 0,
-            min: [0, 'Sales count cannot be negative'],
-        },
         product_ratingAverage: {
             type: Number,
             default: 4.5,

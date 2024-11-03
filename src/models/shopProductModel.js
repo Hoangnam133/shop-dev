@@ -15,7 +15,15 @@ const shopProductSchema = new Schema({
     isPublished: {
         type: Boolean,
         default: true,
-        index: true,
+    },
+    isDeleted:{
+        type: Boolean,
+        default: false,
+    },
+    sales_count:{
+        type: Number,
+        default: 0,
+        min: [0, 'Sales count cannot be negative'],
     }
 }, {
     timestamps: true,

@@ -6,16 +6,18 @@ const {
     updateProduct,
     updateDeleteProduct,
     updatePublishProduct,
-    getAllProduct,
+    // getAllProduct,
     getAllProductsByShopId,
     getProductsSortedByRatingDesc,
     getPublishedProducts,
+    getPublishedProductsManage,
     getDeletedProducts,
     getProductsByCategory,
     searchProductByUser,
     getProductsSortedByPrice,
     getLatestProducts,
-    getProductsSortedBysales_count
+    getProductsSortedBysales_count,
+    getDeletedProductsManage
 } = require('../repositories/productRepository')
 const { getInfoData, toObjectId } = require('../utils/index')
 class ProductService{
@@ -26,7 +28,12 @@ class ProductService{
     static async updateProduct({ user, product_id, payload }) {
         return await updateProduct({ user, productId: product_id, updateData: payload })
     }
-
+    static async getPublishedProductsManage({limit, page, shop_id}){
+        return await getPublishedProductsManage({limit, page, shop_id})
+    }
+    static async getDeletedProductsManage({limit, page, shop_id}){
+        return await getDeletedProductsManage({limit, page, shop_id})
+    }
     static async updateDeleteProduct(product_id) {
         return await updateDeleteProduct(product_id)
     }
@@ -35,9 +42,9 @@ class ProductService{
         return await updatePublishProduct(product_id)
     }
 
-    static async getAllProduct({ limit = 10, sort = 'ctime', page = 1, filter }) {
-        return await getAllProduct({ limit, sort, page, filter })
-    }
+    // static async getAllProduct({ limit = 10, sort = 'ctime', page = 1, filter }) {
+    //     return await getAllProduct({ limit, sort, page, filter })
+    // }
 
     static async getProductById(product_id) {
         const product = await getProductById(product_id);
@@ -47,8 +54,8 @@ class ProductService{
         return product
     }
 
-    static async getProductsByCategory({ category_id, limit = 10, page = 1 }) {
-        return await getProductsByCategory({ category_id, limit, page })
+    static async getProductsByCategory({ category_id, limit = 10, page = 1, shop_id }) {
+        return await getProductsByCategory({ category_id, limit, page, shop_id })
     }
 
     static async searchProductByUser({ keySearch }) {
@@ -63,16 +70,16 @@ class ProductService{
         return await getDeletedProducts({ limit, page })
     }
 
-    static async getProductsSortedByRatingDesc({ sortOrder = 'asc', page = 10, limit = 1, shop_id }) {
-        return await getProductsSortedByRatingDesc({ sortOrder, page, limit, shop_id })
+    static async getProductsSortedByRatingDesc({ page = 10, limit = 1, shop_id }) {
+        return await getProductsSortedByRatingDesc({  page, limit, shop_id })
     }
 
     static async getProductsSortedByPrice({ sortOrder = 'asc', page = 1, limit = 10, shop_id }) {
         return await getProductsSortedByPrice({ sortOrder, page, limit, shop_id })
     }
 
-    static async getLatestProducts(limit = 10) {
-        return await getLatestProducts(limit)
+    static async getLatestProducts({limit = 10, shop_id}) {
+        return await getLatestProducts({ limit, shop_id })
     }
 
     static async getProductsSortedBysales_count({ shop_id }) {
@@ -83,7 +90,7 @@ class ProductService{
         return await getDeletedProducts({ limit, page });
     }
 
-    static async getAllProductsByShopId({ shop_id, limit = 10, sort, page = 1 }) {
+    static async getAllProductsByShopId({ shop_id, limit = 10, page = 1 }) {
         return await getAllProductsByShopId({ shop_id, limit, sort, page })
     }
 }

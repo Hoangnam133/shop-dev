@@ -6,21 +6,15 @@ const { authentication, authorizeRoles } = require("../../auth/authUtils");
 const { asynHandler } = require("../../utils/handler");
 const roles = require("../../utils/roles");
 
-// Bắt buộc xác thực cho tất cả các route
-router.use(authentication);
-
-// Lấy danh sách và thông tin danh mục
-
-// Lấy tất cả danh mục
 router.get("/all", asynHandler(categoryController.getAllCategories));
-
-// Lấy danh mục theo ID
 router.get(
   "/getById/:category_id",
   asynHandler(categoryController.getCategoryById)
 );
 
-// Lấy tất cả danh mục đã công khai
+router.use(authentication);
+
+
 router.get(
   "/list/published",
   asynHandler(categoryController.getAllCategoriesIsPublished)

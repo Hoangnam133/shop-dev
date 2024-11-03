@@ -32,20 +32,20 @@ class ProductController {
         }).send(res)
     }
 
-    getAllProducts = async (req, res, next) => {
-        const { limit, sort, page, filter } = req.query
-        new SuccessResponse({
-            message: 'Fetched all products successfully',
-            metaData: await productService.getAllProduct({ limit, sort, page, filter })
-        }).send(res)
-    }
+    // getAllProducts = async (req, res, next) => {
+    //     const { limit, sort, page, filter } = req.query
+    //     new SuccessResponse({
+    //         message: 'Fetched all products successfully',
+    //         metaData: await productService.getAllProduct({ limit, sort, page, filter })
+    //     }).send(res)
+    // }
 
     getAllProductsByShopId = async (req, res, next) => {
         const { shop_id } = req.params
-        const { limit, sort, page } = req.query
+        const { limit, page } = req.query
         new SuccessResponse({
             message: 'Fetched products by shop ID successfully',
-            metaData: await productService.getAllProductsByShopId({ shop_id, limit, sort, page })
+            metaData: await productService.getAllProductsByShopId({ shop_id, limit, page })
         }).send(res)
     }
 
@@ -59,11 +59,11 @@ class ProductController {
     }
 
     getProductsByCategory = async (req, res, next) => {
-        const { filter, limit, page } = req.query
-        const { category_id } = req.params
+        const { limit, page, category_id } = req.query
+        const { shop_id } = req.params
         new SuccessResponse({
             message: 'Fetched products by category successfully',
-            metaData: await productService.getProductsByCategory({ category_id, limit, page })
+            metaData: await productService.getProductsByCategory({ category_id, limit, page, shop_id })
         }).send(res)
     }
 
@@ -74,7 +74,13 @@ class ProductController {
             metaData: await productService.searchProductByUser({ keySearch })
         }).send(res)
     }
-
+    getPublishedProductsManage = async (req, res, next) => {
+        const { limit, page } = req.query
+        new SuccessResponse({
+            message: 'Fetched published products successfully',
+            metaData: await productService.getPublishedProductsManage({ limit, page, shop_id: req.params.shop_id })
+        }).send(res)
+    }
     getPublishedProducts = async (req, res, next) => {
         const { limit, page } = req.query
         new SuccessResponse({
@@ -90,20 +96,26 @@ class ProductController {
             metaData: await productService.getDeletedProducts({ limit, page })
         }).send(res)
     }
-
+    getDeletedProductsManage = async(req, res, next) => {
+        const { limit, page } = req.query
+        new SuccessResponse({
+            message: 'Fetched list delete products successfully',
+            metaData: await productService.getDeletedProductsManage({ limit, page, shop_id: req.params.shop_id })
+        }).send(res)
+    }
     getProductsSortedByRatingDesc = async (req, res, next) => {
-        const { sortOrder, page, limit, shop_id } = req.query
+        const { sortOrder, page, limit } = req.query
         new SuccessResponse({
             message: 'Fetched products sorted by rating successfully',
-            metaData: await productService.getProductsSortedByRatingDesc({ sortOrder, page, limit, shop_id })
+            metaData: await productService.getProductsSortedByRatingDesc({ sortOrder, page, limit, shop_id: req.params.shop_id })
         }).send(res)
     }
 
     getProductsSortedByPrice = async (req, res, next) => {
-        const { sortOrder, page, limit, shop_id } = req.query
+        const { sortOrder, page, limit } = req.query
         new SuccessResponse({
             message: 'Fetched products sorted by price successfully',
-            metaData: await productService.getProductsSortedByPrice({ sortOrder, page, limit, shop_id })
+            metaData: await productService.getProductsSortedByPrice({ sortOrder, page, limit, shop_id: req.params.shop_id })
         }).send(res)
     }
 
@@ -111,7 +123,10 @@ class ProductController {
         const { limit } = req.query
         new SuccessResponse({
             message: 'Fetched latest products successfully',
-            metaData: await productService.getLatestProducts(limit)
+            metaData: await productService.getLatestProducts({
+                limit,
+                shop_id: req.params.shop_id
+            })
         }).send(res)
     }
 

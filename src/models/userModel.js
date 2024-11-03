@@ -35,10 +35,6 @@ const userSchema = new Schema({
         type: String,
         enum: [roles.ADMIN, roles.USER, roles.EMPLOYEE, roles.BRANCH_MANAGER],
     },
-    favorites: [{
-        type: Schema.Types.ObjectId,
-        ref: 'Product'
-    }],
     resetPasswordCode: {
         type: String,
         default: null

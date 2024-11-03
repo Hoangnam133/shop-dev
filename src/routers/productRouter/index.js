@@ -14,26 +14,30 @@ router.delete('/delete/:product_id', asynHandler(productController.deleteProduct
 // công khai sản phẩm
 router.post('/publish/:product_id', asynHandler(productController.publishProduct))
 // Lấy tất cả sản phẩm
-router.get('/', asynHandler(productController.getAllProducts))
+// router.get('/', asynHandler(productController.getAllProducts))
 // Lấy tất cả sản phẩm theo ID của shop
-router.get('/shop/:shop_id', asynHandler(productController.getAllProductsByShopId))
+router.get('/productByshop/:shop_id', asynHandler(productController.getAllProductsByShopId))
 // Lấy thông tin sản phẩm theo ID
 router.get('/:product_id', asynHandler(productController.getProductById))
 // Lấy sản phẩm theo danh mục
-router.get('/category', asynHandler(productController.getProductsByCategory))
+router.get('/ProductInCategory/:shop_id', asynHandler(productController.getProductsByCategory))
 // Tìm kiếm sản phẩm
 router.get('/search', asynHandler(productController.searchProductByUser))
 // Lấy sản phẩm đã xuất bản
+router.get('/publishedManage/:shop_id', asynHandler(productController.getPublishedProductsManage))
+
 router.get('/published', asynHandler(productController.getPublishedProducts))
 // Lấy sản phẩm đã xóa
 router.get('/deleted', asynHandler(productController.getDeletedProducts))
+// lấy sản phẩm đã xóa của chi nhánh
+router.get('/deletedShop/:shop_id', asynHandler(productController.getDeletedProductsManage))
 // Lấy sản phẩm theo đánh giá giảm dần
-router.get('/sorted/rating', asynHandler(productController.getProductsSortedByRatingDesc))
+router.get('/sortedRating/:shop_id', asynHandler(productController.getProductsSortedByRatingDesc))
 // Lấy sản phẩm theo giá
-router.get('/sorted/price', asynHandler(productController.getProductsSortedByPrice))
+router.get('/sortedPrice/:shop_id', asynHandler(productController.getProductsSortedByPrice))
 // Lấy sản phẩm mới nhất
-router.get('/latest', asynHandler(productController.getLatestProducts))
+router.get('/latest/:shop_id', asynHandler(productController.getLatestProducts))
 // Lấy sản phẩm theo số lượng bán
-router.get('/sorted/sales_count/shop/:shop_id', asynHandler(productController.getProductsSortedBysales_count))
+router.get('/sales_count/shop/:shop_id', asynHandler(productController.getProductsSortedBysales_count))
 
 module.exports = router
