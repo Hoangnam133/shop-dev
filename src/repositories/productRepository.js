@@ -7,40 +7,80 @@ const shopModel = require("../models/shopModel");
 const cartModel = require("../models/cartModel");
 const inventoryModel = require("../models/inventoryModel");
 const { toObjectId } = require("../utils/index");
+const { forEach } = require("lodash");
+const shopProductModel = require('../models/shopProductModel')
+const checkShop = async(shop_id)=>{
+  if(!shop_id) {
+    throw new BadRequestError("Shop ID is required");
+  }
+  const objShop_id = toObjectId(shop_id.trim())
+  const foundShop = await shopModel.findById(objShop_id)
+  if(!foundShop) {
+    throw new NotFoundError("Shop not found");
+  }
+  return foundShop
+}
 const createProduct = async (payload) => {
-  const { category_id } = payload;
-  const findcategory = await categoryModel.findById(category_id);
+  const { category_id, shop_ids } = payload;
+
+  const findcategory = await categoryModel.findById(toObjectId(category_id.trim()));
   if (!findcategory) {
     throw new NotFoundError("Category not found");
   }
-  const getAllShop = await shopModel.find({}, "_id");
-  if (!getAllShop || getAllShop.length === 0) {
-    throw new NotFoundError("No shop found");
+  
+  if (!Array.isArray(shop_ids) || shop_ids.length === 0) {
+    throw new BadRequestError("shop_ids cannot be empty");
   }
-  const shopIds = getAllShop.map((shop) => shop._id);
-  const newProduct = await productModel.create({
-    category_id,
-    ...payload,
-    shop_id: shopIds,
-  });
+
+  const shopObjectIds = [];
+ 
+  for (let i = 0; i < shop_ids.length; i++) {
+    const id = shop_ids[i].trim(); 
+    const objectId = toObjectId(id.trim()); 
+    shopObjectIds.push(objectId); 
+  }
+  
+  const getAllShop = await shopModel.find({ _id: { $in: shopObjectIds } }, "_id");
+  if (getAllShop.length !== shop_ids.length) {
+    throw new BadRequestError("One or more shop_ids are not valid");
+  }
+  
+  const newProduct = await productModel.create(payload);
   if (!newProduct) {
     throw new BadRequestError("Failed to create product");
   }
+
+  for (const shop_id of shopObjectIds) {
+    await shopProductModel.create({
+      shop_id,
+      product_id: newProduct._id,
+    });
+  }
+
   return newProduct;
 };
-const getLatestProducts = async (limit = 10) => {
-  const products = await productModel
-    .find({ isPublished: true })
+
+const getLatestProducts = async ({limit = 10, shop_id}) => {
+  const products = await shopProductModel
+    .find({ isPublished: true , isDeleted: false, shop_id: toObjectId(shop_id.trim())})
     .sort({ createdAt: -1 })
+    .populate('product_id') 
     .limit(limit);
   if (!products) {
-    throw new NotFoundError(" not found products");
+    throw new NotFoundError(" not found products")
   }
 }
-const getProductsSortedBysales_count = async ({ shop_id }) => {
-  const products = await productModel
-    .find({ isPublished: true, shop_id })
-    .sort({ sales_count: -1 });
+const getProductsSortedBysales_count = async (shop_id) => {
+  const checkShopId = await checkShop(shop_id)
+  if(!checkShopId) {
+    throw new NotFoundError("Shop not found");
+  }
+  const objShop_id = toObjectId(shop_id.trim())
+  
+  const products = await shopProductModel
+  .find({ isPublished: true , isDeleted: false, shop_id: objShop_id })
+  .populate('product_id') 
+  .sort({ sales_count: -1 });
   if (!products) {
     throw new NotFoundError(" not found products");
   }
@@ -52,74 +92,104 @@ const getProductsSortedByPrice = async ({
   limit = 10,
   shop_id,
 }) => {
-  const products = await productModel
-    .find({ isPublished: true, shop_id })
-    .sort({ product_price: sortOrder === "asc" ? 1 : -1 })
-    .limit(limit)
-    .skip((page - 1) * limit);
-  if (!products) {
-    throw new NotFoundError(" not found products");
+  const checkShopId = await checkShop(shop_id)
+  if(!checkShopId) {
+    throw new NotFoundError("Shop not found");
   }
+  const objShop_id = toObjectId(shop_id.trim())
+  
+  const shopProducts = await shopProductModel
+    .find({ shop_id: objShop_id, isPublished: true, isDeleted: false }) 
+    .populate('product_id') 
+    .sort({ product_price: sortOrder === "asc" ? 1 : -1 }) 
+    .limit(limit) 
+    .skip((page - 1) * limit); 
+
+  if (!shopProducts || shopProducts.length === 0) {
+    throw new NotFoundError("No products found");
+  }
+
+  return shopProducts; 
 };
+
 const getProductsSortedByRatingDesc = async ({
   sortOrder = "asc",
   page = 1,
   limit = 10,
   shop_id,
 }) => {
-  const products = await productModel
-    .find({ isPublished: true, shop_id })
-    .sort({ product_ratingAverage: sortOrder === "asc" ? -1 : 1 })
-    .limit(limit)
-    .skip((page - 1) * limit);
-  if (!products) {
-    throw new NotFoundError(" not found products");
+  const checkShopId = await checkShop(shop_id)
+  if(!checkShopId) {
+    throw new NotFoundError("Shop not found");
   }
+  const objShop_id = toObjectId(shop_id.trim())
+  
+  const shopProducts = await shopProductModel
+    .find({ shop_id: objShop_id, isPublished: true, isDeleted: false }) 
+    .populate('product_id') 
+    .sort({ product_ratingAverage: sortOrder === "asc" ? 1 : -1 }) 
+    .limit(limit) 
+    .skip((page - 1) * limit); 
+  if (!shopProducts || shopProducts.length === 0) {
+    throw new NotFoundError("No products found");
+  }
+
+  return shopProducts; 
 };
-const getAllProduct = async ({ limit, sort, page, filter }) => {
+const getAllProductsByShopId = async ({ limit = 10, page = 1, shop_id }) => {
   const skip = (page - 1) * limit;
-  const sortBy = sort === "ctime" ? { _id: -1 } : { _id: 1 };
-  const products = await productModel
-    .find({ filter })
-    .sort(sortBy)
-    .skip(skip)
-    .limit(limit)
-    .lean();
-  if (!products) {
-    throw new NotFoundError(" not found products");
+  const checkShopId = await checkShop(shop_id)
+  if(!checkShopId) {
+    throw new NotFoundError("Shop not found");
   }
-  return products;
-};
-const getAllProductsByShopId = async ({ limit, sort, page, shop_id }) => {
+  const objShop_id = toObjectId(shop_id.trim())
+  const foundShop = await shopModel.findById(objShop_id)
+  const shopProducts = await shopProductModel
+    .find({ shop_id: objShop_id, isPublished: true, isDeleted: false }) 
+    .populate('product_id') 
+    .limit(limit) 
+    .skip(skip); 
+  if (!shopProducts || shopProducts.length === 0) {
+    throw new NotFoundError("No products found");
+  }
+}
+
+const getProductsByCategory = async ({ category_id, limit = 10, page = 1, shop_id }) => {
   const skip = (page - 1) * limit;
-  const sortBy = sort === "ctime" ? { _id: -1 } : { _id: 1 };
-  const products = await productModel
-    .find({ shop_id, isDelete: true, isDelete: false })
-    .sort(sortBy)
-    .skip(skip)
-    .limit(limit)
-    .lean();
-  if (!products) {
-    throw new NotFoundError(" not found products");
+  if(!category_id){
+    throw new BadRequestError("Category ID is required");
   }
-  return products;
-};
-const getProductsByCategory = async ({ category_id, limit, page }) => {
-  const skip = (page - 1) * limit;
-  const products = await productModel
-    .find(category_id)
-    .skip(skip)
-    .limit(limit)
-    .lean();
-  if (!products) {
-    throw new NotFoundError(" not found products");
+  const checkShopId = await checkShop(shop_id)
+  if(!checkShopId) {
+    throw new NotFoundError("Shop not found");
   }
-  return products;
-};
+  const category_id = toObjectId(category_id.trim());
+  const existingCategory = await cartModel.findById(category_id)
+  if (!existingCategory) {
+    throw new NotFoundError("Category not found");
+  }
+  const productIds = await productModel.find({ category_id}).distinct('_id');
+  const products = await shopProductModel
+    .find({
+      shop_id: checkShopId._id,
+      isPublished: true,
+      isDeleted: false,
+      product_id: { $in: productIds } 
+    })
+    .populate('product_id') 
+    .limit(limit) 
+    .skip(skip);
+  if (!products || products.length === 0) {
+    throw new NotFoundError("No products found in this category");
+  }
+
+  return products
+}
+//Admin only
 const getPublishedProducts = async ({ limit, page }) => {
   const skip = (page - 1) * limit;
   const products = await productModel
-    .find({ isPublished: true })
+    .find({ isPublished: true, isDeleted: false})
     .skip(skip)
     .limit(limit)
     .lean();
@@ -127,11 +197,30 @@ const getPublishedProducts = async ({ limit, page }) => {
     throw new NotFoundError(" not found products");
   }
   return products;
-};
+}
+// manage branch
+const getPublishedProductsManage = async ({ limit = 10, page = 1, shop_id }) => {
+  const checkShopId = await checkShop(shop_id)
+  if(!checkShopId) {
+    throw new NotFoundError("Shop not found");
+  }
+  const skip = (page - 1) * limit;
+  const products = await shopProductModel
+    .find({ isPublished: true, isDeleted: false, shop_id: checkShopId._id})
+    .populate('product_id') 
+    .skip(skip)
+    .limit(limit)
+    .lean()
+  if (!products) {
+    throw new NotFoundError(" not found products")
+  }
+  return products
+}
+//Admin only
 const getDeletedProducts = async ({ limit, page }) => {
   const skip = (page - 1) * limit;
   const products = await productModel
-    .find({ isDeleted: true })
+    .find({ isDeleted: true, isPublished: false })
     .skip(skip)
     .limit(limit)
     .lean();
@@ -139,7 +228,27 @@ const getDeletedProducts = async ({ limit, page }) => {
     throw new NotFoundError(" not found products");
   }
   return products;
-};
+}
+// manage branch
+const getDeletedProductsManage = async ({ limit = 10, page = 1, shop_id }) => {
+  const skip = (page - 1) * limit;
+  const checkShopId = await checkShop(shop_id)
+  if(!checkShopId) {
+    throw new NotFoundError("Shop not found");
+  }
+  const products = await shopProductModel
+    .find({ isPublished: true , isDeleted: false, shop_id: checkShopId._id})
+    .populate('product_id') 
+    .skip(skip)
+    .limit(limit)
+    .lean()
+  if (!products) {
+    throw new NotFoundError(" not found products")
+  }
+  return products
+}
+
+// chưa hoàn thiện
 const updatePublishProduct = async (product_id) => {
   const updateProduct = await productModel.findByIdAndUpdate(
     product_id,
@@ -158,7 +267,7 @@ const updatePublishProduct = async (product_id) => {
   }
   return updateProduct;
 };
-const updateProduct = async ({ user, productId, updateData }) => {
+const updateProduct = async ({ user, product_id, updateData }) => {
   if (!user) {
     throw new BadRequestError("User not found");
   }
@@ -168,7 +277,7 @@ const updateProduct = async ({ user, productId, updateData }) => {
     const existingProduct = await productModel
       .findOne({
         meals: { $regex: new RegExp(`^${updateData.product_name}$`, "i") },
-        _id: { $ne: toObjectId(productId.toString()) },
+        _id: { $ne: toObjectId(product_id.toString()) },
       })
       .lean();
     if (existingProduct) {
@@ -177,7 +286,7 @@ const updateProduct = async ({ user, productId, updateData }) => {
   }
   const cleanDateBeforeUpdate = removeUndefinedObject(updateData);
   const updateProduct = await productModel.findByIdAndUpdate(
-    productId,
+    product_id,
     cleanDateBeforeUpdate,
     {
       new: true,
@@ -263,18 +372,19 @@ const searchProductByUser = async ({ keySearch }) => {
     throw new NotFoundError("Product not found");
   }
   return results;
-};
-
+}
 const getProductById = async (product_id) => {
   return await productModel.findById(product_id);
-};
+}
+const getProductByIdOfShop = async (product_id) => {
+
+}
 module.exports = {
   getProductById,
   createProduct,
   updateProduct,
   updateDeleteProduct,
   updatePublishProduct,
-  getAllProduct,
   getAllProductsByShopId,
   getProductsSortedByRatingDesc,
   getPublishedProducts,
@@ -284,4 +394,6 @@ module.exports = {
   getProductsSortedByPrice,
   getLatestProducts,
   getProductsSortedBysales_count,
+  getPublishedProductsManage,
+  getDeletedProductsManage
 };
