@@ -11,4 +11,5 @@ router.use('/v2/api/comment', require('./commentRouter/index'))
 router.use('/v2/api/review', require('./reviewRouter/index'))
 router.use('/v2/api/favorite', require('./FavoritesProductRouter/index'))
 router.use('/v2/api/location', require('./locationRouter/index'))
+router.use('/v2/api/inventory', require('./inventoryRouter/index'))
 module.exports = router
