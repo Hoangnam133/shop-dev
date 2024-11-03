@@ -396,4 +396,4 @@ module.exports = {
   getProductsSortedBysales_count,
   getPublishedProductsManage,
   getDeletedProductsManage
-};
+}
