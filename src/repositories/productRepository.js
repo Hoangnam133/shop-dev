@@ -458,7 +458,7 @@ const searchProductByUser = async ({ keySearch }) => {
     .find({
       product_name: { $regex: regex },
       isPublished: true,
-      isDelete: false,
+      isDeleted: false,
     })
     .limit(5)
     .lean();
