@@ -113,7 +113,15 @@ const getReviewByUser = async({user, limit = 10, page = 1})=>{
         review_order_id: {
             $in: orders.map(order => order._id)
         }
-    }).populate({
+    })
+    .populate({
+        path: 'review_product_id',
+        populate:{
+            path:'order_userId',
+            select: 'name avatar'
+        }
+    })
+    .populate({
         path: 'review_product_id',
         select: 'product_name product_thumb'
     })
