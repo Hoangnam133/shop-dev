@@ -1,13 +1,26 @@
-const express = require('express')
-const {authentication, authorizeRoles} = require('../../auth/authUtils')
-const router = express.Router()
+const express = require('express');
+const { authentication, authorizeRoles } = require('../../auth/authUtils');
+const router = express.Router();
 
-const discountController = require('../../controllers/discountController')
+const discountController = require('../../controllers/discountController');
+const { asynHandler } = require('../../utils/handler');
+// Lấy danh sách tất cả các mã giảm giá
+router.get('/getAllDiscounts', asynHandler(discountController.getActiveDiscounts))
+// router.use(authentication);
 
-const { asynHandler } = require('../../utils/handler')
-router.get('/getAllDiscounts', asynHandler(discountController.getAllDiscounts))
-router.use(authentication)
-router.post('/create', authorizeRoles('ADMIN'),asynHandler(discountController.createDiscount))
-router.patch('/update/:discount_id', authorizeRoles('ADMIN'),asynHandler(discountController.updateDiscount))
-router.get('/getDiscountsByCode/:code', asynHandler(discountController.getDiscountByCode))
-module.exports = router
+// Tạo mã giảm giá mới (chỉ ADMIN có quyền)
+router.post('/create', asynHandler(discountController.createDiscount))
+// Cập nhật mã giảm giá theo discount_id (chỉ ADMIN có quyền)
+router.patch('/update/:discount_id', asynHandler(discountController.updateDiscountById))
+// Lấy mã giảm giá theo mã code
+router.get('/getDiscountsByCode/:discountCode', asynHandler(discountController.getDiscountByCode))
+// Lấy thông tin mã giảm giá theo discount_id
+router.get('/getDiscountById/:discount_id', asynHandler(discountController.getDiscountById))
+// Xóa mềm mã giảm giá theo discount_id (chỉ ADMIN có quyền)
+router.patch('/softDelete/:discount_id', authorizeRoles('ADMIN'), asynHandler(discountController.softDeleteDiscount))
+// Kiểm tra mã giảm giá đã hết hạn chưa (kiểm tra theo discountCode)
+router.get('/isDiscountExpired/:discountCode', asynHandler(discountController.isDiscountExpired))
+// Lấy danh sách các mã giảm giá công khai
+router.get('/getPublicDiscounts', asynHandler(discountController.getPublicDiscounts))
+
+module.exports = router;
