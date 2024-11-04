@@ -1,5 +1,5 @@
 // models/shopSchema.js
-const { Schema, model } = require("mongoose");
+const { Schema, model, default: mongoose } = require("mongoose");
 
 const COLLECTION_NAME = "Shops";
 const DOCUMENT_NAME = "Shop";
@@ -28,6 +28,11 @@ const shopSchema = new Schema(
       type: String,
       default: "",
     },
+    opening_hours:{
+      type: mongoose.Types.ObjectId,
+      ref: "OpeningHours",
+      required: true
+    }
   },
   {
     timestamps: true,

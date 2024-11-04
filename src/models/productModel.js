@@ -59,6 +59,8 @@
         preparation_time: {
             type: Number,
             required: true,
+            min: [0.5, 'Thời gian chuẩn bị tối thiểu là 0.5 phút (30 giây)'],
+            max: [5, 'Thời gian chuẩn bị tối đa là 5 phút'],
         },
         product_usage: {
             type: String,
