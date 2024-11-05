@@ -4,6 +4,7 @@ const {
   BadRequestError,
   NotFoundError,
 } = require("../core/errorResponse");
+const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const keyTokenService = require("../services/keyTokenService");
 dotenv.config();
