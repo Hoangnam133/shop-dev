@@ -3,6 +3,26 @@ const { BadRequestError } = require("../core/errorResponse");
 const productModel = require("../models/productModel");
 const { toObjectId } = require("../utils/index");
 const shopModel = require("../models/shopModel");
+const checkProductStockInShop = async ({ shop_id, product_id, quantity }) => {
+  const shop = await shopModel.findById(toObjectId(shop_id))
+  if (!shop) {
+      throw new BadRequestError('Shop not found')
+  }
+  console.log('product idddddd',product_id)
+  const product = await productModel.findById(product_id)
+  if (!product) {
+      throw new BadRequestError('Product not found')
+  }
+  const stockData = await inventoryModel.findOne({ shop_id, product_id, isDeleted: false })
+
+  if (!stockData) {
+      throw new BadRequestError('No inventory found for this product');
+  }
+  if(stockData.inven_stock <= 0 || stockData.inven_stock < quantity){
+      return false
+  }
+  return true
+}
 // Hàm kiểm tra số lượng sản phẩm còn lại ở các chi nhánh
 const getProductStockInAllShops = async ({
   product_id,
@@ -342,4 +362,5 @@ module.exports = {
   restoreProductInInventory,
   getDeletedProductsInInventory,
   softDeleteProductInInventory,
+  checkProductStockInShop
 };

@@ -28,7 +28,7 @@ const createCategory = async (payload) => {
 
 const getAllCategories = async () => {
   const categories = await categoryModel
-    .find({ isPublished: true, isDelete: false })
+    .find({ isPublished: true, isDeleted: false })
     .lean();
   if (!categories) {
     throw new NotFoundError("No categories found");
@@ -117,7 +117,7 @@ const getAllCategoriesIsPublished = async () => {
 
 const getAllCategoriesIsDeleted = async () => {
   const categories = await categoryModel
-    .find({ isDelete: true, isPublished: false })
+    .find({ isDeleted: true, isPublished: false })
     .lean();
   if (!categories) {
     throw new NotFoundError("No categories found");
