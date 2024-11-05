@@ -14,27 +14,28 @@ const checkShop = async (shop_id) => {
   if (!shop_id) {
     throw new BadRequestError("Shop ID is required");
   }
-  const objShop_id = toObjectId(shop_id.trim());
-  const foundShop = await shopModel.findById(objShop_id);
+  
+  const foundShop = await shopModel.findById(shop_id)
   if (!foundShop) {
     throw new NotFoundError("Shop not found");
   }
   return foundShop;
 };
 // kiểm tra sản phẩm có tồn tại trong shop đó không
-const checkProductInShop = async ({ shop_id, product_id }) => {
-  const shop = await checkShop(shop_id);
+const checkProductInShop = async (shop_id, product_id) => {
+  
+  await checkShop(shop_id);
   const product = await productModel.findOne({
-    _id: toObjectId(product_id),
-    isDeleted: false,
-    isPublished: true,
+      _id: product_id,
+      isDelete: false,
+      isPublished: true
   });
   const checkProduct = await shopProductModel.findOne({
-    shop_id: shop._id,
-    product_id: product._id,
+      shop_id,
+      product_id,
   });
-  if (!shop && !product && !checkProduct) {
-    return false;
+  if (!shop || !product || !checkProduct) {
+      return false;
   }
   return true;
 };
@@ -414,7 +415,7 @@ const searchProductByUser = async ({ keySearch }) => {
   return results;
 };
 const getProductById = async (product_id) => {
-  const foundProduct = await productModel.findById(toObjectId(product_id));
+  const foundProduct = await productModel.findById(product_id);
   if (!foundProduct) {
     throw new NotFoundError("Product not found");
   }

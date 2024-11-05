@@ -10,7 +10,7 @@ const categoryShema = new Schema({
         type: Boolean,
         default: true
     },
-    isDelete:{
+    isDeleted:{
         type: Boolean,
         default: false
     },

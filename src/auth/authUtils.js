@@ -62,7 +62,7 @@ const authentication = asynHandler(async (req, res, next) => {
       }
       shop = findShop;
     }
-
+    console.log("shopppp",shop._id)
     req.shop = shop;
     req.keyStore = findKeyStore;
     req.user = existingUser;
