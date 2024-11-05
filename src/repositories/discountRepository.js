@@ -1,17 +1,32 @@
 const discountModel = require('../models/discountModel')
 const {removeUndefinedObject, toObjectId} = require('../utils/index')
 const { NotFoundError, BadRequestError } = require('../core/errorResponse')
-const createDiscount = async (discountData) => {
-    const discount = await discountModel.create(discountData)
+const {toObjectId} = require('../utils/index')
+const {getCurrentDateInTimeZone} = require('../utils/convertTime')
+// tạo mã giảm giá 
+const createDiscount = async (payload) => {
+    const existingDiscount = await discountModel.findOne({ discount_code: payload.discount_code });
+    if (existingDiscount){
+        throw new BadRequestError('Discount code already exists');
+    }
+    if (new Date(payload.discount_start_date) >= new Date(payload.discount_end_date)) {
+        throw new BadRequestError('The start date must be earlier than the end date');
+    }
+    const discount = await discountModel.create(payload)
+    if(!discount){
+        throw new BadRequestError('Failed to create discount')
+    }
     return discount
 }
-const getDiscountById = async (discountId) => {
-    const discount = await discountModel.findById(discountId).lean()
+// lấy discount theo id
+const getDiscountById = async (discount_id) => {
+    const discount = await discountModel.findById(toObjectId(discount_id)).lean()
     if (!discount) {
         throw new NotFoundError('Discount not found')
     }
     return discount
 }
+// lấy discount theo mã code
 const getDiscountByCode = async (discountCode) => {
     const discount = await discountModel.findOne({ discount_code: discountCode }).lean()
     if (!discount) {
@@ -19,13 +34,19 @@ const getDiscountByCode = async (discountCode) => {
     }
     return discount
 }
-const getAllDiscounts = async ({ page , limit , filter = {} }) => {
+// danh sách mã giảm giá còn hiệu lực
+const getActiveDiscounts = async ({ page, limit }) => {
+    const filter = {
+        discount_end_date: { $gte: getCurrentDateInTimeZone() },
+        is_delete: false 
+    };
     const discounts = await discountModel.find(filter)
         .skip((page - 1) * limit)
         .limit(limit)
         .lean();
-    return discounts
+    return discounts;
 }
+// cập nhật discount
 const updateDiscountById = async ({discount_id, dataUpdate}) => {
     const cleanedData = removeUndefinedObject(dataUpdate)
     const discount = await discountModel.findById(discount_id).lean()
@@ -65,7 +86,7 @@ const updateDiscountById = async ({discount_id, dataUpdate}) => {
     if (cleanedData.maximum_discount_value && cleanedData.maximum_discount_value < 0) {
         throw new BadRequestError('Maximum discount value cannot be negative');
     }
-    const updatedDiscount = await discountModel.findByIdAndUpdate(discount_id, cleanedData, {
+    const updatedDiscount = await discountModel.findByIdAndUpdate(discount._id, cleanedData, {
         new: true,
         lean: true
     })
@@ -73,21 +94,23 @@ const updateDiscountById = async ({discount_id, dataUpdate}) => {
     if (!updatedDiscount) {
         throw new BadRequestError('Update discount failed')
     }
- 
     return updatedDiscount
 }
-const softDeleteDiscount = async (discountId) => {
-    const deletedDiscount = await discountModel.findByIdAndUpdate(discountId, { is_delete: true }, { new: true, lean: true });
+// xóa mềm discount
+const softDeleteDiscount = async (discount_id) => {
+    const deletedDiscount = await discountModel.findByIdAndUpdate(toObjectId(discount_id), { is_delete: true }, { new: true, lean: true });
     if (!deletedDiscount) {
         throw new NotFoundError('Delete discount failed')
     }
     return deletedDiscount
 }
+// kiểm tra mã giảm giá đã hết hạn hay chưa (nếu trả về true là mã đó hết hạn)
 const isDiscountExpired = async (discountCode) => {
     const discount = await getDiscountByCode(discountCode)
     const currentDate = new Date();
     return discount.discount_end_date < currentDate
 }
+// cập nhật khi user sử dụng mã giảm giá
 const updateDiscountUsageByUser = async (discountId, userId) => {
     const discount = await discountModel.findOneAndUpdate(
         { _id: discountId, "discount_user_used.dbu_userId": userId },
@@ -102,25 +125,31 @@ const updateDiscountUsageByUser = async (discountId, userId) => {
 
     return discount
 }
-const checkUserDiscountUsage = async (discountId, userId) => {
-    const discount = await discountModel.findById(discountId).lean();
+// kiểm tra số lượt sử dụng mã giảm giá của user cụ thể
+const checkUserDiscountUsage = async (discount_id, user) => {
+    const discount = await discountModel.findById(toObjectId(discount_id)).lean();
     if (!discount) {
         throw new NotFoundError('Discount not found')
     }
-
-    const userUsage = discount.discount_user_used.find(user => user.dbu_userId.toString() === userId.toString());
+    const userUsage = discount.discount_user_used.find(user => user.dbu_userId.toString() === user._id.toString())
     if (!userUsage) {
         return discount.max_uses_per_user;
     }
-
     const remainingUses = discount.max_uses_per_user - userUsage.count_used;
     return remainingUses > 0 ? remainingUses : 0
 }
-const getPublicDiscounts = async () => {
-    const discounts = await discountModel.find({ is_public: true, is_delete: false }).lean()
+// lấy tất cả mã giảm giá chưa bị xóa
+const getPublicDiscounts = async ({limit, page}) => {
+    const skip = (page - 1) * limit;
+    const discounts = await discountModel.find({is_delete: false })
+    .skip(skip)
+    .limit(limit)
+    .lean()
     return discounts;
 }
+// hàm này kiểm tra xem giảm giá này áp dụng có đúng loại (order / product ) không (xem chi tiết ở models)
 const checkDiscountApplicable = async ({discount, applicableTo}) => {
+    // truyền vô discount luôn
     const getDiscount = await getDiscountById(discount._id)
     if (!getDiscount) {
         throw new NotFoundError('Discount not found')
@@ -130,6 +159,7 @@ const checkDiscountApplicable = async ({discount, applicableTo}) => {
     }
     return getDiscount
 }
+// kiểm tra giá trị order của user xem có phù hợp để sử dụng mã giảm giá này không
 const checkMinOrderValue = async ({discount, orderValue}) => {
     const getDiscount = await getDiscountById(discount._id)
     if (getDiscount.min_order_value && orderValue < getDiscount.min_order_value) {
@@ -138,6 +168,7 @@ const checkMinOrderValue = async ({discount, orderValue}) => {
 
     return getDiscount
 }
+// lấy các discount chưa bị xóa và sắp xếp (ngày nào sắp hết hạn sẽ được ưu tiên lên trên) 
 const getDiscountsSortedByExpiryDate = async () => {
     const discounts = await discountModel.find({ is_delete: false })
         .sort({ discount_end_date: 1 }) 
@@ -147,8 +178,7 @@ const getDiscountsSortedByExpiryDate = async () => {
     }
     return discounts
 }
-
-
+// lấy ra số lượt sử dụng tối đa của 1 user của 1 discount
 const getMaxUsesForUser  = async (discount) => {
     const getDiscount = await getDiscountById(discount._id)
     if (!getDiscount) {
@@ -157,17 +187,20 @@ const getMaxUsesForUser  = async (discount) => {
     const userUsage = getDiscount.max_uses_per_user
     return userUsage
 }
-const userUsageCount = async({user_id, discount})=>{
+
+// lấy ra số lượt đã sử dụng của 1 user của 1 discount
+const userUsageCount = async({user, discount})=>{
     const getDiscount = await getDiscountById(discount._id)
     if (!getDiscount) {
         throw new NotFoundError('Discount not found')
     }
-    const userUsage = getDiscount.discount_user_used.find(user => user.dbu_userId.toString() === user_id.toString())
+    const userUsage = getDiscount.discount_user_used.find(user => user.dbu_userId.toString() === user._id.toString())
     if (!userUsage) {
         return 0
     }
     return userUsage.count_used
 }
+// kiểm tra xem sản phẩm có  được áp dụng mã giảm giá này hay không (return true/false)
 const checkproductAppliedDiscount = async ({discount, product})=>{
     const foundDiscount = await getDiscountById(discount._id)
     const foundProductInDiscountApplied = foundDiscount.applicable_products.find(prod => prod._id.toString() === product._id.toString());
@@ -176,6 +209,7 @@ const checkproductAppliedDiscount = async ({discount, product})=>{
     }
     return true
 }
+// tính toán giảm giá dựa trên từng loại cụ thể (tổng tiền hoặc phần trăm)
 const calculateDiscountAmount  = ({discountValue, totalPrice, discountValueType, maxValueDiscount}) => {
     let totalDiscount = 0;
     if (discountValueType === 'fixed_amount') {
@@ -238,7 +272,8 @@ const calculateDiscount = async ({ product, checkDiscount, user, totalPrice }) =
 
 
     return totalDiscount;
-};
+}
+// thêm người dùng vào danh sách những người đã sử dụng mã giảm giá 
 const updateUserToDiscount = async ({ discountCode, user_id }) => {
     const discount = await discountModel.findOne({ discount_code: discountCode, is_delete: false }).lean()
     if (!discount) {
@@ -278,7 +313,6 @@ module.exports = {
     createDiscount,
     getDiscountById,
     getDiscountByCode,
-    getAllDiscounts,
     updateDiscountById,
     softDeleteDiscount,
     isDiscountExpired,
@@ -291,5 +325,6 @@ module.exports = {
     getMaxUsesForUser,
     userUsageCount,
     calculateDiscount,
-    updateUserToDiscount
+    updateUserToDiscount,
+    getActiveDiscounts
 }
