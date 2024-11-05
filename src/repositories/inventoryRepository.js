@@ -3,9 +3,29 @@ const {BadRequestError} = require('../core/errorResponse')
 const productModel = require('../models/productModel')
 const {toObjectId} = require('../utils/index')
 const shopModel = require('../models/shopModel')
+// hàm kiểm tra số lượng sản phẩm cụ thể của sản phẩm tại 1 chi nhánh
+const checkProductStockInShop = async ({ shop_id, product_id, quantity }) => {
+    const shop = await shopModel.findById(toObjectId(shop_id))
+    if (!shop) {
+        throw new BadRequestError('Shop not found')
+    }
+    const product = await productModel.findById(toObjectId(product_id))
+    if (!product) {
+        throw new BadRequestError('Product not found')
+    }
+    const stockData = await inventoryModel.findOne({ shop_id, product_id, isDelete: false })
+
+    if (!stockData) {
+        throw new BadRequestError('No inventory found for this product');
+    }
+    if(stockData.inven_stock <= 0 || stockData.inven_stock < quantity){
+        return false
+    }
+    return true
+}
 // Hàm kiểm tra số lượng sản phẩm còn lại ở các chi nhánh
 const getProductStockInAllShops = async ({product_id, limit = 10, page = 1}) => {
-    const product = await productModel.findById(toObjectId(product_id.trim()))
+    const product = await productModel.findById(toObjectId(product_id))
     if (!product) {
         throw new BadRequestError('Product not found')
     }
@@ -25,7 +45,7 @@ const getProductStockInAllShops = async ({product_id, limit = 10, page = 1}) => 
 
 // Hàm kiểm tra các sản phẩm sắp hết hàng ở một chi nhánh cụ thể
 const getLowStockProductsInShop = async ({shop_id, limit = 10, page = 1}) => {
-    const shop = await shopModel.findById(toObjectId(shop_id.trim()))
+    const shop = await shopModel.findById(toObjectId(shop_id))
     if (!shop) {
         throw new BadRequestError('Shop not found')
     }
@@ -47,11 +67,11 @@ const getLowStockProductsInShop = async ({shop_id, limit = 10, page = 1}) => {
 };
 // Hàm kiểm tra số lượng sản phẩm còn lại trong kho của một chi nhánh cụ thể
 const getProductStockInShop = async ({shop_id, product_id, limit = 10, page = 1}) => {
-    const shop = await shopModel.findById(toObjectId(shop_id.trim()))
+    const shop = await shopModel.findById(toObjectId(shop_id))
     if (!shop) {
         throw new BadRequestError('Shop not found')
     }
-    const product = await productModel.findById(toObjectId(product_id.trim()))
+    const product = await productModel.findById(toObjectId(product_id))
     if (!product) {
         throw new BadRequestError('Product not found')
     }
@@ -71,11 +91,11 @@ const getProductStockInShop = async ({shop_id, product_id, limit = 10, page = 1}
 }
 // isDelete 
 const softDeleteProductInInventory = async ({ shop_id, product_id }) => {
-    const shop = await shopModel.findById(toObjectId(shop_id.trim()))
+    const shop = await shopModel.findById(toObjectId(shop_id))
     if (!shop) {
         throw new BadRequestError('Shop not found')
     }
-    const product = await productModel.findById(toObjectId(product_id.trim()))
+    const product = await productModel.findById(toObjectId(product_id))
     if (!product) {
         throw new BadRequestError('Product not found')
     }
@@ -93,11 +113,11 @@ const softDeleteProductInInventory = async ({ shop_id, product_id }) => {
 }
 //Thêm sản phẩm mới vào kho của một chi nhánh
 const addProductToInventory = async ({ shop_id, product_id, quantity, minStockLevel }) => {
-    const shop = await shopModel.findById(toObjectId(shop_id.trim()))
+    const shop = await shopModel.findById(toObjectId(shop_id))
     if (!shop) {
         throw new BadRequestError('Shop not found')
     }
-    const product = await productModel.findById(toObjectId(product_id.trim()))
+    const product = await productModel.findById(toObjectId(product_id))
     if (!product) {
         throw new BadRequestError('Product not found')
     }
@@ -125,11 +145,11 @@ const addProductToInventory = async ({ shop_id, product_id, quantity, minStockLe
 };
 //Giảm số lượng tồn kho khi có đơn hàng từ chi nhánh cụ thể
 const reduceInventoryStock = async ({ shop_id, product_id, quantity }) => {
-    const shop = await shopModel.findById(toObjectId(shop_id.trim()))
+    const shop = await shopModel.findById(toObjectId(shop_id))
     if (!shop) {
         throw new BadRequestError('Shop not found')
     }
-    const product = await productModel.findById(toObjectId(product_id.trim()))
+    const product = await productModel.findById(toObjectId(product_id))
     if (!product) {
         throw new BadRequestError('Product not found')
     }
@@ -148,11 +168,11 @@ const reduceInventoryStock = async ({ shop_id, product_id, quantity }) => {
 
 //Kiểm tra tồn kho trước khi thực hiện đơn hàng
 const checkInventoryStock = async ({ shop_id, product_id, quantity }) => {
-    const shop = await shopModel.findById(toObjectId(shop_id.trim()))
+    const shop = await shopModel.findById(toObjectId(shop_id))
     if (!shop) {
         throw new BadRequestError('Shop not found')
     }
-    const product = await productModel.findById(toObjectId(product_id.trim()))
+    const product = await productModel.findById(toObjectId(product_id))
     if (!product) {
         throw new BadRequestError('Product not found')
     }
@@ -165,11 +185,11 @@ const checkInventoryStock = async ({ shop_id, product_id, quantity }) => {
     return stockData.inven_stock
 };
 const updateInventory = async ({ shop_id, product_id, quantity, minStockLevel }) => {
-    const shop = await shopModel.findById(toObjectId(shop_id.trim()))
+    const shop = await shopModel.findById(toObjectId(shop_id))
     if (!shop) {
         throw new BadRequestError('Shop not found')
     }
-    const product = await productModel.findById(toObjectId(product_id.trim()))
+    const product = await productModel.findById(toObjectId(product_id))
     if (!product) {
         throw new BadRequestError('Product not found')
     }
@@ -200,7 +220,7 @@ const updateInventory = async ({ shop_id, product_id, quantity, minStockLevel })
 }
 //Kiểm tra sản phẩm hết hàng trên toàn hệ thống
 const checkProductOutOfStockAllShops = async ({product_id, limit, page}) => {
-    const product = await productModel.findById(toObjectId(product_id.trim()))
+    const product = await productModel.findById(toObjectId(product_id))
     if (!product) {
         throw new BadRequestError('Product not found')
     }
@@ -240,11 +260,11 @@ const getLowStockProductsAcrossAllShops = async ({limit, page}) => {
 }
 //Hàm khôi phục sản phẩm
 const restoreProductInInventory = async ({ shop_id, product_id }) => {
-    const shop = await shopModel.findById(toObjectId(shop_id.trim()))
+    const shop = await shopModel.findById(toObjectId(shop_id))
     if (!shop) {
         throw new BadRequestError('Shop not found')
     }
-    const product = await productModel.findById(toObjectId(product_id.trim()))
+    const product = await productModel.findById(toObjectId(product_id))
     if (!product) {
         throw new BadRequestError('Product not found')
     }
@@ -262,7 +282,7 @@ const restoreProductInInventory = async ({ shop_id, product_id }) => {
 }
 //Hàm xem danh sách sản phẩm đã bị xóa
 const getDeletedProductsInInventory = async ({shop_id, limit = 10, page = 1}) => {
-    const shop = await shopModel.findById(toObjectId(shop_id.trim()))
+    const shop = await shopModel.findById(toObjectId(shop_id))
     if (!shop) {
         throw new BadRequestError('Shop not found')
     }
@@ -295,5 +315,6 @@ module.exports = {
     getLowStockProductsAcrossAllShops,
     restoreProductInInventory,
     getDeletedProductsInInventory,
-    softDeleteProductInInventory
+    softDeleteProductInInventory,
+    checkProductStockInShop
 }

@@ -9,6 +9,7 @@ const inventoryModel = require("../models/inventoryModel");
 const { toObjectId } = require("../utils/index");
 const { forEach } = require("lodash");
 const shopProductModel = require('../models/shopProductModel')
+// kiểm tra shop có tồn tại
 const checkShop = async(shop_id)=>{
   if(!shop_id) {
     throw new BadRequestError("Shop ID is required");
@@ -20,6 +21,24 @@ const checkShop = async(shop_id)=>{
   }
   return foundShop
 }
+// kiểm tra sản phẩm có tồn tại trong shop đó không
+const checkProductInShop = async({shop_id, product_id}) => {
+  const shop = await checkShop(shop_id)
+  const product = await productModel.findOne({
+    _id: toObjectId(product_id),
+    isDelete: false,
+    isPublished: true
+  })
+  const checkProduct = await shopProductModel.findOne({
+    shop_id: shop._id,
+    product_id: product._id,
+  })
+  if(!shop && !product && !checkProduct){
+    return false
+  }
+  return true
+}
+// tạo sản phẩm
 const createProduct = async (payload) => {
   const { category_id, shop_ids } = payload;
 
@@ -59,7 +78,7 @@ const createProduct = async (payload) => {
 
   return newProduct;
 };
-
+// lấy ra sản phẩm mới nhất (limit)
 const getLatestProducts = async ({limit = 10, shop_id}) => {
   const products = await shopProductModel
     .find({ isPublished: true , isDeleted: false, shop_id: toObjectId(shop_id.trim())})
@@ -70,6 +89,7 @@ const getLatestProducts = async ({limit = 10, shop_id}) => {
     throw new NotFoundError(" not found products")
   }
 }
+// lấy ra sản phẩm bán chạy nhất (có sắp xếp giảm dần theo lượt bán)
 const getProductsSortedBysales_count = async (shop_id) => {
   const checkShopId = await checkShop(shop_id)
   if(!checkShopId) {
@@ -85,7 +105,8 @@ const getProductsSortedBysales_count = async (shop_id) => {
     throw new NotFoundError(" not found products");
   }
   return products;
-};
+}
+// lấy ra sản phẩm sắp xếp theo giá từ cao đến thấp hoặc ngược lại
 const getProductsSortedByPrice = async ({
   sortOrder = "asc",
   page = 1,
@@ -111,7 +132,7 @@ const getProductsSortedByPrice = async ({
 
   return shopProducts; 
 };
-
+// lấy ra sản phẩm đánh giá từ thấp đến cao hoặc ngược lại
 const getProductsSortedByRatingDesc = async ({
   sortOrder = "asc",
   page = 1,
@@ -136,6 +157,7 @@ const getProductsSortedByRatingDesc = async ({
 
   return shopProducts; 
 };
+// lấy ra tất cả sản phẩm trong 1 shop
 const getAllProductsByShopId = async ({ limit = 10, page = 1, shop_id }) => {
   const skip = (page - 1) * limit;
   const checkShopId = await checkShop(shop_id)
@@ -153,7 +175,7 @@ const getAllProductsByShopId = async ({ limit = 10, page = 1, shop_id }) => {
     throw new NotFoundError("No products found");
   }
 }
-
+// lấy ra sản phẩm từ danh mục (ví dụ cà phê sẽ có bạc xỉu, cf sữa đá)
 const getProductsByCategory = async ({ category_id, limit = 10, page = 1, shop_id }) => {
   const skip = (page - 1) * limit;
   if(!category_id){
@@ -185,7 +207,7 @@ const getProductsByCategory = async ({ category_id, limit = 10, page = 1, shop_i
 
   return products
 }
-//Admin only
+//Admin only (lấy ra danh sách tất cả sản phẩm đã published )
 const getPublishedProducts = async ({ limit, page }) => {
   const skip = (page - 1) * limit;
   const products = await productModel
@@ -198,7 +220,7 @@ const getPublishedProducts = async ({ limit, page }) => {
   }
   return products;
 }
-// manage branch
+// manage branch (lấy ra danh sách tất cả sản phẩm đã published ở 1 shop cụ thể )
 const getPublishedProductsManage = async ({ limit = 10, page = 1, shop_id }) => {
   const checkShopId = await checkShop(shop_id)
   if(!checkShopId) {
@@ -216,7 +238,7 @@ const getPublishedProductsManage = async ({ limit = 10, page = 1, shop_id }) => 
   }
   return products
 }
-//Admin only
+//Admin only (lấy ra danh sách tất cả sản phẩm đã bị xóa)
 const getDeletedProducts = async ({ limit, page }) => {
   const skip = (page - 1) * limit;
   const products = await productModel
@@ -229,7 +251,7 @@ const getDeletedProducts = async ({ limit, page }) => {
   }
   return products;
 }
-// manage branch
+// manage branch (lấy ra danh sách sản phẩm đã bị xóa ở 1 shop cụ thể)
 const getDeletedProductsManage = async ({ limit = 10, page = 1, shop_id }) => {
   const skip = (page - 1) * limit;
   const checkShopId = await checkShop(shop_id)
@@ -374,7 +396,11 @@ const searchProductByUser = async ({ keySearch }) => {
   return results;
 }
 const getProductById = async (product_id) => {
-  return await productModel.findById(product_id);
+  const foundProduct = await productModel.findById(toObjectId(product_id));
+  if (!foundProduct) {
+    throw new NotFoundError("Product not found");
+  }
+  return foundProduct;
 }
 const getProductByIdOfShop = async (product_id) => {
 
@@ -395,5 +421,7 @@ module.exports = {
   getLatestProducts,
   getProductsSortedBysales_count,
   getPublishedProductsManage,
-  getDeletedProductsManage
+  getDeletedProductsManage,
+  checkShop,
+  checkProductInShop
 }
