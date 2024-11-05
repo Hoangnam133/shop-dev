@@ -32,5 +32,11 @@ const discountSchema = new Schema({
     timestamps: true,
     collection: COLLECTION_NAME
 })
-
+discountSchema.pre('save', function(next) {
+    if (this.discount_code) {
+        // Loại bỏ khoảng trắng trong discount_code
+        this.discount_code = this.discount_code.replace(/\s+/g, '');
+    }
+    next();
+})
 module.exports = model(DOCUMENT_NAME, discountSchema)

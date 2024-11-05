@@ -3,7 +3,6 @@ const { BadRequestError } = require("../core/errorResponse");
 const productModel = require("../models/productModel");
 const { toObjectId } = require("../utils/index");
 const shopModel = require("../models/shopModel");
-const mongoose = require("mongoose");
 // Hàm kiểm tra số lượng sản phẩm còn lại ở các chi nhánh
 const getProductStockInAllShops = async ({
   product_id,
@@ -14,11 +13,9 @@ const getProductStockInAllShops = async ({
   if (!product) {
     throw new BadRequestError("Product not found");
   }
-  console.log("fđàadfadsfasdff" + product);
-
   const skip = (page - 1) * limit;
   const stockData = await inventoryModel
-    .find({ product_id, isDeleted: false })
+    .find({ product_id, isDelete: false })
     .populate("shop_id")
     .populate("product_id")
     .skip(skip)
@@ -41,7 +38,7 @@ const getLowStockProductsInShop = async ({ shop_id, limit = 10, page = 1 }) => {
   const lowStockProducts = await inventoryModel
     .find({
       shop_id,
-      isDeleted: false, // Chỉ lấy sản phẩm chưa bị xóa
+      isDelete: false, // Chỉ lấy sản phẩm chưa bị xóa
       $expr: { $lt: ["$inven_stock", "$minStockLevel"] },
     })
     .skip(skip)
@@ -99,8 +96,8 @@ const softDeleteProductInInventory = async ({ shop_id, product_id }) => {
     throw new BadRequestError("Product not found");
   }
   const updatedInventory = await inventoryModel.findOneAndUpdate(
-    { shop_id, product_id, isDeleted: false }, // Chỉ xóa sản phẩm chưa bị xóa
-    { isDeleted: true },
+    { shop_id, product_id, isDelete: false }, // Chỉ xóa sản phẩm chưa bị xóa
+    { isDelete: true },
     { new: true, lean: true }
   );
 
@@ -116,7 +113,7 @@ const softDeleteProductInInventory = async ({ shop_id, product_id }) => {
 const addProductToInventory = async ({
   shop_id,
   product_id,
-  inven_stock,
+  quantity,
   minStockLevel,
 }) => {
   const shop = await shopModel.findById(toObjectId(shop_id.trim()));
@@ -131,20 +128,18 @@ const addProductToInventory = async ({
     shop_id,
     product_id,
   });
-  console.log(existingInventory);
-
   if (existingInventory) {
     throw new BadRequestError(
       "The product already exists in this branch warehouse"
     );
   }
-  if (inven_stock < 0) {
+  if (quantity < 0) {
     throw new BadRequestError("Inventory quantity cannot be negative");
   }
   if (minStockLevel < 0) {
     throw new BadRequestError("The minimum inventory level cannot be negative");
   }
-  if (inven_stock < minStockLevel) {
+  if (quantity < minStockLevel) {
     throw new BadRequestError(
       "The inventory quantity must be greater than or equal to the minimum inventory level"
     );
@@ -152,10 +147,10 @@ const addProductToInventory = async ({
   const newInventory = await inventoryModel.create({
     shop_id,
     product_id,
-    inven_stock,
+    inven_stock: quantity,
     minStockLevel,
   });
-  console.log("New inventory:", newInventory);
+
   return newInventory;
 };
 //Giảm số lượng tồn kho khi có đơn hàng từ chi nhánh cụ thể
@@ -183,20 +178,15 @@ const reduceInventoryStock = async ({ shop_id, product_id, quantity }) => {
 
 //Kiểm tra tồn kho trước khi thực hiện đơn hàng
 const checkInventoryStock = async ({ shop_id, product_id, quantity }) => {
-  const shop = await shopModel.findById(toObjectId(shop_id));
-  console.log(shop);
+  const shop = await shopModel.findById(toObjectId(shop_id.trim()));
   if (!shop) {
     throw new BadRequestError("Shop not found");
   }
-
-  const product = await productModel.findById(toObjectId(product_id));
-  console.log(product);
+  const product = await productModel.findById(toObjectId(product_id.trim()));
   if (!product) {
     throw new BadRequestError("Product not found");
   }
-
   const stockData = await inventoryModel.findOne({ shop_id, product_id });
-  console.log(stockData);
 
   if (!stockData || stockData.inven_stock < quantity) {
     throw new BadRequestError("Insufficient inventory");
@@ -249,11 +239,10 @@ const updateInventory = async ({
 };
 //Kiểm tra sản phẩm hết hàng trên toàn hệ thống
 const checkProductOutOfStockAllShops = async ({ product_id, limit, page }) => {
-  const product = await productModel.findById(product_id);
+  const product = await productModel.findById(toObjectId(product_id.trim()));
   if (!product) {
     throw new BadRequestError("Product not found");
   }
-
   const skip = (page - 1) * limit;
   const outOfStockShops = await inventoryModel
     .find({ product_id, inven_stock: 0 })
@@ -292,17 +281,17 @@ const getLowStockProductsAcrossAllShops = async ({ limit, page }) => {
 };
 //Hàm khôi phục sản phẩm
 const restoreProductInInventory = async ({ shop_id, product_id }) => {
-  const shop = await shopModel.findById(shop_id);
+  const shop = await shopModel.findById(toObjectId(shop_id.trim()));
   if (!shop) {
     throw new BadRequestError("Shop not found");
   }
-  const product = await productModel.findById(product_id);
+  const product = await productModel.findById(toObjectId(product_id.trim()));
   if (!product) {
     throw new BadRequestError("Product not found");
   }
   const updatedInventory = await inventoryModel.findOneAndUpdate(
-    { shop_id, product_id, isDeleted: true },
-    { isDeleted: false },
+    { shop_id, product_id, isDelete: true },
+    { isDelete: false },
     { new: true, lean: true }
   );
 
@@ -325,7 +314,7 @@ const getDeletedProductsInInventory = async ({
   const skip = (page - 1) * limit;
   const deletedProducts = await inventoryModel
     .find({
-      isDeleted: true,
+      isDelete: true,
       ...(shop_id && { shop_id }),
     })
     .populate("shop_id")

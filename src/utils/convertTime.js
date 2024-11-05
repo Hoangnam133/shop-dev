@@ -1,6 +1,8 @@
 const moment = require('moment-timezone')
-const initDataTimeFormat = () => {
-    const date = new Date(), timeZone = 'Asia/Ho_Chi_Minh', format = 'YYYY-MM-DD HH:mm:ss'
+const getCurrentDateInTimeZone = () => {
+    const date = new Date();
+    const timeZone = 'Asia/Ho_Chi_Minh';
+    const format = 'YYYY-MM-DD HH:mm:ss';
     const momentDate = moment(date);
     return momentDate.tz(timeZone).format(format);
 }
@@ -35,5 +37,5 @@ console.log(convertToVietnamTime()); // Ví dụ: "2024-09-27"
 
 
 module.exports = {
-    convertTimeToVN, convertToVietnamTime, initDataTimeFormat
+    convertTimeToVN, convertToVietnamTime, getCurrentDateInTimeZone
 }
