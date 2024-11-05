@@ -27,7 +27,7 @@ const checkProductInShop = async (shop_id, product_id) => {
   await checkShop(shop_id);
   const product = await productModel.findOne({
       _id: product_id,
-      isDelete: false,
+      isDeleted: false,
       isPublished: true
   });
   const checkProduct = await shopProductModel.findOne({
