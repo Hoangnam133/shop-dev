@@ -22,6 +22,21 @@ const getCartByUserId  = async(user) => {
 
     return foundCart
 }
+const getCart  = async(user) => {
+    if (!user) throw new NotFoundError('User not found');
+    
+    const foundCart = await cartModel.findOne({ cart_userId: user._id })
+    .populate(
+        {
+         path: 'cart_products.product_id',
+         select: 'product_name product_thumb'
+        }
+    )
+  
+    // if (!foundCart) throw new NotFoundError('Cart not found')
+
+    return foundCart
+}
 const checkStockAndProductInShop = async({product_id, shop_id, quantity})=>{
     // kiểm tra sản phẩm có nằm trong shop này hay không
     const checkProduct = await checkProductInShop(shop_id, product_id)
@@ -176,10 +191,12 @@ const deleteProductInCart = async({user, product})=>{
     return deleteItem
 }
 const incOfDecProductQuantity = async({user, product, shop, action})=>{
-
+    if(!shop){
+        throw new BadRequestError('Shop data is missing')
+    }
     const {product_id} = product
-    const {shop_id} = shop._id
-    
+    const shop_id = shop._id
+
     console.log('incOfProductQuantity shopId', shop_id)
     await checkStockAndProductInShop({product_id, shop_id, quantity: 1})
     const foundCart = await getCartByUserId (user)
@@ -198,7 +215,8 @@ const incOfDecProductQuantity = async({user, product, shop, action})=>{
     else{
         newQuantity = oldQuantity - 1
         if(newQuantity <= 0){
-            await deleteProductInCart({user, product})
+            return await deleteProductInCart({user, product})
+             
         }
     }
 
@@ -211,13 +229,23 @@ const incOfDecProductQuantity = async({user, product, shop, action})=>{
     options =  {
         new: true
         
+    },
+    filter = {
+        _id: foundCart._id,
+        'cart_products.product_id': product_id
     }
 
-    const updateCart = await cartModel.findByIdAndUpdate(foundCart._id, payload, options)
+    const updateCart = await cartModel.findOneAndUpdate(filter, payload, options)
+    .populate(
+       {
+        path: 'cart_products.product_id',
+        select: 'product_name product_thumb'
+       }
+    )
     if(!updateCart){
         throw new BadRequestError('Update product quantity in cart failed')
     }
-    return await updateCart
+    return updateCart
 }
 module.exports = {
     addTocart,
