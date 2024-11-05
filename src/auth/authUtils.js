@@ -54,7 +54,7 @@ const authentication = asynHandler(async (req, res, next) => {
       throw new NotFoundError("KeyStore not found for this user");
     }
 
-    let shop = "";
+    let shop;
     if (decoded.shop_id && mongoose.Types.ObjectId.isValid(decoded.shop_id)) {
       const findShop = await shopModel.findById(decoded.shop_id);
       if (!findShop) {
@@ -62,7 +62,6 @@ const authentication = asynHandler(async (req, res, next) => {
       }
       shop = findShop;
     }
-
     req.shop = shop;
     req.keyStore = findKeyStore;
     req.user = existingUser;

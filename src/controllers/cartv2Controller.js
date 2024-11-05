@@ -46,7 +46,7 @@ class CartV2Controller{
     getCartByUserId = async(req, res, next)=>{
         new SuccessResponse({
             message: 'get cart success',
-            metaData: await cartServiceV2.getCartByUserId({
+            metaData: await cartServiceV2.getCart({
                 user: req.user
             })
         }).send(res)

@@ -11,24 +11,35 @@ const {toObjectId} = require('../utils/index')
     6. delete item
     7. update quantity product in cart
     8. delete cart (delete all items)
- */
-
+*/
 // Kiểm tra giỏ hàng xem tồn tại hay không
 const getCartByUserId  = async(user) => {
     if (!user) throw new NotFoundError('User not found');
     
     const foundCart = await cartModel.findOne({ cart_userId: user._id })
-    .populate({
-        path: 'cart_products.product_id',
-        select: 'product_name product_thumb'
-    })
-    if (!foundCart) throw new NotFoundError('Cart not found')
+  
+    // if (!foundCart) throw new NotFoundError('Cart not found')
+
+    return foundCart
+}
+const getCart  = async(user) => {
+    if (!user) throw new NotFoundError('User not found');
+    
+    const foundCart = await cartModel.findOne({ cart_userId: user._id })
+    .populate(
+        {
+         path: 'cart_products.product_id',
+         select: 'product_name product_thumb'
+        }
+    )
+  
+    // if (!foundCart) throw new NotFoundError('Cart not found')
 
     return foundCart
 }
 const checkStockAndProductInShop = async({product_id, shop_id, quantity})=>{
     // kiểm tra sản phẩm có nằm trong shop này hay không
-    const checkProduct = await checkProductInShop({shop_id, product_id})
+    const checkProduct = await checkProductInShop(shop_id, product_id)
     if(!checkProduct){
         throw new NotFoundError('Product not found in shop')
     }
@@ -42,7 +53,7 @@ const checkStockAndProductInShop = async({product_id, shop_id, quantity})=>{
 const createUserCart = async({user, product, shop})=>{
     const shop_id = shop._id
     const {product_id, quantity} = product
-
+    console.log('Checking product in shop with shop_id:', shop_id, 'and product_id:', product_id);
     await checkStockAndProductInShop({product_id, shop_id, quantity})
     const getProduct = await getProductById(product_id)
 
@@ -61,7 +72,7 @@ const createUserCart = async({user, product, shop})=>{
         throw new BadRequestError('Create cart failed')
     }
 
-    return await getCartByUserId(user)
+    return createCart
 }
 // thêm sản phẩm vào giỏ hàng trống
 const addProductToEmptyCartIfAbsent = async({user, product, shop})=>{
@@ -81,15 +92,15 @@ const addProductToEmptyCartIfAbsent = async({user, product, shop})=>{
         }
     },
     options =  {
-        new: true,
-        lean: true
+        new: true
+       
     }
 
     const updateCart = await cartModel.findByIdAndUpdate(foundCart._id, payload, options)
     if(!updateCart){
         throw new BadRequestError('Add product to cart failed')
     }
-    return await getCartByUserId(user)
+    return updateCart
 }
 // cập nhật lại số lượng trong giỏ hàng
 const updateCartProductQuantity =  async({user, product, shop})=>{
@@ -99,7 +110,7 @@ const updateCartProductQuantity =  async({user, product, shop})=>{
     await checkStockAndProductInShop({product_id, shop_id, quantity})
     const foundCart = await getCartByUserId (user)
     const getProduct = await getProductById(product_id)
-
+    console.log('giỏ hàng fffdfdf', foundCart.cart_products)
     const findProductInCart = foundCart.cart_products.find(product => product.product_id.toString() === product_id.toString())
     if(!findProductInCart){
         throw new NotFoundError('Product not found in cart')
@@ -116,32 +127,43 @@ const updateCartProductQuantity =  async({user, product, shop})=>{
         }
     },
     options =  {
-        new: true,
-        lean: true
+        new: true
+       
+    },
+    filter = {
+        _id: foundCart._id,
+        'cart_products.product_id': product_id
     }
-    const updateCart = await cartModel.findByIdAndUpdate(foundCart._id, payload, options)
-    
+    const updateCart = await cartModel.findOneAndUpdate(filter, payload, options)
     if(!updateCart){
         throw new BadRequestError('Update product quantity in cart failed')
     }
-    return await getCartByUserId(user)
+    return updateCart
 }
 // thêm sản phẩm vào giỏ hàng
-const addTocart = async({user, product, shop})=>{
-    const foundCart = await getCartByUserId (user)
-    // nếu giỏ hàng chưa tồn tại tạo giỏ hàng
-    if(!foundCart){
-        await createUserCart({user, product, shop})
+const addTocart = async({user, product, shop}) => {
+    let foundCart = await getCartByUserId(user)
+    const attached = {
+        path: 'cart_products.product_id',
+        select: 'product_name product_thumb'
     }
-    // nếu đã tồn tại rồi nhưng giỏ hàng trống
-    if(!foundCart.cart_products.length){
-        await addProductToEmptyCartIfAbsent({user, product, shop})
+    // Nếu giỏ hàng chưa tồn tại, tạo giỏ hàng mới
+    if (!foundCart) {
+        foundCart = await createUserCart({ user, product, shop })
+        return foundCart.populate(attached)
     }
-    // nếu giỏ hàng đã tồn tại nhưng đã có hàng trong giỏ hàng
-    // kiểm tra thêm xem sản phẩm này có tồn tại trong giỏ hàng hay không, 
-    //nếu có thì cập nhật lại số lượng
-    await updateCartProductQuantity({user, product, shop})
-}
+
+    // Nếu giỏ hàng đã tồn tại nhưng không có sản phẩm
+    if (!foundCart.cart_products.length) {
+        const updateCart =  await addProductToEmptyCartIfAbsent({ user, product, shop })
+        return updateCart.populate(attached)
+    }
+
+    // Nếu giỏ hàng đã tồn tại và đã có sản phẩm, cập nhật lại số lượng
+    const updateQuantity = await updateCartProductQuantity({ user, product, shop })
+    return updateQuantity.populate(attached)
+};
+
 // xóa sản phẩm khỏi giỏ hàng
 const deleteProductInCart = async({user, product})=>{
     const {product_id} = product
@@ -158,20 +180,24 @@ const deleteProductInCart = async({user, product})=>{
         }
     },
     options = {
-        new: true,
-        lean: true
+        new: true
+       
     }
     const deleteItem = await cartModel.findOneAndUpdate(filter, update, options)
 
     if(!deleteItem){
         throw new BadRequestError('Failed to remove the product from the cart')
     }
-    return await getCartByUserId(user)
+    return deleteItem
 }
 const incOfDecProductQuantity = async({user, product, shop, action})=>{
-    const product_id = product
+    if(!shop){
+        throw new BadRequestError('Shop data is missing')
+    }
+    const {product_id} = product
     const shop_id = shop._id
-    
+
+    console.log('incOfProductQuantity shopId', shop_id)
     await checkStockAndProductInShop({product_id, shop_id, quantity: 1})
     const foundCart = await getCartByUserId (user)
     const getProduct = await getProductById(product_id)
@@ -189,7 +215,8 @@ const incOfDecProductQuantity = async({user, product, shop, action})=>{
     else{
         newQuantity = oldQuantity - 1
         if(newQuantity <= 0){
-            await deleteProductInCart({user, product})
+            return await deleteProductInCart({user, product})
+             
         }
     }
 
@@ -200,15 +227,25 @@ const incOfDecProductQuantity = async({user, product, shop, action})=>{
         }
     },
     options =  {
-        new: true,
-        lean: true
+        new: true
+        
+    },
+    filter = {
+        _id: foundCart._id,
+        'cart_products.product_id': product_id
     }
 
-    const updateCart = await cartModel.findByIdAndUpdate(foundCart._id, payload, options)
+    const updateCart = await cartModel.findOneAndUpdate(filter, payload, options)
+    .populate(
+       {
+        path: 'cart_products.product_id',
+        select: 'product_name product_thumb'
+       }
+    )
     if(!updateCart){
         throw new BadRequestError('Update product quantity in cart failed')
     }
-    return await getCartByUserId(user)
+    return updateCart
 }
 module.exports = {
     addTocart,
