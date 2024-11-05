@@ -82,7 +82,7 @@ const deleteCategoryById = async (category_id) => {
   const deletedCategory = await categoryModel
     .findByIdAndUpdate(
       category_id,
-      { isDelete: true, isPublished: false },
+      { isDeleted: true, isPublished: false },
       { new: true }
     )
     .lean();
@@ -96,7 +96,7 @@ const publishCategoryById = async (category_id) => {
   const publishedCategory = await categoryModel
     .findByIdAndUpdate(
       category_id,
-      { isPublished: true, isDelete: false },
+      { isPublished: true, isDeleted: false },
       { new: true }
     )
     .lean();
@@ -107,7 +107,7 @@ const publishCategoryById = async (category_id) => {
 };
 const getAllCategoriesIsPublished = async () => {
   const categories = await categoryModel
-    .find({ isPublished: true, isDelete: false })
+    .find({ isPublished: true, isDeleted: false })
     .lean();
   if (!categories) {
     throw new NotFoundError("No categories found");
@@ -126,7 +126,7 @@ const getAllCategoriesIsDeleted = async () => {
 };
 const getLatestCategories = async (limit) => {
   const latestCategories = await categoryModel
-    .find({ isPublished: true, isDelete: false })
+    .find({ isPublished: true, isDeleted: false })
     .sort({ createdAt: -1 })
     .limit(limit)
     .lean();

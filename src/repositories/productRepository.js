@@ -34,7 +34,7 @@ const checkProductInShop = async (shop_id, product_id) => {
       shop_id,
       product_id,
   });
-  if (!shop || !product || !checkProduct) {
+  if (!product || !checkProduct) {
       return false;
   }
   return true;
