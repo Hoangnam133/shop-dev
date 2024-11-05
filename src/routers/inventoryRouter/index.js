@@ -71,6 +71,7 @@ router.get(
 // xóa 1 sản phẩm trong 1 shop
 router.patch(
   "/softDelete",
+  authorizeRoles(roles.ADMIN, roles.BRANCH_MANAGER),
   asynHandler(inventoryController.softDeleteProductInInventory)
 );
 

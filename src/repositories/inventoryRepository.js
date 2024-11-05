@@ -15,7 +15,7 @@ const getProductStockInAllShops = async ({
   }
   const skip = (page - 1) * limit;
   const stockData = await inventoryModel
-    .find({ product_id, isDelete: false })
+    .find({ product_id, isDeleted: false })
     .populate("shop_id")
     .populate("product_id")
     .skip(skip)
@@ -38,7 +38,7 @@ const getLowStockProductsInShop = async ({ shop_id, limit = 10, page = 1 }) => {
   const lowStockProducts = await inventoryModel
     .find({
       shop_id,
-      isDelete: false, // Chỉ lấy sản phẩm chưa bị xóa
+      isDeleted: false, // Chỉ lấy sản phẩm chưa bị xóa
       $expr: { $lt: ["$inven_stock", "$minStockLevel"] },
     })
     .skip(skip)
@@ -85,7 +85,7 @@ const getProductStockInShop = async ({
   }
   return stockData;
 };
-// isDelete
+// isDeleted
 const softDeleteProductInInventory = async ({ shop_id, product_id }) => {
   const shop = await shopModel.findById(toObjectId(shop_id.trim()));
   if (!shop) {
@@ -96,8 +96,8 @@ const softDeleteProductInInventory = async ({ shop_id, product_id }) => {
     throw new BadRequestError("Product not found");
   }
   const updatedInventory = await inventoryModel.findOneAndUpdate(
-    { shop_id, product_id, isDelete: false }, // Chỉ xóa sản phẩm chưa bị xóa
-    { isDelete: true },
+    { shop_id, product_id, isDeleted: false }, // Chỉ xóa sản phẩm chưa bị xóa
+    { isDeleted: true },
     { new: true, lean: true }
   );
 
@@ -113,7 +113,7 @@ const softDeleteProductInInventory = async ({ shop_id, product_id }) => {
 const addProductToInventory = async ({
   shop_id,
   product_id,
-  quantity,
+  inven_stock,
   minStockLevel,
 }) => {
   const shop = await shopModel.findById(toObjectId(shop_id.trim()));
@@ -133,13 +133,13 @@ const addProductToInventory = async ({
       "The product already exists in this branch warehouse"
     );
   }
-  if (quantity < 0) {
+  if (inven_stock < 0) {
     throw new BadRequestError("Inventory quantity cannot be negative");
   }
   if (minStockLevel < 0) {
     throw new BadRequestError("The minimum inventory level cannot be negative");
   }
-  if (quantity < minStockLevel) {
+  if (inven_stock < minStockLevel) {
     throw new BadRequestError(
       "The inventory quantity must be greater than or equal to the minimum inventory level"
     );
@@ -147,7 +147,7 @@ const addProductToInventory = async ({
   const newInventory = await inventoryModel.create({
     shop_id,
     product_id,
-    inven_stock: quantity,
+    inven_stock,
     minStockLevel,
   });
 
@@ -164,7 +164,7 @@ const reduceInventoryStock = async ({ shop_id, product_id, quantity }) => {
     throw new BadRequestError("Product not found");
   }
   const updatedInventory = await inventoryModel.findOneAndUpdate(
-    { shop_id, product_id, inven_stock: { $gte: quantity }, isDelete: false },
+    { shop_id, product_id, inven_stock: { $gte: quantity }, isDeleted: false },
     { $inc: { inven_stock: -quantity } },
     { new: true, lean: true }
   );
@@ -290,8 +290,8 @@ const restoreProductInInventory = async ({ shop_id, product_id }) => {
     throw new BadRequestError("Product not found");
   }
   const updatedInventory = await inventoryModel.findOneAndUpdate(
-    { shop_id, product_id, isDelete: true },
-    { isDelete: false },
+    { shop_id, product_id, isDeleted: true },
+    { isDeleted: false },
     { new: true, lean: true }
   );
 
@@ -314,7 +314,7 @@ const getDeletedProductsInInventory = async ({
   const skip = (page - 1) * limit;
   const deletedProducts = await inventoryModel
     .find({
-      isDelete: true,
+      isDeleted: true,
       ...(shop_id && { shop_id }),
     })
     .populate("shop_id")

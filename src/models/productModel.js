@@ -51,7 +51,7 @@ const productSchema = new Schema(
       index: true,
       select: false,
     },
-    isDelete: {
+    isDeleted: {
       type: Boolean,
       default: false,
       index: true,
