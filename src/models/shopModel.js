@@ -31,7 +31,7 @@ const shopSchema = new Schema(
     opening_hours:{
       type: mongoose.Types.ObjectId,
       ref: "OpeningHours",
-      required: true
+      //required: true
     }
   },
   {
