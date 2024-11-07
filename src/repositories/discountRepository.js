@@ -45,7 +45,7 @@ const getDiscountByCode = async (discountCode) => {
 const getActiveDiscounts = async ({ page, limit }) => {
   const filter = {
     discount_end_date: { $gte: getCurrentDateInTimeZone() },
-    is_delete: false,
+    is_deleted: false,
   };
   const discounts = await discountModel
     .find(filter)
@@ -120,7 +120,7 @@ const updateDiscountById = async ({ discount_id, dataUpdate }) => {
 const softDeleteDiscount = async (discount_id) => {
   const deletedDiscount = await discountModel.findByIdAndUpdate(
     toObjectId(discount_id),
-    { is_delete: true },
+    { is_deleted: true },
     { new: true, lean: true }
   );
   if (!deletedDiscount) {
@@ -172,7 +172,7 @@ const checkUserDiscountUsage = async (discount_id, user) => {
 const getPublicDiscounts = async ({ limit, page }) => {
   const skip = (page - 1) * limit;
   const discounts = await discountModel
-    .find({ is_delete: false })
+    .find({ is_deleted: false })
     .skip(skip)
     .limit(limit)
     .lean();

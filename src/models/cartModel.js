@@ -1,45 +1,51 @@
-const { Schema, model } = require('mongoose')
+const { Schema, model } = require("mongoose");
 
-const cartProductSchema = new Schema({
+const cartProductSchema = new Schema(
+  {
     product_id: {
-        type: Schema.Types.ObjectId,
-        ref: 'Product',
-        required: true
+      type: Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
     },
     quantity: {
-        type: Number,
-        default: 1
+      type: Number,
+      default: 1,
     },
-    totalPrice:{
-        type: Number,
-        required: true
+    totalPrice: {
+      type: Number,
+      required: true,
     },
     isDeleted: {
-        type: Boolean,
-        default: false
-    }
-},{
-    _id: false
-})
-const cartSchema = new Schema({
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    _id: false,
+  }
+);
+const cartSchema = new Schema(
+  {
     cart_status: {
-        type: String,
-        required: true,
-        enum: ['active', 'unactive', 'failed', 'pending'],
-        default: 'active'
+      type: String,
+      required: true,
+      enum: ["active", "unactive", "failed", "pending"],
+      default: "active",
     },
     cart_products: {
-        type: [cartProductSchema], 
-        default: [],
-        required: true
+      type: [cartProductSchema],
+      default: [],
+      required: true,
     },
     cart_userId: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-        required: true 
-    }
-}, {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+  },
+  {
     timestamps: true,
-    collection: 'Carts'
-})
-module.exports = model('Cart', cartSchema)
+    collection: "Carts",
+  }
+);
+module.exports = model("Cart", cartSchema);
