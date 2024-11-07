@@ -15,7 +15,7 @@ const cartProductSchema = new Schema(
       type: Number,
       required: true,
     },
-    isDelete: {
+    isDeleted: {
       type: Boolean,
       default: false,
     },
