@@ -8,6 +8,7 @@ const { authentication, authorizeRoles } = require("../../auth/authUtils");
 const roles = require("../../utils/roles");
 router.use(authentication);
 // Tạo sản phẩm mới
+// fix update
 router.post(
   "/create",
   authorizeRoles(roles.ADMIN),
