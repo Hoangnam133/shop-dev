@@ -5,10 +5,10 @@ const { removeUndefinedObject } = require("../utils/index");
 const userModel = require("../models/userModel");
 const shopModel = require("../models/shopModel");
 const cartModel = require("../models/cartModel");
-const inventoryModel = require("../models/inventoryModel");
+const slugify = require('slugify')
 const { toObjectId } = require("../utils/index");
-const { forEach } = require("lodash");
 const shopProductModel = require("../models/shopProductModel");
+const sideDishModel = require("../models/sideDishModel");
 // kiểm tra shop có tồn tại
 const checkShop = async (shop_id) => {
   if (!shop_id) {
@@ -312,8 +312,16 @@ const updateProduct = async ({ user, product_id, updateData }) => {
   if (!user) {
     throw new BadRequestError("User not found");
   }
+  
+  const foundProduct = await productModel.findById(product_id);
+  if (!foundProduct) {
+    throw new NotFoundError("Product not found");
+  }
+
   const findUser = await userModel.findById(user._id);
   if (!findUser) throw new NotFoundError("User not found");
+
+  // Kiểm tra nếu có thay đổi tên sản phẩm
   if (updateData.product_name && updateData.product_name.trim() !== "") {
     const existingProduct = await productModel
       .findOne({
@@ -324,25 +332,68 @@ const updateProduct = async ({ user, product_id, updateData }) => {
     if (existingProduct) {
       throw new BadRequestError("This product name already exists");
     }
+    updateData.product_slug = slugify(updateData.product_name, { lower: true });
   }
-  const cleanDateBeforeUpdate = removeUndefinedObject(updateData);
-  const updateProduct = await productModel.findByIdAndUpdate(
-    product_id,
-    cleanDateBeforeUpdate,
-    {
-      new: true,
-      lean: true,
+
+  // Cập nhật required_points nếu giá thay đổi
+  if (updateData.product_price) {
+    updateData.required_points = Math.floor(updateData.product_price * 0.1);
+  }
+
+  // Loại bỏ các thuộc tính undefined trước khi cập nhật
+  const cleanDataBeforeUpdate = removeUndefinedObject(updateData);
+
+  let updateProduct;
+
+  // Kiểm tra và thêm sideDish_id nếu có
+  if (cleanDataBeforeUpdate.sideDish_id) {
+    const sideDish = cleanDataBeforeUpdate.sideDish_id;
+
+    // Check if the sideDish already exists in the product's sideDish_id array
+    const isSideDishExist = foundProduct.sideDish_id.some(id => id.toString() === sideDish.toString());
+
+    if (isSideDishExist) {
+      throw new BadRequestError('This side dish is already in the product');
+    } else {
+      // Remove sideDish_id from updateData and push it to the array
+      delete cleanDataBeforeUpdate.sideDish_id;
+      updateProduct = await productModel.findByIdAndUpdate(
+        product_id,
+        {
+          $set: cleanDataBeforeUpdate,
+          $push: { sideDish_id: sideDish },  // Add the sideDish to the array
+        },
+        {
+          new: true,
+          lean: true,
+        }
+      );
     }
-  );
-  console.log("Update Product ID:", updateProduct._id);
-  if (updateProduct.isDeleted || !updateProduct.isPublished) {
-    await processProductUnPublishOrDeleteFromAdmin(updateProduct._id);
   }
+
+  // If no sideDish_id provided, just update the product
+  if (!cleanDataBeforeUpdate.sideDish_id) {
+    updateProduct = await productModel.findByIdAndUpdate(
+      product_id,
+      { $set: cleanDataBeforeUpdate },
+      { new: true, lean: true }
+    );
+  }
+
   if (!updateProduct) {
     throw new NotFoundError("Product not found");
   }
+
+  console.log("Update Product ID:", updateProduct._id);
+
+  // Xử lý khi sản phẩm bị xóa hoặc không được xuất bản
+  if (updateProduct.isDeleted || !updateProduct.isPublished) {
+    await processProductUnPublishOrDeleteFromAdmin(updateProduct._id);
+  }
+
   return updateProduct;
 };
+
 
 const processProductUnPublishOrDeleteFromAdmin = async (product_id) => {
   try {
@@ -362,8 +413,7 @@ const processProductUnPublishOrDeleteFromAdmin = async (product_id) => {
     const userFavorites = await userModel.updateMany(
       { favorites: product_id },
       { $pull: { favorites: product_id } }
-    );
-
+    )
     if (userFavorites.matchedCount > 0 && userFavorites.modifiedCount > 0) {
       console.log("remove product from favorites success");
     } else {
@@ -423,6 +473,14 @@ const getProductById = async (product_id) => {
 };
 const getProductByIdOfShop = async (product_id) => {};
 //----------------------------------------------------------------
+const getSideDishInProduct = async (product_id)=>{
+  const foundProduct = await productModel.findById(product_id);
+  if (!foundProduct) {
+    throw new NotFoundError("Product not found");
+  }
+  const sideDishes = await sideDishModel.find({_id: {$in: foundProduct.sideDish_id}})
+  return sideDishes
+}
 module.exports = {
   getProductById,
   createProduct,
@@ -442,4 +500,5 @@ module.exports = {
   getDeletedProductsManage,
   checkShop,
   checkProductInShop,
+  getSideDishInProduct,
 };

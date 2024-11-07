@@ -10,7 +10,7 @@ router.use(authentication)
 
 router.get('/getFavorites',asynHandler(FavoriteController.getFavorites))
 router.post('/addFavorite/:product_id',asynHandler(FavoriteController.toggleFavorite))
-router.post('/deleteFavorite/:product_id',asynHandler(FavoriteController.deleteFavorite))
+router.delete('/deleteFavorite/:product_id',asynHandler(FavoriteController.deleteFavorite))
 
 
 

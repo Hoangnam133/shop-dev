@@ -251,5 +251,6 @@ module.exports = {
     addTocart,
     deleteProductInCart,
     incOfDecProductQuantity,
-    getCartByUserId
+    getCartByUserId,
+    getCart
 }

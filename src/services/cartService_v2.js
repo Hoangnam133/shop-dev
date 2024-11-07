@@ -1,6 +1,6 @@
 const {addTocart,
     deleteProductInCart,
-    incOfDecProductQuantity, getCartByUserId} = require('../repositories/cartRepository_v2')
+    incOfDecProductQuantity, getCart} = require('../repositories/cartRepository_v2')
 
 class CartServiceV2 {
     static async addTocart({user, product, shop}) {
@@ -12,8 +12,8 @@ class CartServiceV2 {
     static async incOfDecProductQuantity({user, product, shop, action}) {
         return await incOfDecProductQuantity({user, product, shop, action})
     }
-    static async getCartByUserId({user}) {
-        return await getCartByUserId({user})
+    static async getCart({user}) {
+        return await getCart(user)
     }
 }
 module.exports = CartServiceV2

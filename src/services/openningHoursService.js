@@ -12,8 +12,8 @@ class OpeningHoursService {
     static async createOpeningHours(payload) {
         return await createOpeningHours(payload)
     }
-    static async getAllOpeningHours({limuit, page}) {
-        return await getAllOpeningHours({limuit, page})
+    static async getAllOpeningHours({limit, page}) {
+        return await getAllOpeningHours({limit, page})
     }
     static async getOpeningHoursById(openingHours_id) {
         return await getOpeningHoursById(openingHours_id)

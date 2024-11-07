@@ -2,16 +2,17 @@ const openingHoursService = require('../services/openningHoursService')
 const {SuccessResponse} = require('../core/successResponse')
 
 class OpeningHoursController {
-    getOpeningHours = async (req, res, next) => {
+    createOpeningHours = async (req, res, next) => {
         new SuccessResponse({
             message: 'get opening hours success',
             metaData: await openingHoursService.createOpeningHours(req.body)
         }).send(res)
     }
     getAllOpeningHours = async (req, res, next) => {
+        let {limit, page} = req.query
         new SuccessResponse({
             message: 'get all opening hours success',
-            metaData: await openingHoursService.getAllOpeningHours()
+            metaData: await openingHoursService.getAllOpeningHours({limit, page})
         }).send(res)
     }
     updateOpeningHours = async (req, res, next) => {

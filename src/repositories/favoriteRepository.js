@@ -3,6 +3,7 @@ const userModel = require('../models/userModel')
 const shopModel = require('../models/shopModel')
 const favoritesModel = require('../models/favoriteModel')
 const shopProductModel = require('../models/shopProductModel')
+const {BadRequestError, NotFoundError} = require('../core/errorResponse')
 const toggleFavorite = async({user, product_id})=>{
     if(!user){
         throw new BadRequestError('User not found')
@@ -19,10 +20,11 @@ const toggleFavorite = async({user, product_id})=>{
         product_id: product_id
     })
     if(userFavorites){
-        await deleteProductInFavorites({user, product_id})
+        return await deleteProductInFavorites({user, product_id})
+       
     }
     else{
-        await addFavorite({user, product_id})
+        return addFavorite({user, product_id})
     }
 }
 
@@ -48,21 +50,15 @@ const deleteProductInFavorites = async({user, product_id})=>{
     }
     return deleteFavorite
 }
-
-const getFavorite = async({user, shop})=>{
+const getFavorite = async(user)=>{
     if(!user){
         throw new BadRequestError('User not found')
     }
-    const favorites = await favoritesModel.find({ user_id: user._id }).populate('product_id');
-    if (!favorites || favorites.length === 0) {
-          throw new NotFoundError('Favorites not found')
-    }
-    const favoriteProductIds = favorites.map(favorite => favorite.product_id._id);
-    const shopProducts = await shopProductModel.find({ shop_id: shop._id, product_id: { $in: favoriteProductIds } }).populate('product_id');
-    if (!shopProducts || shopProducts.length === 0) {
-          throw new NotFoundError('No favorite products found for this shop');
-    }
-    return shopProducts.map(shopProduct => shopProduct.product_id)
+    const favorites = await favoritesModel.find({ user_id: user._id }).populate({
+        path: 'product_id',
+        select: 'product_name product_thumb'
+    })
+    return favorites
 }
 module.exports = {
     toggleFavorite,

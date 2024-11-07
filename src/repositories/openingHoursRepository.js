@@ -5,7 +5,7 @@ const shopModel = require('../models/shopModel')
 // tạo giờ mở và đóng cửa
 const createOpeningHours = async(payload)=>{
     const {name} = payload
-    const checkName = await isDuplicateNameOnCreate({model: openHoursModel, fieldName: "name", name})
+    const checkName = await isDuplicateNameOnCreate({model: openingHoursModel, fieldName: "name", name})
     if(checkName){
         throw new BadRequestError("Opening hours name already exists")
     }
@@ -38,7 +38,7 @@ const getAllOpeningHours = async({limit = 10, page = 1})=>{
     })
         .skip(skip)
         .limit(limit)
-        .select('name')
+
     return openingHours
 }
 // chi tiết giờ mở và đóng

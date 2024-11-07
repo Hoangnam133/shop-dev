@@ -13,10 +13,9 @@ class FavoriteController{
     getFavorites = async (req, res, next) => {
         new SuccessResponse({
             message: 'Get favorites success',
-            metaData: await favoriteService.getFavoriteProducts({
-                user: req.user,
-                shop: req.shop
-            })
+            metaData: await favoriteService.getFavoriteProducts(
+                req.user
+            )
         }).send(res)
     }
     deleteFavorite = async (req, res, next) => {
