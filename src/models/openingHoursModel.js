@@ -22,6 +22,8 @@ const hoursSchema = new Schema({
             return !this.isClosed; // Nếu isClosed là true, không yêu cầu giá trị close
         },  
     }, // Định dạng: 'HH:mm', ví dụ: '17:00'
+},{
+    _id: false
 });
 const openingHoursSchema = new Schema({
     name: {

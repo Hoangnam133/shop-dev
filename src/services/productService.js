@@ -25,7 +25,6 @@ class ProductService {
   static async createProduct(payload) {
     return await createProduct(payload);
   }
-
   static async updateProduct({ user, product_id, payload }) {
     return await updateProduct({ user, product_id, updateData: payload });
   }

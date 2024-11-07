@@ -20,7 +20,7 @@ const createSideDishModel = async(payload)=>{
 }
 // tìm món phụ theo id
 const findSideDishById = async (sideDish_id) => {
-    const sideDish = await sideDishModel.findById(toObjectId(toObjectId(sideDish_id)));
+    const sideDish = await sideDishModel.findById(sideDish_id);
     if (!sideDish || sideDish.isDeleted) {
         throw new NotFoundError('Side dish not found');
     }
@@ -28,7 +28,7 @@ const findSideDishById = async (sideDish_id) => {
 }
 // cập nhật món phụ
 const updateSideDishById = async ({sideDish_id, payload}) => {
-    const sideDish = await findSideDishById(toObjectId(sideDish_id));
+    const sideDish = await findSideDishById(sideDish_id);
     if (!sideDish) {
         throw new NotFoundError('Side dish not found');
     }
@@ -45,8 +45,8 @@ const updateSideDishById = async ({sideDish_id, payload}) => {
         }
     }
     const updatedSideDish = await sideDishModel.findByIdAndUpdate(
-        toObjectId(payload),
-        updateData,
+        sideDish._id,
+        cleanData,
         { new: true, lean: true } 
     )
     if (!updatedSideDish) {

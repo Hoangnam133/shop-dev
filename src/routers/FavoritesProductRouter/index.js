@@ -18,5 +18,4 @@ router.post(
   asynHandler(FavoriteController.deleteFavorite)
 );
 
-module.exports = router;
-// mỗi khi xóa sản phẩm ở ADMIN thì xóa luôn sản phẩm trong giỏ hàng và trong danh sách yêu thích
+

@@ -276,8 +276,4 @@ const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
   return updateCart;
 };
 module.exports = {
-  addTocart,
-  deleteProductInCart,
-  incOfDecProductQuantity,
-  getCartByUserId,
-};
+
