@@ -63,8 +63,8 @@ class ProductService {
     return await getProductsByCategory({ category_id, limit, page, shop_id });
   }
 
-  static async searchProductByUser({ keySearch }) {
-    return await searchProductByUser({ keySearch });
+  static async searchProductByUser(keySearch ) {
+    return await searchProductByUser( keySearch );
   }
 
   static async getPublishedProducts({ limit = 10, page = 1 }) {

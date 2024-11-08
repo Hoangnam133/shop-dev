@@ -84,7 +84,7 @@ class ProductController {
     const { keySearch } = req.query;
     new SuccessResponse({
       message: "Searched products successfully",
-      metaData: await productService.searchProductByUser({ keySearch }),
+      metaData: await productService.searchProductByUser(keySearch),
     }).send(res);
   };
   getPublishedProductsManage = async (req, res, next) => {
