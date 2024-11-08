@@ -9,6 +9,7 @@ const slugify = require('slugify')
 const { toObjectId } = require("../utils/index");
 const shopProductModel = require("../models/shopProductModel");
 const sideDishModel = require("../models/sideDishModel");
+const fuzzy = require('fuzzy')
 // kiểm tra shop có tồn tại
 const checkShop = async (shop_id) => {
   if (!shop_id) {
@@ -446,23 +447,53 @@ const updateDeleteProduct = async (product_id) => {
 
   return updateProduct;
 };
-const searchProductByUser = async ({ keySearch }) => {
-  console.log(`keySearch:::${keySearch}`);
-  const regex = new RegExp(keySearch, "i");
+const removeVietnameseTones = (str)=> {
+  return str
+      .normalize("NFD") // Chuyển ký tự về dạng tổ hợp
+      .replace(/[\u0300-\u036f]/g, "") // Xóa dấu
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D");
+}
+// const searchProductByUser = async ({ keySearch }) => {
+//   console.log(`keySearch:::${keySearch}`);
+//   const regex = new RegExp(keySearch, "i");
 
-  const results = await productModel
-    .find({
-      isPublished: true,
-      isDeleted: false,
-      isDraft: false,
-      product_name: { $regex: regex },
-    })
-    .limit(5)
-    .lean();
-  if (!results || results.length === 0) {
-    throw new NotFoundError("Product not found");
+//   const results = await productModel
+//     .find({
+//       isPublished: true,
+//       isDeleted: false,
+//       isDraft: false,
+//       product_name: { $regex: regex },
+//     })
+//     .limit(5)
+//     .lean();
+//   if (!results || results.length === 0) {
+//     throw new NotFoundError("Product not found");
+//   }
+//   return results;
+// };
+const searchProductByUser = async (keySearch) => {
+  try{
+       // chuyển key thành không dấu
+       const normalizedKeyword = removeVietnameseTones(keySearch.toLowerCase())
+       // lấy ra tất cả sản phẩm, chuẩn hóa product name
+       const products = await productModel.find({}, 'product_name')
+       // map thành mảng tên
+       const productNames = products.map(product => product.product_name)
+       // Sử dụng fuzzy search trên danh sách tên không dấu
+       const results = fuzzy.filter(normalizedKeyword, productNames.map(name => removeVietnameseTones(name.toLowerCase())))
+       // Lấy các tên sản phẩm gốc từ kết quả tìm kiếm
+       const matchedNames = results.map(result => productNames[result.index])
+       // Tìm các tài liệu sản phẩm theo tên sản phẩm đã tìm thấy
+       const matchedProducts = await productModel.find({
+         product_name: { $in: matchedNames }
+     }).limit(5)
+     return matchedProducts
+  }catch(e) {
+    console.error("Error in searchProductByUser", e);
+    throw new BadRequestError(e.mesage);
   }
-  return results;
+ 
 };
 const getProductById = async (product_id) => {
   const foundProduct = await productModel.findById(product_id);
