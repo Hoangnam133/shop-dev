@@ -26,9 +26,6 @@ const createDiscount = async (payload) => {
 // lấy discount theo id
 const getDiscountById = async (discount_id) => {
   const discount = await discountModel.findById(toObjectId(discount_id)).lean();
-  if (!discount) {
-    throw new NotFoundError("Discount not found");
-  }
   return discount;
 };
 // lấy discount theo mã code
@@ -36,9 +33,6 @@ const getDiscountByCode = async (discountCode) => {
   const discount = await discountModel
     .findOne({ discount_code: discountCode })
     .lean();
-  if (!discount) {
-    throw new NotFoundError("Discount not found");
-  }
   return discount;
 };
 // danh sách mã giảm giá còn hiệu lực
@@ -179,12 +173,9 @@ const getPublicDiscounts = async ({ limit, page }) => {
   return discounts;
 };
 // hàm này kiểm tra xem giảm giá này áp dụng có đúng loại (order / product ) không (xem chi tiết ở models)
-const checkDiscountApplicable = async ({ discount, applicableTo }) => {
+const checkDiscountApplicable = async (discount, applicableTo ) => {
   // truyền vô discount luôn
   const getDiscount = await getDiscountById(discount._id);
-  if (!getDiscount) {
-    throw new NotFoundError("Discount not found");
-  }
   if (getDiscount.applicable_to !== applicableTo) {
     throw new BadRequestError("Discount not applicable for this type");
   }
@@ -198,7 +189,6 @@ const checkMinOrderValue = async ({ discount, orderValue }) => {
       `Order value must be at least ${getDiscount.min_order_value}`
     );
   }
-
   return getDiscount;
 };
 // lấy các discount chưa bị xóa và sắp xếp (ngày nào sắp hết hạn sẽ được ưu tiên lên trên)
@@ -237,7 +227,7 @@ const userUsageCount = async ({ user, discount }) => {
   return userUsage.count_used;
 };
 // kiểm tra xem sản phẩm có  được áp dụng mã giảm giá này hay không (return true/false)
-const checkproductAppliedDiscount = async ({ discount, product }) => {
+const checkproductAppliedDiscount = async (discount, product) => {
   const foundDiscount = await getDiscountById(discount._id);
   const foundProductInDiscountApplied = foundDiscount.applicable_products.find(
     (prod) => prod._id.toString() === product._id.toString()
@@ -388,4 +378,6 @@ module.exports = {
   calculateDiscount,
   updateUserToDiscount,
   getActiveDiscounts,
+  checkproductAppliedDiscount,
+  calculateDiscountAmount
 };
