@@ -112,33 +112,35 @@ const updateCartProductQuantity =  async({user, product, shop})=>{
     const getProduct = await getProductById(product_id)
     console.log('giỏ hàng fffdfdf', foundCart.cart_products)
     const findProductInCart = foundCart.cart_products.find(product => product.product_id.toString() === product_id.toString())
-    if(!findProductInCart){
-        throw new NotFoundError('Product not found in cart')
-    }
-
-    const oldQuantity = findProductInCart.quantity
-    ,newQuantity = oldQuantity + quantity
-    ,newTotalPrice = newQuantity *  getProduct.product_price
-
-    const payload = {
-        $set: {
-            'cart_products.$.quantity': newQuantity,
-            'cart_products.$.totalPrice': newTotalPrice
+    if(findProductInCart){
+        const oldQuantity = findProductInCart.quantity
+        ,newQuantity = oldQuantity + quantity
+        ,newTotalPrice = newQuantity *  getProduct.product_price
+    
+        const payload = {
+            $set: {
+                'cart_products.$.quantity': newQuantity,
+                'cart_products.$.totalPrice': newTotalPrice
+            }
+        },
+        options =  {
+            new: true
+           
+        },
+        filter = {
+            _id: foundCart._id,
+            'cart_products.product_id': product_id
         }
-    },
-    options =  {
-        new: true
-       
-    },
-    filter = {
-        _id: foundCart._id,
-        'cart_products.product_id': product_id
+        const updateCart = await cartModel.findOneAndUpdate(filter, payload, options)
+        if(!updateCart){
+            throw new BadRequestError('Update product quantity in cart failed')
+        }
+        return updateCart
     }
-    const updateCart = await cartModel.findOneAndUpdate(filter, payload, options)
-    if(!updateCart){
-        throw new BadRequestError('Update product quantity in cart failed')
+    else{
+        return await addProductToEmptyCartIfAbsent({user, product, shop})
     }
-    return updateCart
+    
 }
 // thêm sản phẩm vào giỏ hàng
 const addTocart = async({user, product, shop}) => {
@@ -159,7 +161,9 @@ const addTocart = async({user, product, shop}) => {
         return updateCart.populate(attached)
     }
 
-    // Nếu giỏ hàng đã tồn tại và đã có sản phẩm, cập nhật lại số lượng
+    // Nếu giỏ hàng đã tồn tại và đã có sản phẩm, xét 2 trường hợp
+    // TH1: nếu có cùng mã sản phẩm ,cập nhật lại số lượng
+    // TH2: nếu khác mã sản phẩm thì thêm vào
     const updateQuantity = await updateCartProductQuantity({ user, product, shop })
     return updateQuantity.populate(attached)
 };

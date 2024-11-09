@@ -13,14 +13,9 @@ const checkOutSchema = new Schema({
         type: Number,
         default: 0,
     },
-    final_price: {
+    finalPrice: {
         type: Number,
         default: 0
-    },
-    shipping_id:{
-        type: Schema.Types.ObjectId,
-        ref: 'Shipping',
-        required: true
     }
 }, {
     _id: false
@@ -53,13 +48,30 @@ const orderSchema = new Schema({
         required: true
     },
     order_product: [{
-        productId: {
+        _id: false,
+        product_id: {
             type: Schema.Types.ObjectId,
             ref: 'Product',
             required: true
         },
         quantity: {
             type: Number,
+            required: true
+        },
+        price:{
+            type: Number,
+            required: true
+        },
+        totalPrice: {
+            type: Number,
+            required: true
+        },
+        product_thumb:{
+            type: String,
+            required: true
+        },
+        product_name:{
+            type: String,
             required: true
         }
     }],
@@ -76,21 +88,10 @@ const orderSchema = new Schema({
         type: Date,
         required: true
     },
-    selected_delivery_time: {  
-        type: Boolean,
-        required: true,
-        default: false // false for "as soon as possible"
-    },
-    delivery_time: {  
-        type: Date,
-        default: null,
-        validate: {
-            validator: function(value) {
-                // Only allow `delivery_time` if `selected_delivery_time` is true
-                return this.selected_delivery_time ? value != null : true;
-            },
-            message: 'A delivery time is required if a specific delivery time is selected.'
-        }
+    options_delivery:{
+        type: String,
+        enum: ['asap', 'specific_time'],
+        default: 'asap'
     },
     estimated_delivery_time: {
         type: Date,  // Thời gian giao hàng dự kiến =  order_time + thời gian làm món + thời gian đặt trước nếu có , sau đó sẽ đưa vô hàng đợi và tính toán lại
