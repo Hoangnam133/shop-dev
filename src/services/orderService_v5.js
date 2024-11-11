@@ -1,4 +1,3 @@
-const orderService = require('../models/orderModel')
 const {getCartByUserId} = require('../repositories/cartRepository_v2')
 const {BadRequestError, NotFoundError} = require('../core/errorResponse')
 const userModel = require('../models/userModel')
@@ -8,7 +7,41 @@ const productModel = require('../models/productModel')
 const {getDiscountByCode, checkproductAppliedDiscount, checkDiscountApplicable, calculateDiscountAmount} = require('../repositories/discountRepository')
 const {checkDeliveryTimeForShop, checkImmediateDeliveryTime} = require('../repositories/openingHoursRepository')
 const orderModel = require('../models/orderModel')
+const {deductStockAfterPayment} = require('../repositories/inventoryRepository')
+const {listOrderCancelledOfUser, listOrderCompletedOfUser, listOrderPendingOfUser, listOrderSuccessOfUser
+    ,updateStatusCancelled, updateStatusCompleted, listOrderPending, listOrderSuccess, listOrderCancelled, listOrderCompleted
+} = require('../repositories/orderRepository')
 class OrderServiceV5{
+    static async listOrderCancelledOfUser(user){
+        return await listOrderCancelledOfUser(user)
+    }
+    static async listOrderCompletedOfUser(user){
+        return await listOrderCompletedOfUser(user)
+    }
+    static async list_OrderPendingOfUser(user){
+        return await listOrderPendingOfUser(user)
+    }
+    static async listOrderSuccessOfUser(user){
+        return await listOrderSuccessOfUser(user)
+    }
+    static async updateStatusCancelled(order_id){
+        return await updateStatusCancelled(order_id)
+    }
+    static async updateStatusCompleted(order_id){
+        return await updateStatusCompleted(order_id)
+    }
+    static async listOrderPending({limit = 10, page = 1}){
+        return await listOrderPending({limit, page})
+    }
+    static async listOrderSuccess({limit = 10, page = 1}){
+        return await listOrderSuccess({limit, page})
+    }
+    static async listOrderCancelled({limit = 10, page = 1}){
+        return await listOrderCancelled({limit, page})
+    }
+    static async listOrderCompleted({limit = 10, page = 1}){
+        return await listOrderCompleted({limit, page})
+    }
     static async checkoutPreview({user, shop, products_ids = [], discount_code}){
         console.log(`product_ids: ${products_ids}`)
         const foundUser = await userModel.findById(user._id)
@@ -159,5 +192,10 @@ class OrderServiceV5{
         }
         return newOrder
     }
+    // xử lý sản phẩm trong kho (viết ở repository) ok
+    // tích hợp món phụ vào
+    // tích hợp thanh toán
+    // send thông báo khi đặt hàng thành công
+    // đổi điểm nữa
 }
 module.exports = OrderServiceV5

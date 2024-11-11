@@ -1,6 +1,4 @@
 const { NotFoundError, BadRequestError } = require("../core/errorResponse");
-const productModel = require("../models/productModel");
-const userModel = require("../models/userModel");
 const {
   createProduct,
   updateProduct,
@@ -22,11 +20,11 @@ const {
 } = require("../repositories/productRepository");
 const { getInfoData, toObjectId } = require("../utils/index");
 class ProductService {
-  static async createProduct(payload) {
-    return await createProduct(payload);
+  static async createProduct(payload, file) {
+    return await createProduct(payload, file);
   }
-  static async updateProduct({ user, product_id, payload }) {
-    return await updateProduct({ user, product_id, updateData: payload });
+  static async updateProduct({ user, product_id, payload, file }) {
+    return await updateProduct({ user, product_id, updateData: payload, file });
   }
   static async getPublishedProductsManage({ limit, page, shop_id }) {
     return await getPublishedProductsManage({ limit, page, shop_id });

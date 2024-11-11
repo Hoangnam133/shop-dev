@@ -3,7 +3,7 @@ const { authentication, authorizeRoles } = require("../../auth/authUtils");
 const roles = require("../../utils/roles");
 const sideDishController = require("../../controllers/sideDishController");
 const { asynHandler } = require("../../utils/handler");
-
+const {uploadDisk, uploadMemory} = require('../../configs/multer.config')
 const router = express.Router()
 
 // router.use(authentication)

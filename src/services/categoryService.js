@@ -11,8 +11,8 @@ const {createCategory,
     getLatestCategories} = require('../repositories/categoryRepository')
 
 class CategoryService {
-    static async createCategory(payload){   
-        return await createCategory(payload)
+    static async createCategory(payload, file){   
+        return await createCategory(payload, file)
     }
     static async getAllCategories(){
         return await getAllCategories()
@@ -20,8 +20,8 @@ class CategoryService {
     static async getCategoryById(categoryId){
         return await getCategoryById(categoryId)
     }
-    static async updateCategoryById({category_id, payload}){
-        return await updateCategoryById({category_id, payload})
+    static async updateCategoryById({category_id, payload, file}){
+        return await updateCategoryById({category_id, payload, file})
     }
     static async deleteCategoryById(category_id){
         return await deleteCategoryById(category_id)

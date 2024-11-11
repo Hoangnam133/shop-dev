@@ -6,18 +6,19 @@ const productController = require("../../controllers/productController");
 const { asynHandler } = require("../../utils/handler");
 const { authentication, authorizeRoles } = require("../../auth/authUtils");
 const roles = require("../../utils/roles");
+const {uploadDisk, uploadMemory} = require('../../configs/multer.config')
 router.use(authentication);
 // Tạo sản phẩm mới
 // fix update
 router.post(
   "/create",
-  authorizeRoles(roles.ADMIN),
+  authorizeRoles(roles.ADMIN), uploadMemory.single('file'),
   asynHandler(productController.createProduct)
 );
 // Cập nhật sản phẩm
 router.patch(
   "/update/:product_id",
-  authorizeRoles(roles.ADMIN),
+  authorizeRoles(roles.ADMIN), uploadMemory.single('file'),
   asynHandler(productController.updateProduct)
 );
 // Xóa sản phẩm

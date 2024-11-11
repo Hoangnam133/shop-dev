@@ -24,10 +24,8 @@ const uploadImageFromLocalS3 = async(file)=>{
         });
         // const url = await getSignedUrl(s3, signedUrl, { expiresIn: 3600 });
         // console.log('url',url)
-        return {
-            url:`${urlPublic}/${imageName}`,
-            result
-        }
+
+        return `${urlPublic}/${imageName}`
         
     }catch(error){
         console.log(error)
