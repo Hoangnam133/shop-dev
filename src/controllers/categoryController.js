@@ -4,9 +4,13 @@ const {SuccessResponse} = require('../core/successResponse')
 class CategoryController{
   
     createCategory = async (req, res, next) => {
+        const  {file} = req
+        if(!file){
+            throw new Error('file missing')
+        }
         new SuccessResponse({
             message: 'Create category success',
-            metaData: await categoryService.createCategory(req.body)
+            metaData: await categoryService.createCategory(req.body, file)
         }).send(res)
     }
 
@@ -25,11 +29,13 @@ class CategoryController{
     }
        
     updateCategoryById = async (req, res, next) =>{
+        const  {file} = req
         new SuccessResponse({
             message: 'Update category success',
             metaData: await categoryService.updateCategoryById({
                 category_id: req.params.category_id,
-                payload: req.body
+                payload: req.body,
+                file
             })
         }).send(res)
     }

@@ -4,6 +4,7 @@ const router = express.Router();
 const categoryController = require("../../controllers/categoryController");
 const { authentication, authorizeRoles } = require("../../auth/authUtils");
 const { asynHandler } = require("../../utils/handler");
+const {uploadDisk, uploadMemory} = require('../../configs/multer.config')
 const roles = require("../../utils/roles");
 
 router.get("/all", asynHandler(categoryController.getAllCategories));
@@ -35,14 +36,14 @@ router.get("/latest", asynHandler(categoryController.getLatestCategories));
 // Tạo danh mục mới
 router.post(
   "/create",
-  authorizeRoles(roles.ADMIN),
+  authorizeRoles(roles.ADMIN),uploadMemory.single('file'),
   asynHandler(categoryController.createCategory)
 );
 
 // Cập nhật danh mục theo ID
 router.patch(
   "/update/:category_id",
-  authorizeRoles(roles.ADMIN),
+  authorizeRoles(roles.ADMIN), uploadMemory.single('file'),
   asynHandler(categoryController.updateCategoryById)
 );
 

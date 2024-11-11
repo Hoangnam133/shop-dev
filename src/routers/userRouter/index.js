@@ -8,6 +8,7 @@ const rateLimit = require("express-rate-limit");
 const router = express.Router();
 const userController = require("../../controllers/userController");
 const { asynHandler } = require("../../utils/handler");
+const {uploadDisk, uploadMemory} = require('../../configs/multer.config')
 const upload = require("../../utils/multer");
 const roles = require("../../utils/roles");
 

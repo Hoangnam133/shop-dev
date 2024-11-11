@@ -40,15 +40,8 @@ const notificationSchema = new Schema({
     trim: true,
     description: 'The content of the notification, explaining the purpose'
   },
-  // Tùy chọn thêm cho thông báo (metadata hoặc các trường mở rộng)
-  options: {
-    type: Map, // Thay Object bằng Map nếu bạn dự định lưu key-value pairs
-    of: String,
-    default: {},
-    description: 'Additional options or metadata for the notification'
-  }
 }, {
-  timestamps: true, // Thêm createdAt và updatedAt tự động
+  timestamps: true, 
   collection: COLLECTION_NAME
 });
 

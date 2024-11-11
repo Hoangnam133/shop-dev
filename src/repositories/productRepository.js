@@ -10,6 +10,7 @@ const { toObjectId } = require("../utils/index");
 const shopProductModel = require("../models/shopProductModel");
 const sideDishModel = require("../models/sideDishModel");
 const fuzzy = require('fuzzy')
+const uploadService = require("../services/uploadService");
 // kiểm tra shop có tồn tại
 const checkShop = async (shop_id) => {
   if (!shop_id) {
@@ -41,8 +42,8 @@ const checkProductInShop = async (shop_id, product_id) => {
   return true;
 };
 // tạo sản phẩm
-const createProduct = async (payload) => {
-  const { category_id, shop_ids } = payload;
+const createProduct = async (payload, file) => {
+  let { category_id, shop_ids } = payload;
 
   const findcategory = await categoryModel.findById(
     toObjectId(category_id.trim())
@@ -70,7 +71,14 @@ const createProduct = async (payload) => {
   if (getAllShop.length !== shop_ids.length) {
     throw new BadRequestError("One or more shop_ids are not valid");
   }
-
+  if (!file) {
+    throw new BadRequestError('Image file is required');
+  }
+  const uploadImg = await uploadService.uploadImageFromLocalS3(file)
+  if (!uploadImg) {
+    throw new BadRequestError("Failed to upload image");
+  }
+  payload.product_thumb = uploadImg
   const newProduct = await productModel.create(payload);
   if (!newProduct) {
     throw new BadRequestError("Failed to create product");
@@ -309,7 +317,7 @@ const updatePublishProduct = async (product_id) => {
   }
   return updateProduct;
 };
-const updateProduct = async ({ user, product_id, updateData }) => {
+const updateProduct = async ({ user, product_id, updateData, file }) => {
   if (!user) {
     throw new BadRequestError("User not found");
   }
@@ -343,7 +351,13 @@ const updateProduct = async ({ user, product_id, updateData }) => {
 
   // Loại bỏ các thuộc tính undefined trước khi cập nhật
   const cleanDataBeforeUpdate = removeUndefinedObject(updateData);
-
+  if(file){
+    const uploadImg = await uploadService.uploadImageFromLocalS3(file)
+    if (!uploadImg) {
+      throw new BadRequestError("Failed to upload image");
+    }
+    cleanDataBeforeUpdate.product_thumb = uploadImg
+  }
   let updateProduct;
 
   // Kiểm tra và thêm sideDish_id nếu có

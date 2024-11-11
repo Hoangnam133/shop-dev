@@ -6,7 +6,7 @@ const listOrderPendingOfUser = async(user)=>{
         order_status: 'pending',
         'order_payment.payment_status': 'success'  
     }
-    const findOrder = await orderModel.find(query)
+    const findOrder = await orderModel.find(query).sort({createdAt: -1})
     if(!findOrder){
         throw new NotFoundError('Order not found')
     }
@@ -15,9 +15,9 @@ const listOrderPendingOfUser = async(user)=>{
 const listOrderCompletedOfUser = async(user)=>{
     const query = {
         order_userId: user._id,
-        order_status: 'Completed'
+        order_status: 'completed'
     }
-    const findOrder = await orderModel.find(query)
+    const findOrder = await orderModel.find(query).sort({createdAt: -1})
     if(!findOrder){
         throw new NotFoundError('Order not found')
     }
@@ -28,7 +28,7 @@ const listOrderCancelledOfUser = async(user)=>{
         order_userId: user._id,
         order_status: 'cancelled'
     }
-    const findOrder = await orderModel.find(query)
+    const findOrder = await orderModel.find(query).sort({createdAt: -1})
     if(!findOrder){
         throw new NotFoundError('Order not found')
     }
@@ -39,7 +39,7 @@ const listOrderSuccessOfUser = async(user)=>{
         order_userId: user._id,
         order_status: 'success'
     }
-    const findOrder = await orderModel.find(query)
+    const findOrder = await orderModel.find(query).sort({createdAt: -1})
     if(!findOrder){
         throw new NotFoundError('Order not found')
     }
@@ -89,6 +89,7 @@ const listOrderPending = async({ limit , page  })=>{
         order_status: 'pending'
     }
     const findOrder = await orderModel.find(query)
+    .sort({createdAt: -1})
     .skip(skip)
     .limit(limit)
     .lean()
@@ -103,6 +104,7 @@ const listOrderPending = async({ limit , page  })=>{
         order_status:'success'
     }
     const findOrder = await orderModel.find(query)
+    .sort({createdAt: -1})
     .skip(skip)
     .limit(limit)
     .lean()
@@ -117,6 +119,7 @@ const listOrderCancelled = async({ limit , page  })=>{
         order_status: 'cancelled'
     }
     const findOrder = await orderModel.find(query)
+    .sort({createdAt: -1})
     .skip(skip)
     .limit(limit)
     .lean()
@@ -131,6 +134,7 @@ const listOrderCompleted = async({ limit , page  })=>{
         order_status: 'completed'
     }
     const findOrder = await orderModel.find(query)
+    .sort({createdAt: -1})
     .skip(skip)
     .limit(limit)
     .lean()

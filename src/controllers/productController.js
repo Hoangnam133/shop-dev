@@ -2,20 +2,26 @@ const productService = require("../services/productService");
 const { SuccessResponse } = require("../core/successResponse");
 class ProductController {
   createProduct = async (req, res, next) => {
+    const {file} = req
+    if(!file){
+        throw new Error('file missing')
+    }
     new SuccessResponse({
       message: "Create product success",
-      metaData: await productService.createProduct(req.body),
+      metaData: await productService.createProduct(req.body, file),
     }).send(res);
   };
 
   updateProduct = async (req, res, next) => {
     const { product_id } = req.params;
+    const {file} = req
     new SuccessResponse({
       message: "Update product success",
       metaData: await productService.updateProduct({
         user: req.user,
         product_id,
         payload: req.body,
+        file
       }),
     }).send(res);
   };
