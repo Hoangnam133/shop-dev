@@ -95,12 +95,18 @@ class OrderServiceV5{
             }
             finalPrice += itemTotalPrice - discountForProduct
             totalDiscount += discountForProduct
+            let sideDishes = product.sideDishes.map((sideDish) => ({
+                sideDish_id: sideDish.sideDish_id,
+                quantity: sideDish.quantity,
+                sideDish_name: sideDish.sideDish_name,
+            }));
             productCheckout.push({
                 product_id: foundProduct._id,
-                quantity: product.quantity,
-                totalPrice: itemTotalPrice,
                 product_thumb: foundProduct.product_thumb,
                 product_name: foundProduct.product_name,
+                extra: sideDishes,
+                quantity: product.quantity,
+                totalPrice: itemTotalPrice,
                 discountForProduct
             })
         }
