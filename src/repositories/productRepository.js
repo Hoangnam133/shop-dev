@@ -60,8 +60,8 @@ const createProduct = async (payload, file) => {
 
   for (let i = 0; i < shop_ids.length; i++) {
     const id = shop_ids[i].trim();
-    const objectId = toObjectId(id.trim());
-    shopObjectIds.push(objectId);
+    // const objectId = toObjectId(id.trim());
+    shopObjectIds.push(id);
   }
 
   const getAllShop = await shopModel.find(

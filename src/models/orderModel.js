@@ -2,7 +2,22 @@ const { model, Schema } = require('mongoose');
 const { convertToVietnamTime } = require('../utils/convertTime');
 const DOCUMENT_NAME = 'Order';
 const COLLECTION_NAME = 'Orders';
-
+const ExtraSchema = new Schema({
+    sideDish_id: {
+        type: Schema.Types.ObjectId,
+        ref: 'sideDish',  
+        required: true,
+    },
+    sideDish_name: {
+        type: String,
+        required: true,
+    },
+    quantity: {
+        type: Number,
+        required: true,
+        default: 1,
+    }
+})
 const checkOutSchema = new Schema({
     totalAmount: {
         type: Number,
@@ -73,7 +88,8 @@ const orderSchema = new Schema({
         product_name:{
             type: String,
             required: true
-        }
+        },
+        extra: [ExtraSchema]
     }],
     order_trackingNumber: {
         type: String,
