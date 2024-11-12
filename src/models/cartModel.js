@@ -19,6 +19,23 @@ const cartProductSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    sideDishes: [
+      {
+        sideDish_id: {
+          type: Schema.Types.ObjectId,
+          ref: "SideDish",
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          default: 1,
+        },
+        sideDish_name:{
+          type: String,
+          required: true,
+        }
+      },
+    ],
   },
   {
     _id: false,

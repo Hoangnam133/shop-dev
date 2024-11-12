@@ -3,15 +3,7 @@ const {checkProductStockInShop} = require('../repositories/inventoryRepository')
 const {checkProductInShop, getProductById} = require('../repositories/productRepository')
 const {NotFoundError, BadRequestError} = require('../core/errorResponse')
 const {toObjectId} = require('../utils/index')
-/*
-    1. create cart and add product to cart
-    2. reduce product quantity
-    3. increase product quantity
-    4. get cart
-    6. delete item
-    7. update quantity product in cart
-    8. delete cart (delete all items)
-*/
+const sideDishModel = require('../models/sideDishModel')
 // Kiểm tra giỏ hàng xem tồn tại hay không
 const getCartByUserId  = async(user) => {
     if (!user) throw new NotFoundError('User not found');
@@ -52,18 +44,29 @@ const checkStockAndProductInShop = async({product_id, shop_id, quantity})=>{
 // tạo giỏ hàng 
 const createUserCart = async({user, product, shop})=>{
     const shop_id = shop._id
-    const {product_id, quantity} = product
+    const {product_id, quantity, sideDish_ids = []} = product
     console.log('Checking product in shop with shop_id:', shop_id, 'and product_id:', product_id);
     await checkStockAndProductInShop({product_id, shop_id, quantity})
     const getProduct = await getProductById(product_id)
-
+    const sideDishs = await sideDishModel.find({
+        _id: {$in: sideDish_ids}
+    })
+    if(sideDishs.length !== sideDish_ids.length){
+        throw new BadRequestError('One or more side dish are not valid')
+    }
+    let totalPriceSideDish = sideDishs.reduce((total, dish) => total + dish.price, 0)
     const payload = {
         cart_userId: user._id,
         cart_status: 'active',
         cart_products:[{
                 product_id,
                 quantity,
-                totalPrice: quantity * getProduct.product_price
+                totalPrice: quantity * getProduct.product_price + totalPriceSideDish * quantity,
+                sideDishes: sideDishs.map(dish => ({
+                    sideDish_id: dish._id,
+                    quantity: 1,  
+                    sideDish_name: dish.sideDish_name
+            }))
         }]
     }
 
@@ -76,18 +79,34 @@ const createUserCart = async({user, product, shop})=>{
 }
 // thêm sản phẩm vào giỏ hàng trống
 const addProductToEmptyCartIfAbsent = async({user, product, shop})=>{
-    const {product_id, quantity} = product
+    const {product_id, quantity, sideDish_ids = []} = product
     const shop_id = shop._id
 
     await checkStockAndProductInShop({product_id, shop_id, quantity})
     const foundCart = await getCartByUserId (user)
     const getProduct = await getProductById(product_id)
+
+    const sideDishs = await sideDishModel.find({
+        _id: {$in: sideDish_ids}
+    })
+    if(sideDishs.length !== sideDish_ids.length){
+        throw new BadRequestError('One or more side dish are not valid')
+    }
+    let totalPriceSideDish = 0
+    for(let i = 0; i < sideDishs.length; i++) {
+        totalPriceSideDish += sideDishs[i].price;
+    }
     const payload = {
-        $push: {
+        $push:{
             cart_products: {
                 product_id,
                 quantity,
-                totalPrice: quantity * getProduct.product_price
+                totalPrice: quantity * getProduct.product_price + totalPriceSideDish * quantity,
+                sideDishes: sideDishs.map(dish => ({
+                    sideDish_id: dish._id,
+                    quantity: 1,  
+                    sideDish_name: dish.sideDish_name
+            }))
             }
         }
     },
@@ -95,53 +114,97 @@ const addProductToEmptyCartIfAbsent = async({user, product, shop})=>{
         new: true
        
     }
-
     const updateCart = await cartModel.findByIdAndUpdate(foundCart._id, payload, options)
     if(!updateCart){
         throw new BadRequestError('Add product to cart failed')
     }
     return updateCart
 }
-// cập nhật lại số lượng trong giỏ hàng
-const updateCartProductQuantity =  async({user, product, shop})=>{
-    const {product_id, quantity} = product
-    const shop_id = shop._id
+const updateCartProductQuantity = async ({ user, product, shop }) => {
+    const { product_id, quantity, sideDish_ids = [] } = product;
+    const shop_id = shop._id;
 
-    await checkStockAndProductInShop({product_id, shop_id, quantity})
-    const foundCart = await getCartByUserId (user)
-    const getProduct = await getProductById(product_id)
-    console.log('giỏ hàng fffdfdf', foundCart.cart_products)
-    const findProductInCart = foundCart.cart_products.find(product => product.product_id.toString() === product_id.toString())
-    if(findProductInCart){
-        const oldQuantity = findProductInCart.quantity
-        ,newQuantity = oldQuantity + quantity
-        ,newTotalPrice = newQuantity *  getProduct.product_price
+    await checkStockAndProductInShop({ product_id, shop_id, quantity });
+    const foundCart = await getCartByUserId(user);
+    const getProduct = await getProductById(product_id);
+
+    const sideDishes = await sideDishModel.find({
+        _id: { $in: sideDish_ids }
+    });
+    if (sideDishes.length !== sideDish_ids.length) {
+        throw new BadRequestError('One or more side dishes are not valid');
+    }
+
+    let totalPriceSideDish = 0
+    for(let i = 0; i < sideDishes.length; i++) {
+        totalPriceSideDish += sideDishes[i].price;
+    }
     
+    // Chuẩn hóa danh sách món phụ để dễ so sánh
+    const sortedNewSideDishes = sideDishes.map(dish => dish._id.toString()).sort();
+
+    // Tìm sản phẩm có cùng product_id và sideDishes trong giỏ hàng
+    let findProductInCart = foundCart.cart_products.find(product => 
+        product.product_id.toString() === product_id.toString() &&
+        product.sideDishes.map(d => d.sideDish_id.toString()).sort().every((id, index) => id === sortedNewSideDishes[index])
+    );
+
+    if (findProductInCart) {
+        // Cập nhật số lượng nếu món phụ trùng khớp
+        console.log(' chạy vào // Cập nhật số lượng nếu món phụ trùng khớp')
+        const newQuantity = findProductInCart.quantity + quantity;
+        const newTotalPrice = newQuantity * getProduct.product_price + newQuantity * totalPriceSideDish;
+
         const payload = {
             $set: {
-                'cart_products.$.quantity': newQuantity,
-                'cart_products.$.totalPrice': newTotalPrice
+                'cart_products.$[elem].quantity': newQuantity,
+                'cart_products.$[elem].totalPrice': newTotalPrice
             }
-        },
-        options =  {
-            new: true
-           
-        },
-        filter = {
-            _id: foundCart._id,
-            'cart_products.product_id': product_id
+        };
+        const options = { 
+            arrayFilters: [
+                { 
+                    "elem.product_id": product_id,
+                    "elem.sideDishes": { $size: sortedNewSideDishes.length }, // Ensures the correct count of side dishes
+                    "elem.sideDishes.sideDish_id": { $all: sortedNewSideDishes } // Matches sideDish_id values directly
+                }
+            ], 
+            new: true 
         }
-        const updateCart = await cartModel.findOneAndUpdate(filter, payload, options)
-        if(!updateCart){
-            throw new BadRequestError('Update product quantity in cart failed')
+
+        const updateCart = await cartModel.findOneAndUpdate({ _id: foundCart._id }, payload, options);
+        if (!updateCart) {
+            throw new BadRequestError('Update product quantity in cart failed');
         }
-        return updateCart
+        return updateCart;
     }
-    else{
-        return await addProductToEmptyCartIfAbsent({user, product, shop})
+
+    // Nếu món phụ khác nhau hoặc sản phẩm chưa tồn tại trong giỏ, thêm sản phẩm mới
+    console.log(' chạy vào // Nếu món phụ khác nhau hoặc sản phẩm chưa tồn tại trong giỏ, thêm sản phẩm mới')
+    const payload = {
+        $push: {
+            cart_products: {
+                product_id,
+                quantity,
+                totalPrice: quantity * getProduct.product_price + totalPriceSideDish * quantity,
+                sideDishes: sideDishes.map(dish => ({
+                    sideDish_id: dish._id,
+                    quantity: 1,  
+                    sideDish_name: dish.sideDish_name
+                }))
+            }
+        }
+    };
+    const options = { new: true };
+    const filter = { _id: foundCart._id };
+
+    const updateCart = await cartModel.findOneAndUpdate(filter, payload, options);
+    if (!updateCart) {
+        throw new BadRequestError('Add product to cart failed');
     }
-    
-}
+    return updateCart;
+};
+
 // thêm sản phẩm vào giỏ hàng
 const addTocart = async({user, product, shop}) => {
     let foundCart = await getCartByUserId(user)
@@ -149,24 +212,24 @@ const addTocart = async({user, product, shop}) => {
         path: 'cart_products.product_id',
         select: 'product_name product_thumb'
     }
-    // Nếu giỏ hàng chưa tồn tại, tạo giỏ hàng mới
+  
+    
     if (!foundCart) {
-        foundCart = await createUserCart({ user, product, shop })
+        console.log(' chạy vào //// Nếu giỏ hàng chưa tồn tại, tạo giỏ hàng mới')
+        foundCart = await createUserCart({ user, product, shop})
         return foundCart.populate(attached)
     }
 
-    // Nếu giỏ hàng đã tồn tại nhưng không có sản phẩm
+   
     if (!foundCart.cart_products.length) {
-        const updateCart =  await addProductToEmptyCartIfAbsent({ user, product, shop })
+        console.log(' chạy vào // Nếu giỏ hàng đã tồn tại nhưng không có sản phẩm')
+        const updateCart = await addProductToEmptyCartIfAbsent({ user, product, shop})
         return updateCart.populate(attached)
     }
-
-    // Nếu giỏ hàng đã tồn tại và đã có sản phẩm, xét 2 trường hợp
-    // TH1: nếu có cùng mã sản phẩm ,cập nhật lại số lượng
-    // TH2: nếu khác mã sản phẩm thì thêm vào
-    const updateQuantity = await updateCartProductQuantity({ user, product, shop })
-    return updateQuantity.populate(attached)
+    console.log(' chạy vào // Nếu nếu sản phẩm đã tồn tại trogn giỏ hàng')
+    return await updateCartProductQuantity({ user, product, shop})
 };
+
 
 // xóa sản phẩm khỏi giỏ hàng
 const deleteProductInCart = async({user, product})=>{
@@ -194,63 +257,58 @@ const deleteProductInCart = async({user, product})=>{
     }
     return deleteItem
 }
-const incOfDecProductQuantity = async({user, product, shop, action})=>{
-    if(!shop){
+const incOfDecProductQuantity = async({user, product, shop, action}) => {
+    if (!shop) {
         throw new BadRequestError('Shop data is missing')
     }
+
     const {product_id} = product
     const shop_id = shop._id
 
-    console.log('incOfProductQuantity shopId', shop_id)
     await checkStockAndProductInShop({product_id, shop_id, quantity: 1})
-    const foundCart = await getCartByUserId (user)
+    const foundCart = await getCartByUserId(user)
     const getProduct = await getProductById(product_id)
 
     const findProductInCart = foundCart.cart_products.find(product => product.product_id.toString() === product_id.toString())
-    if(!findProductInCart){
+    if (!findProductInCart) {
         throw new NotFoundError('Product not found in cart')
     }
 
     const oldQuantity = findProductInCart.quantity
     let newQuantity = 0
-    if(action === 'inc'){
+    if (action === 'inc') {
         newQuantity = oldQuantity + 1
-    }
-    else{
+    } else {
         newQuantity = oldQuantity - 1
-        if(newQuantity <= 0){
+        if (newQuantity <= 0) {
+            // Nếu số lượng giảm xuống 0, xóa sản phẩm khỏi giỏ hàng
             return await deleteProductInCart({user, product})
-             
         }
     }
 
     const payload = {
         $set: {
             'cart_products.$.quantity': newQuantity,
-            'cart_products.$.totalPrice': newQuantity * getProduct.product_price
+            'cart_products.$.totalPrice': newQuantity * findProductInCart.totalPrice
         }
-    },
-    options =  {
-        new: true
-        
-    },
-    filter = {
+    };
+    const options = { new: true };
+    const filter = {
         _id: foundCart._id,
         'cart_products.product_id': product_id
-    }
+    };
 
     const updateCart = await cartModel.findOneAndUpdate(filter, payload, options)
-    .populate(
-       {
-        path: 'cart_products.product_id',
-        select: 'product_name product_thumb'
-       }
-    )
-    if(!updateCart){
+        .populate({
+            path: 'cart_products.product_id',
+            select: 'product_name product_thumb'
+        });
+    if (!updateCart) {
         throw new BadRequestError('Update product quantity in cart failed')
     }
     return updateCart
-}
+};
+
 module.exports = {
     addTocart,
     deleteProductInCart,
