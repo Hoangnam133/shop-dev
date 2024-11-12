@@ -117,10 +117,6 @@ class UserController {
       message: "Employee account created successfully",
       metaData: await userService.createBranchManager(req.body),
     }).send(res);
-    new SuccessResponse({
-      message: "signUp success",
-      metaData: await userService.signUp(req.body),
-    }).send(res);
   };
 }
 module.exports = new UserController();
