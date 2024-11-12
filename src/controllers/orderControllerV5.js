@@ -1,4 +1,4 @@
-const OrderServiceV5 = require('../services/orderService_v5')
+const OrderServiceV5 = require('../services/orderService_v6')
 const {SuccessResponse} = require('../core/successResponse')
 
 class OrderControllerV5 {
