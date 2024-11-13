@@ -216,14 +216,6 @@ class UserService {
     };
   };
   static signUp = async ({ name, email, password }) => {
-    const userData = { name, email, password };
-    const missingFields = userModel.prototype.checkRequiredFields(userData);
-
-    if (missingFields.length > 0) {
-      throw new BadRequestError(
-        `Missing required fields: ${missingFields.join(", ")}`
-      );
-    }
     const checkUser = await findByEmail(email);
     if (checkUser) {
       throw new BadRequestError("email already registed");

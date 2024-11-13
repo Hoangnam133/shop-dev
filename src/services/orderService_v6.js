@@ -186,6 +186,8 @@ class OrderServiceV5 {
         selectedDeliveryTime,
         totalMinutes,
       });
+      console.log(user);
+
       if (checkTime) {
         estimated_delivery = selectedDeliveryTime;
         options_delivery = "specific_time";
@@ -221,9 +223,13 @@ class OrderServiceV5 {
       order_discount_code: discount_code,
       estimated_delivery_time: estimated_delivery,
       order_time,
+      order_userId: user._id,
       note,
     };
+
     console.log("đã  chạy đến đây LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+    console.log(payload.order_userId);
+
     // sai ngay đây
     const newOrder = await orderModel.create(payload);
     if (!newOrder) {

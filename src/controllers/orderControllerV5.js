@@ -98,7 +98,7 @@ class OrderControllerV5 {
   listOrderSuccess = async (req, res, next) => {
     new SuccessResponse({
       message: "list of successful orders",
-      metaData: await orderService.listOrderSuccess(req.query),
+      metaData: await OrderServiceV5.listOrderSuccess(req.query),
     }).send(res);
   };
 }
