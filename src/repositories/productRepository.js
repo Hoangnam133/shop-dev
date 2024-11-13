@@ -12,6 +12,8 @@ const sideDishModel = require("../models/sideDishModel");
 const fuzzy = require('fuzzy')
 const uploadService = require("../services/uploadService");
 const Fuse = require('fuse.js');
+const dotenv = require('dotenv')
+const inventoryModel = require('../models/inventoryModel');
 // kiểm tra shop có tồn tại
 const checkShop = async (shop_id) => {
   if (!shop_id) {
@@ -203,35 +205,65 @@ const getProductsByCategory = async ({
   shop_id,
 }) => {
   const skip = (page - 1) * limit;
+
+
   if (!category_id) {
-    throw new BadRequestError("Category ID is required");
+    throw new BadRequestError("Category ID is required")
   }
-  const checkShopId = await checkShop(shop_id);
+
+
+  const checkShopId = await checkShop(shop_id)
   if (!checkShopId) {
-    throw new NotFoundError("Shop not found");
+    throw new NotFoundError("Shop not found")
   }
+
   category_id = toObjectId(category_id.trim());
-  const existingCategory = await cartModel.findById(category_id);
+
+
+  const existingCategory = await categoryModel.findById(category_id)
   if (!existingCategory) {
-    throw new NotFoundError("Category not found");
+    throw new NotFoundError("Category not found")
   }
-  const productIds = await productModel.find({ category_id }).distinct("_id");
+
+
+  const productIds = await productModel.find({ category_id }).distinct("_id")
+
+
+  const availableProducts = await inventoryModel
+    .find({
+      shop_id: checkShopId._id,
+      product_id: { $in: productIds },
+      inven_stock: { $gt: 0 }, 
+      isDeleted: false,
+    })
+    .populate("product_id");
+
+  if (!availableProducts || availableProducts.length === 0) {
+    throw new NotFoundError("No available products in this category")
+  }
+
+
   const products = await shopProductModel
     .find({
       shop_id: checkShopId._id,
       isPublished: true,
       isDeleted: false,
-      product_id: { $in: productIds },
+      product_id: { $in: availableProducts.map(item => item.product_id._id) },
     })
     .populate("product_id")
     .limit(limit)
     .skip(skip);
+
   if (!products || products.length === 0) {
     throw new NotFoundError("No products found in this category");
   }
 
-  return products;
-};
+  return {
+    category_name: existingCategory.category_name,
+    products
+  }
+}
+
 //Admin only (lấy ra danh sách tất cả sản phẩm đã published )
 const getPublishedProducts = async ({ limit, page }) => {
   const skip = (page - 1) * limit;

@@ -46,7 +46,7 @@ router.get(
 );
 // Lấy sản phẩm theo danh mục
 router.get(
-  "/ProductInCategory/:shop_id",
+  "/ProductInCategory/:category_id",
   asynHandler(productController.getProductsByCategory)
 );
 // Tìm kiếm sản phẩm
