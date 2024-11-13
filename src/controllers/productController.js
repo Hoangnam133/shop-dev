@@ -73,8 +73,10 @@ class ProductController {
   };
 
   getProductsByCategory = async (req, res, next) => {
-    const { limit, page, category_id } = req.query;
-    const { shop_id } = req.params;
+    const { limit, page} = req.query;
+    const { category_id } = req.params;
+    const shop  = req.shop;
+    const shop_id = shop._id
     new SuccessResponse({
       message: "Fetched products by category successfully",
       metaData: await productService.getProductsByCategory({
