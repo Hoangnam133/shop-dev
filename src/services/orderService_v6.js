@@ -177,7 +177,8 @@ class OrderServiceV5{
             order_status: 'pending',
             order_discount_code: discount_code,
             estimated_delivery_time: estimated_delivery,
-            order_time, 
+            order_time,
+            order_userId: user._id,
             note
         }
         console.log('đã  chạy đến đây LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL')

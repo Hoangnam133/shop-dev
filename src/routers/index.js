@@ -14,4 +14,6 @@ router.use('/v2/api/location', require('./locationRouter/index'))
 router.use('/v2/api/inventory', require('./inventoryRouter/index'))
 router.use('/v2/api/openningHours', require('./openningHoursRouter/index'))
 router.use('/v2/api/sideDish', require('./sideDishRouter/index'))
+router.use('/v2/api/rcm', require('./recommen/index'))
+
 module.exports = router
