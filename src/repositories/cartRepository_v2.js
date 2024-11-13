@@ -273,7 +273,7 @@ const incOfDecProductQuantity = async({user, product, shop, action}) => {
     if (!findProductInCart) {
         throw new NotFoundError('Product not found in cart')
     }
-
+    
     const oldQuantity = findProductInCart.quantity
     let newQuantity = 0
     if (action === 'inc') {
