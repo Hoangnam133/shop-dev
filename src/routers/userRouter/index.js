@@ -8,31 +8,66 @@ const rateLimit = require("express-rate-limit");
 const router = express.Router();
 const userController = require("../../controllers/userController");
 const { asynHandler } = require("../../utils/handler");
-const {uploadDisk, uploadMemory} = require('../../configs/multer.config')
 const upload = require("../../utils/multer");
 const roles = require("../../utils/roles");
-
+const userModel = require("../../models/userModel");
+const checkRequiredFields = require("../../middlewares/checkRequired");
 // no authentication
-router.post( "/handlerRefreshToken", handleRefreshToken, asynHandler(userController.handlerRefreshToken));
-router.post("/signUp", asynHandler(userController.signUp));
+router.post(
+  "/handlerRefreshToken",
+  handleRefreshToken,
+  asynHandler(userController.handlerRefreshToken)
+);
+router.post(
+  "/signUp",
+  checkRequiredFields(userModel),
+  asynHandler(userController.signUp)
+);
 router.post("/loginAdmin", asynHandler(userController.loginAdmin));
 router.post("/loginUser", asynHandler(userController.loginUser));
 router.post("/loginEmployee", asynHandler(userController.loginEmployee));
-router.post("/loginBranchManager",asynHandler(userController.loginBranchManager));
+router.post(
+  "/loginBranchManager",
+  asynHandler(userController.loginBranchManager)
+);
 router.post("/forgotPassword", asynHandler(userController.forgotPassword));
 router.post("/resetPassword", asynHandler(userController.resetPassword));
-
 
 router.use(authentication);
 router.post("/logout", asynHandler(userController.logout));
 router.patch("/changePassword", asynHandler(userController.changePassword));
-router.patch("/updatePrUser", authorizeRoles(roles.USER), upload.single("avatar"), asynHandler(userController.updatePr));
-router.patch("/updatePrEmployee", authorizeRoles(roles.EMPLOYEE), upload.single("avatar"), asynHandler(userController.updatePr));
+router.patch(
+  "/updatePrUser",
+  authorizeRoles(roles.USER),
+  upload.single("avatar"),
+  asynHandler(userController.updatePr)
+);
+router.patch(
+  "/updatePrEmployee",
+  authorizeRoles(roles.EMPLOYEE),
+  upload.single("avatar"),
+  asynHandler(userController.updatePr)
+);
 
-router.patch("/updatePrManager", authorizeRoles(roles.BRANCH_MANAGER), upload.single("avatar"), asynHandler(userController.updatePr));
+router.patch(
+  "/updatePrManager",
+  authorizeRoles(roles.BRANCH_MANAGER),
+  upload.single("avatar"),
+  asynHandler(userController.updatePr)
+);
 router.get("/getUserInfo", asynHandler(userController.getUserInfo));
 
-router.post( "/signUpForEmployee", authorizeRoles(roles.ADMIN), asynHandler(userController.createEmployee));
-router.post("/signUpForBranchManager", authorizeRoles(roles.ADMIN), asynHandler(userController.createBranchManager));
+router.post(
+  "/signUpForEmployee",
+  authorizeRoles(roles.ADMIN),
+  checkRequiredFields(userModel),
+  asynHandler(userController.createEmployee)
+);
+router.post(
+  "/signUpForBranchManager",
+  authorizeRoles(roles.ADMIN),
+  checkRequiredFields(userModel),
+  asynHandler(userController.createBranchManager)
+);
 
 module.exports = router;
