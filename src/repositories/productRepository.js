@@ -202,35 +202,65 @@ const getProductsByCategory = async ({
   shop_id,
 }) => {
   const skip = (page - 1) * limit;
+
+
   if (!category_id) {
-    throw new BadRequestError("Category ID is required");
+    throw new BadRequestError("Category ID is required")
   }
-  const checkShopId = await checkShop(shop_id);
+
+
+  const checkShopId = await checkShop(shop_id)
   if (!checkShopId) {
-    throw new NotFoundError("Shop not found");
+    throw new NotFoundError("Shop not found")
   }
+
   category_id = toObjectId(category_id.trim());
-  const existingCategory = await cartModel.findById(category_id);
+
+
+  const existingCategory = await categoryModel.findById(category_id)
   if (!existingCategory) {
-    throw new NotFoundError("Category not found");
+    throw new NotFoundError("Category not found")
   }
-  const productIds = await productModel.find({ category_id }).distinct("_id");
+
+
+  const productIds = await productModel.find({ category_id }).distinct("_id")
+
+
+  const availableProducts = await inventoryModel
+    .find({
+      shop_id: checkShopId._id,
+      product_id: { $in: productIds },
+      inven_stock: { $gt: 0 }, 
+      isDeleted: false,
+    })
+    .populate("product_id");
+
+  if (!availableProducts || availableProducts.length === 0) {
+    throw new NotFoundError("No available products in this category")
+  }
+
+
   const products = await shopProductModel
     .find({
       shop_id: checkShopId._id,
       isPublished: true,
       isDeleted: false,
-      product_id: { $in: productIds },
+      product_id: { $in: availableProducts.map(item => item.product_id._id) },
     })
     .populate("product_id")
     .limit(limit)
     .skip(skip);
+
   if (!products || products.length === 0) {
     throw new NotFoundError("No products found in this category");
   }
 
-  return products;
-};
+  return {
+    category_name: existingCategory.category_name,
+    products
+  }
+}
+
 //Admin only (lấy ra danh sách tất cả sản phẩm đã published )
 const getPublishedProducts = async ({ limit, page }) => {
   const skip = (page - 1) * limit;
@@ -468,47 +498,37 @@ const removeVietnameseTones = (str)=> {
       .replace(/đ/g, "d")
       .replace(/Đ/g, "D");
 }
-// const searchProductByUser = async ({ keySearch }) => {
-//   console.log(`keySearch:::${keySearch}`);
-//   const regex = new RegExp(keySearch, "i");
-
-//   const results = await productModel
-//     .find({
-//       isPublished: true,
-//       isDeleted: false,
-//       isDraft: false,
-//       product_name: { $regex: regex },
-//     })
-//     .limit(5)
-//     .lean();
-//   if (!results || results.length === 0) {
-//     throw new NotFoundError("Product not found");
-//   }
-//   return results;
-// };
 const searchProductByUser = async (keySearch) => {
-  try{
-       // chuyển key thành không dấu
-       const normalizedKeyword = removeVietnameseTones(keySearch.toLowerCase())
-       // lấy ra tất cả sản phẩm, chuẩn hóa product name
-       const products = await productModel.find({}, 'product_name')
-       // map thành mảng tên
-       const productNames = products.map(product => product.product_name)
-       // Sử dụng fuzzy search trên danh sách tên không dấu
-       const results = fuzzy.filter(normalizedKeyword, productNames.map(name => removeVietnameseTones(name.toLowerCase())))
-       // Lấy các tên sản phẩm gốc từ kết quả tìm kiếm
-       const matchedNames = results.map(result => productNames[result.index])
-       // Tìm các tài liệu sản phẩm theo tên sản phẩm đã tìm thấy
-       const matchedProducts = await productModel.find({
-         product_name: { $in: matchedNames }
-     }).limit(5)
-     return matchedProducts
-  }catch(e) {
-    console.error("Error in searchProductByUser", e);
-    throw new BadRequestError(e.mesage);
+  try {
+    if (!keyword) {
+        throw new BadRequestError('Search keyword is required')
+    }
+    const normalizedKeyword = removeVietnameseTones(keyword.toLowerCase());
+    const products = await productModel.find({isPublished: true, isDeleted: false}, 'product_name product_description product_thumb _id')
+
+    const fuseData = products.map(product => ({
+        ...product.toObject(),
+        normalized_name: removeVietnameseTones(product.product_name.toLowerCase()),
+        normalized_description: removeVietnameseTones(product.product_description.toLowerCase())
+    }));
+
+  
+    const options = {
+        keys: ['normalized_name', 'normalized_description'],
+        threshold: 0.2, // Mức độ mờ của tìm kiếm
+    };
+
+    const fuse = new Fuse(fuseData, options);
+    const results = fuse.search(normalizedKeyword);
+    const matchedProducts = results.map(result => result.item)
+
+    return matchedProducts.slice(0, 10); 
+  }catch (error) {
+      console.error('Error in searchProducts:', error)
+      throw error
   }
- 
 };
+
 const getProductById = async (product_id) => {
   const foundProduct = await productModel.findById(product_id);
   if (!foundProduct) {
@@ -546,4 +566,4 @@ module.exports = {
   checkShop,
   checkProductInShop,
   getSideDishInProduct,
-};
+}
