@@ -3,6 +3,35 @@ const { BadRequestError } = require("../core/errorResponse");
 const productModel = require("../models/productModel");
 const { toObjectId } = require("../utils/index");
 const shopModel = require("../models/shopModel");
+const deductStockAfterPayment = async ({ shop_id, product_id, quantity }) => {
+  const shop = await shopModel.findById(toObjectId(shop_id))
+  if (!shop) {
+      throw new BadRequestError('Shop not found')
+  }
+  const product = await productModel.findById(product_id)
+  if (!product) {
+      throw new BadRequestError('Product not found')
+  }
+  const query = {
+    shop_id,
+    product_id,
+    isDeleted: false,
+  },
+  payload = {
+    $inc:{
+      inven_stock: -quantity,
+    }
+  },
+  options = {
+    new: true,
+    upsert: true,
+  };
+  const updateInventory = await inventoryModel.findOneAndUpdate(query,payload,options)
+  if (!updateInventory) {
+    throw new BadRequestError("Failed to update inventory");
+  }
+  return true
+}
 const checkProductStockInShop = async ({ shop_id, product_id, quantity }) => {
   const shop = await shopModel.findById(toObjectId(shop_id))
   if (!shop) {
@@ -362,5 +391,6 @@ module.exports = {
   restoreProductInInventory,
   getDeletedProductsInInventory,
   softDeleteProductInInventory,
-  checkProductStockInShop
+  checkProductStockInShop,
+  deductStockAfterPayment
 };

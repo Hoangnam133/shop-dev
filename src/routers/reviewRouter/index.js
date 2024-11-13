@@ -1,7 +1,7 @@
 const express = require('express')
 const {authentication, authorizeRoles} = require('../../auth/authUtils')
 const router = express.Router()
-
+const {uploadDisk, uploadMemory} = require('../../configs/multer.config')
 const reviewController = require('../../controllers/reviewController')
 const { asynHandler } = require('../../utils/handler')
 router.get('/getAllReviewOfProduct/:product_id', asynHandler(reviewController.getReviewsByProductId))

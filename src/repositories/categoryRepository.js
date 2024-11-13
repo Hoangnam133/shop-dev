@@ -7,8 +7,9 @@ const {
 } = require("../utils/index");
 const { BadRequestError, NotFoundError } = require("../core/errorResponse");
 const productModel = require("../models/productModel");
-const createCategory = async (payload) => {
-  const { category_name } = payload;
+const uploadService = require("../services/uploadService");
+const createCategory = async (payload, file) => {
+  let { category_name, category_images } = payload;
   if (category_name) {
     const checkName = await isDuplicateNameOnCreate({
       model: categoryModel,
@@ -19,6 +20,14 @@ const createCategory = async (payload) => {
       throw new BadRequestError("Category name already exists");
     }
   }
+  if (!file) {
+    throw new BadRequestError('Image file is required');
+  }
+  const uploadImg = await uploadService.uploadImageFromLocalS3(file)
+  if (!uploadImg) {
+    throw new BadRequestError("Failed to upload image");
+  }
+  payload.category_images = uploadImg
   const newCategory = await categoryModel.create(payload);
   if (!newCategory) {
     throw new BadRequestError("Failed to create category");
@@ -44,7 +53,7 @@ const getCategoryById = async (category_id) => {
   return category;
 };
 
-const updateCategoryById = async ({ category_id, payload }) => {
+const updateCategoryById = async ({ category_id, payload, file }) => {
   const checkCategory = await categoryModel.findById(category_id).lean();
   if (!checkCategory) {
     throw new NotFoundError("Category not found");
@@ -60,6 +69,13 @@ const updateCategoryById = async ({ category_id, payload }) => {
     if (existingCategory) {
       throw new BadRequestError("Category name already exists");
     }
+  }
+  if(file){
+    const uploadImg = await uploadService.uploadImageFromLocalS3(file)
+    if (!uploadImg) {
+      throw new BadRequestError("Failed to upload image");
+    }
+    cleanData.category_images = uploadImg
   }
   const updateCategory = await categoryModel
     .findByIdAndUpdate(category_id, cleanData, { new: true })

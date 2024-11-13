@@ -2,6 +2,7 @@ const openingHoursModel = require('../models/openingHoursModel')
 const {NotFoundError, BadRequestError} = require('../core/errorResponse')
 const {isDuplicateNameOnCreate, toObjectId, removeUndefinedObject, isDuplicateUpdateField} = require('../utils/index')
 const shopModel = require('../models/shopModel')
+const { addDays, isWithinInterval, subHours  } = require('date-fns')
 // tạo giờ mở và đóng cửa
 const createOpeningHours = async(payload)=>{
     const {name} = payload
@@ -15,21 +16,7 @@ const createOpeningHours = async(payload)=>{
     }
     return newOpeningHours
 }
-// lấy tất cả giờ mở và đóng của 1 shop cụ thể
-const getAllOpeningHoursOfShopId = async(shop_id)=>{
-    const foundShop = await shopModel.findById(toObjectId(shop_id))
-    if(!foundShop){
-        throw new NotFoundError("Shop not found")
-    }
-    const getOpenningHours = await openingHoursModel.find({
-        _id: foundShop.opening_hours,
-        isDeleted: false
-    })
-    if(!getOpenningHours){
-        throw new NotFoundError("No opening hours found")
-    }
-    return getOpenningHours
-}
+
 // lấy ra tất cả giờ mở và đóng cửa
 const getAllOpeningHours = async({limit = 10, page = 1})=>{
     const skip = (page - 1) * limit
@@ -94,6 +81,135 @@ const restoreOpeningHours = async(openingHours_id)=>{
     }
     return foundOpeningHours
 }
+const getAllOpeningHoursOfShopId = async(shop_id)=>{
+    const foundShop = await shopModel.findById(toObjectId(shop_id))
+    if(!foundShop){
+        throw new NotFoundError("Shop not found")
+    }
+    const getOpenningHours = await openingHoursModel.find({
+        _id: foundShop.opening_hours,
+        isDeleted: false
+    })
+    if(!getOpenningHours){
+        throw new NotFoundError("No opening hours found")
+    }
+    return getOpenningHours
+}
+// hàm này áp dụng cho đặt trước 
+const checkDeliveryTimeForShop = async ({ shop_id, selectedDeliveryTime, totalMinutes }) => {
+    // Lấy ra giờ mở cửa của shop dựa vào shop_id
+    const foundShop = await shopModel.findById(shop_id);
+    if (!foundShop) {
+        return false;
+    }
+
+    const openingHours = await openingHoursModel.findById(foundShop.opening_hours);
+    if (!openingHours || openingHours.isDeleted) {
+        return false;
+    }
+    console.log(openingHours.saturday);
+
+    // Kiểm tra tính hợp lệ của selectedDeliveryTime
+    if (!selectedDeliveryTime) return true; // Nếu không có thời gian giao hàng mong muốn, coi là hợp lệ
+
+    const selectedDate = new Date(selectedDeliveryTime);
+    
+    // Kiểm tra xem selectedDeliveryTime có phải là ngày hợp lệ không
+    if (isNaN(selectedDate.getTime())) {
+        return false;
+    }
+
+    // Cộng thời gian chuẩn bị vào selectedDeliveryTime
+    selectedDate.setMinutes(selectedDate.getMinutes() + totalMinutes);
+
+    const currentDate = new Date();
+    // Đặt thời gian giờ, phút, giây, mili giây của ngày hiện tại thành 00:00:00 để so sánh ngày
+    currentDate.setHours(0, 0, 0, 0);
+    const maxPreorderDate = addDays(currentDate, 2);  // Giới hạn đặt trước là 2 ngày kể từ ngày hiện tại
+    maxPreorderDate.setHours(23, 59, 59, 999);  // Đảm bảo maxPreorderDate là hết ngày 2 ngày sau
+
+    // Kiểm tra nếu thời gian giao hàng vượt quá giới hạn 2 ngày hoặc là trước ngày hiện tại
+    if (selectedDate > maxPreorderDate || selectedDate < currentDate) {
+        return false;
+    }
+
+    // Kiểm tra nếu tháng hoặc năm không khớp với tháng và năm hiện tại
+    if (selectedDate.getFullYear() !== currentDate.getFullYear()) {
+        return false; // Năm không khớp
+    }
+
+    if (selectedDate.getMonth() !== currentDate.getMonth()) {
+        return false; // Tháng không khớp
+    }
+
+    // Xác định ngày trong tuần và lấy giờ mở cửa tương ứng
+    const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    const dayOfWeek = daysOfWeek[selectedDate.getDay()];
+    const dayOpeningHours = openingHours[dayOfWeek];
+
+    // Kiểm tra shop có mở cửa vào ngày đã chọn không
+    if (!dayOpeningHours || dayOpeningHours.isClosed) {
+        return false; // Nếu shop đóng vào ngày đó
+    }
+
+    // Lấy giờ mở và đóng cửa của shop trong ngày đã chọn
+    const openingTime = new Date(selectedDate);
+    openingTime.setHours(...dayOpeningHours.open.split(':').map(Number)); // Giờ mở cửa
+
+    const closingTime = new Date(selectedDate);
+    closingTime.setHours(...dayOpeningHours.close.split(':').map(Number)); // Giờ đóng cửa
+
+    // Giới hạn thời gian đặt hàng là 1 tiếng trước giờ đóng cửa
+    const lastValidOrderTime = subHours(closingTime, 1); // 1 tiếng trước giờ đóng cửa
+
+    // Kiểm tra nếu thời gian đặt trước nằm ngoài giờ mở cửa hoặc quá giờ đóng cửa
+    if (selectedDate < openingTime || selectedDate > lastValidOrderTime) {
+        return false; // Nếu chọn thời gian ngoài giờ mở cửa
+    }
+
+    return true;
+}
+// này là áp dụng đặt lấy ngay nè
+const checkImmediateDeliveryTime  = async ({shop_id, totalMinutes}) => {
+    // Lấy giờ mở cửa của shop
+    const foundShop = await shopModel.findById(shop_id);
+    if (!foundShop) {
+        throw new NotFoundError('Shop not found');
+    }
+
+    const openingHours = await openingHoursModel.findById(foundShop.opening_hours);
+    if (!openingHours || openingHours.isDeleted) {
+        throw new NotFoundError('Shop opening hours not found');
+    }
+
+    const currentTime = new Date();
+
+    // Tính thời gian giao hàng mặc định (hiện tại cộng với totalMinutes cộng thêm 20 phút)
+    let estimatedDelivery = new Date(currentTime.getTime() + totalMinutes * 60000 + 20 * 60000); // +20 phút
+
+    // Lấy ngày và giờ của thời gian giao hàng
+    const dayOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][estimatedDelivery.getDay()];
+    const dayOpeningHours = openingHours[dayOfWeek];
+
+    // Kiểm tra nếu cửa hàng không mở vào ngày đã chọn
+    if (!dayOpeningHours || dayOpeningHours.isClosed) {
+        throw new BadRequestError('Shop is closed on the selected day');
+    }
+
+    // Lấy giờ mở cửa và đóng cửa của cửa hàng trong ngày đã chọn
+    const openingTime = new Date(estimatedDelivery);
+    openingTime.setHours(...dayOpeningHours.open.split(':').map(Number)); // Giờ mở cửa
+
+    const closingTime = new Date(estimatedDelivery);
+    closingTime.setHours(...dayOpeningHours.close.split(':').map(Number)); // Giờ đóng cửa
+
+    // Kiểm tra nếu thời gian giao hàng nằm trong khoảng giờ mở cửa và đóng cửa
+    if (estimatedDelivery < openingTime || estimatedDelivery > closingTime) {
+        return false
+    }
+
+    return estimatedDelivery;
+};
 module.exports = {
     createOpeningHours,
     getAllOpeningHours,
@@ -102,5 +218,7 @@ module.exports = {
     softDeleteOpenningHours,
     getDeletedOpeningHours,
     getAllOpeningHoursOfShopId,
-    restoreOpeningHours
+    restoreOpeningHours,
+    checkDeliveryTimeForShop,
+    checkImmediateDeliveryTime
 }
