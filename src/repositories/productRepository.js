@@ -495,10 +495,10 @@ const removeVietnameseTones = (str) => {
 };
 const searchProductByUser = async (keySearch) => {
   try {
-    if (!keyword) {
+    if (!keySearch) {
       throw new BadRequestError("Search keyword is required");
     }
-    const normalizedKeyword = removeVietnameseTones(keyword.toLowerCase());
+    const normalizedKeyword = removeVietnameseTones(keySearch.toLowerCase());
     const products = await productModel.find(
       { isPublished: true, isDeleted: false },
       "product_name product_description product_thumb _id"
