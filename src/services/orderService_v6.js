@@ -7,10 +7,10 @@ const productModel = require('../models/productModel')
 const {getDiscountByCode, checkproductAppliedDiscount, checkDiscountApplicable, calculateDiscountAmount} = require('../repositories/discountRepository')
 const {checkDeliveryTimeForShop, checkImmediateDeliveryTime} = require('../repositories/openingHoursRepository')
 const orderModel = require('../models/orderModel')
-const {deductStockAfterPayment} = require('../repositories/inventoryRepository')
 const {listOrderCancelledOfUser, listOrderCompletedOfUser, listOrderPendingOfUser, listOrderSuccessOfUser
     ,updateStatusCancelled, updateStatusCompleted, listOrderPending, listOrderSuccess, listOrderCancelled, listOrderCompleted
 } = require('../repositories/orderRepository')
+const {runProducer} = require('../message_queue/rabbitmq/producer')
 class OrderServiceV5{
     static async listOrderCancelledOfUser(user){
         return await listOrderCancelledOfUser(user)
@@ -163,6 +163,7 @@ class OrderServiceV5{
         }
         const order_time = new Date()
         const payload = {
+            shop_id: shop._id,
             order_checkout:{
                 totalAmount: totalPrice,
                 finalPrice,
@@ -182,12 +183,12 @@ class OrderServiceV5{
             note
         }
         console.log('đã  chạy đến đây LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL')
-        // sai ngay đây 
-        const newOrder = await orderModel.create(payload)
-        if(!newOrder){
-            throw new BadRequestError('order creation failed')
-        }
-        return newOrder
+        await runProducer(payload)
+        // const newOrder = await orderModel.create(payload)
+        // if(!newOrder){
+        //     throw new BadRequestError('order creation failed')
+        // }
+        // return newOrder
     }
     // xử lý sản phẩm trong kho (viết ở repository) ok
     // tích hợp món phụ vào

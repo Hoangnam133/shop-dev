@@ -17,7 +17,7 @@ router.get(
 // Tạo mã giảm giá mới (chỉ ADMIN có quyền)
 router.post(
   "/create",
-  authorizeRoles(roles.ADMIN),
+  authorizeRoles(roles.ADMIN), uploadMemory.single('file'),
   asynHandler(discountController.createDiscount)
 );
 // Cập nhật mã giảm giá theo discount_id (chỉ ADMIN có quyền)
