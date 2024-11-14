@@ -1,7 +1,7 @@
 const express = require('express')
 
 const cors = require('cors')
-
+const {runConsumer} = require('../src/message_queue/rabbitmq/consumer')
 const app = express()
 app.use(cors())
 app.use(express.json())
@@ -10,6 +10,7 @@ require('./configs/initMongodb')
 
 app.use('/',require('./routers/index'))
 // handler error
+runConsumer()
 app.use((req, res, next)=>{
     const error = new Error('Not Found')
     error.status = 404

@@ -14,10 +14,10 @@ class CartV2Controller {
     }).send(res);
   };
 
-  deleteProductInCart = async (req, res, next) => {
+  removeProductFromCart = async (req, res, next) => {
     new SuccessResponse({
       message: "delete product in cart success",
-      metaData: await cartServiceV2.deleteProductInCart({
+      metaData: await cartServiceV2.removeProductFromCart({
         user: req.user,
         product: req.body,
       }),

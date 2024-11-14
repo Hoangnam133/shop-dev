@@ -1,6 +1,8 @@
 const amqp = require('amqplib');
-const OrderService = require('../../services/orderService');
-
+const OrderService = require('../../services/orderService_v6');
+const orderModel = require('../../models/orderModel')
+const {deductStockAfterPayment} = require('../../repositories/inventoryRepository')
+const {BadRequestError} = require('../../core/errorResponse')
 const runConsumer = async () => {
     try {
         const connection = await amqp.connect('amqp://localhost');
@@ -14,21 +16,26 @@ const runConsumer = async () => {
         channel.consume(queue_name, async (msg) => {
             if (msg !== null) {
                 try {
-                    // Nhận và log tin nhắn từ hàng đợi
+                 
                     const orderData = JSON.parse(msg.content.toString());
                     console.log(`Received order: ${JSON.stringify(orderData)}`);
-
-                    // Gọi service để xử lý đơn hàng
-                    await OrderService.checkOutByUser(orderData);
-
-                    // Xác nhận tin nhắn đã được xử lý thành công
+                  
+                    const newOrder = await orderModel.create(orderData);
+                    if(!newOrder){
+                        throw new BadRequestError('order creation failed')
+                    }
+                    
                     channel.ack(msg);
                     console.log('Message acknowledged and order processed successfully');
 
+                    // channel.nack(msg, false, false); // Xóa tin nhắn khỏi hàng đợi
+                    // console.log('Message removed from queue due to error');
+
+
                 } catch (error) {
-                    // Xử lý lỗi trong quá trình tiêu thụ tin nhắn
+                
                     console.error('Error processing order:', error);
-                    // Có thể không gọi `ack` để giữ tin nhắn lại cho lần xử lý sau
+        
                 }
             }
         }, {
@@ -39,4 +46,6 @@ const runConsumer = async () => {
     }
 };
 
-runConsumer();
+module.exports = {
+    runConsumer
+}

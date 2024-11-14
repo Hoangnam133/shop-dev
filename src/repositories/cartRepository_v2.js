@@ -38,11 +38,8 @@ const checkStockAndProductInShop = async ({
   shop_id,
   quantity,
 }) => {
-  console.log("Shop_id:" + shop_id);
-
   // kiểm tra sản phẩm có nằm trong shop này hay không
   const checkProduct = await checkProductInShop(shop_id, product_id);
-  console.log("fasfdasf " + checkProduct);
 
   if (!checkProduct) {
     throw new NotFoundError("Product not found in shop");
@@ -257,7 +254,7 @@ const addTocart = async ({ user, product, shop }) => {
     path: "cart_products.product_id",
     select: "product_name product_thumb",
   };
-  console.log(attached);
+
   if (!foundCart) {
     console.log(" chạy vào //// Nếu giỏ hàng chưa tồn tại, tạo giỏ hàng mới");
     foundCart = await createUserCart({ user, product, shop });
