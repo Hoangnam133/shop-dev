@@ -11,7 +11,6 @@ const shopProductModel = require("../models/shopProductModel");
 const sideDishModel = require("../models/sideDishModel");
 const fuzzy = require("fuzzy");
 const uploadService = require("../services/uploadService");
-const inventoryModel = require('../models/inventoryModel')
 // kiểm tra shop có tồn tại
 const checkShop = async (shop_id) => {
   if (!shop_id) {
@@ -495,10 +494,10 @@ const removeVietnameseTones = (str) => {
 };
 const searchProductByUser = async (keySearch) => {
   try {
-    if (!keySearch) {
+    if (!keyword) {
       throw new BadRequestError("Search keyword is required");
     }
-    const normalizedKeyword = removeVietnameseTones(keySearch.toLowerCase());
+    const normalizedKeyword = removeVietnameseTones(keyword.toLowerCase());
     const products = await productModel.find(
       { isPublished: true, isDeleted: false },
       "product_name product_description product_thumb _id"
