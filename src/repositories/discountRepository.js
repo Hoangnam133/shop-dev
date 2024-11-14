@@ -2,8 +2,9 @@ const discountModel = require("../models/discountModel");
 const { removeUndefinedObject, toObjectId } = require("../utils/index");
 const { NotFoundError, BadRequestError } = require("../core/errorResponse");
 const { getCurrentDateInTimeZone } = require("../utils/convertTime");
+const uploadService = require("../services/uploadService");
 // tạo mã giảm giá
-const createDiscount = async (payload) => {
+const createDiscount = async (payload, file) => {
   const existingDiscount = await discountModel.findOne({
     discount_code: payload.discount_code,
   });
@@ -17,6 +18,14 @@ const createDiscount = async (payload) => {
       "The start date must be earlier than the end date"
     );
   }
+  if (!file) {
+    throw new BadRequestError('Image file is required');
+  }
+  const uploadImg = await uploadService.uploadImageFromLocalS3(file)
+  if (!uploadImg) {
+    throw new BadRequestError("Failed to upload image");
+  }
+  payload.discount_image = uploadImg;
   const discount = await discountModel.create(payload);
   if (!discount) {
     throw new BadRequestError("Failed to create discount");

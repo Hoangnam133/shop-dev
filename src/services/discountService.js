@@ -4,8 +4,8 @@ const {
 } = require('../repositories/discountRepository')
 
 class DiscountService{
-    static async createDiscount(payload){
-        return await createDiscount(payload)
+    static async createDiscount(payload, file){
+        return await createDiscount(payload, file)
     }
     static async getDiscountById(discount_id){
         return await getDiscountById(discount_id)

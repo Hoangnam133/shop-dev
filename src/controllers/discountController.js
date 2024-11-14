@@ -3,9 +3,13 @@ const { SuccessResponse } = require('../core/successResponse')
 
 class DiscountController {
     createDiscount = async (req, res, next) => {
+        const {file} = req
+        if(!file){
+            throw new Error('file missing')
+        }
         new SuccessResponse({
             message: 'create discount success',
-            metaData: await discountService.createDiscount(req.body)
+            metaData: await discountService.createDiscount(req.body, file)
         }).send(res)
     }
 
