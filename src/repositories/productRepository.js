@@ -12,6 +12,7 @@ const sideDishModel = require("../models/sideDishModel");
 const fuzzy = require("fuzzy");
 const uploadService = require("../services/uploadService");
 const inventoryModel = require('../models/inventoryModel')
+const Fuse = require('fuse.js');
 // kiểm tra shop có tồn tại
 const checkShop = async (shop_id) => {
   if (!shop_id) {
