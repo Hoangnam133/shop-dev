@@ -3,6 +3,7 @@ const {NotFoundError, BadRequestError} = require('../core/errorResponse')
 const {isDuplicateNameOnCreate, toObjectId, removeUndefinedObject, isDuplicateUpdateField} = require('../utils/index')
 const shopModel = require('../models/shopModel')
 const { addDays, isWithinInterval, subHours  } = require('date-fns')
+const moment = require('moment-timezone');
 // tạo giờ mở và đóng cửa
 const createOpeningHours = async(payload)=>{
     const {name} = payload
@@ -208,7 +209,12 @@ const checkImmediateDeliveryTime  = async ({shop_id, totalMinutes}) => {
         return false
     }
 
-    return estimatedDelivery;
+    const vietnamTime = moment(estimatedDelivery).tz('Asia/Ho_Chi_Minh'); // Chuyển sang giờ Việt Nam
+
+    // Định dạng lại thời gian theo chuẩn ISO 8601
+    const formattedTime = vietnamTime.format('YYYY-MM-DDTHH:mm:ss');
+
+    return formattedTime;
 };
 module.exports = {
     createOpeningHours,
