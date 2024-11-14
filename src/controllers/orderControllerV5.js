@@ -21,6 +21,16 @@ class OrderControllerV5 {
       }),
     }).send(res);
   };
+  cancelOrder = async (req, res, next) => {
+    
+    new SuccessResponse({
+      message: "cancal order success",
+      metaData: await OrderServiceV5.cancelOrder({
+        order_id: req.params.order_id,
+        user: req.user,
+      }),
+    }).send(res);
+  };
   // Danh sách đơn hàng đã hủy của người dùng
   listOrderCancelledOfUser = async (req, res, next) => {
     new SuccessResponse({

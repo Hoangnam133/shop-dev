@@ -1,6 +1,6 @@
 const express = require("express");
 const path = require("path");
-const { handlePaymentCallback } = require("../../services/orderService_v4"); // Import phương thức xử lý callback
+const { handlePaymentCallback } = require("../../services/orderService_v6"); // Import phương thức xử lý callback
 const router = express.Router();
 const { BadRequestError } = require("../../core/errorResponse");
 

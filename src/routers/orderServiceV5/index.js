@@ -7,6 +7,7 @@ const roles = require("../../utils/roles");
 const { asynHandler } = require('../../utils/handler')
 
 router.use(authentication)
+router.patch('/cancelOrder/:order_id',asynHandler(orderControllerV5.cancelOrder))
 router.post('/checkoutPreview',asynHandler(orderControllerV5.checkoutPreview))
 router.post('/checkout',asynHandler(orderControllerV5.checkout))
 router.get('/listOrderCancelledOfUser',asynHandler(orderControllerV5.listOrderCancelledOfUser))
