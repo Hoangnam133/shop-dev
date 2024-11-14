@@ -5,19 +5,19 @@ const { removeUndefinedObject } = require("../utils/index");
 const userModel = require("../models/userModel");
 const shopModel = require("../models/shopModel");
 const cartModel = require("../models/cartModel");
-const slugify = require('slugify')
+const slugify = require("slugify");
 const { toObjectId } = require("../utils/index");
 const shopProductModel = require("../models/shopProductModel");
 const sideDishModel = require("../models/sideDishModel");
-const fuzzy = require('fuzzy')
+const fuzzy = require("fuzzy");
 const uploadService = require("../services/uploadService");
 // kiểm tra shop có tồn tại
 const checkShop = async (shop_id) => {
   if (!shop_id) {
     throw new BadRequestError("Shop ID is required");
   }
-  
-  const foundShop = await shopModel.findById(shop_id)
+
+  const foundShop = await shopModel.findById(shop_id);
   if (!foundShop) {
     throw new NotFoundError("Shop not found");
   }
@@ -25,19 +25,18 @@ const checkShop = async (shop_id) => {
 };
 // kiểm tra sản phẩm có tồn tại trong shop đó không
 const checkProductInShop = async (shop_id, product_id) => {
-  
   await checkShop(shop_id);
   const product = await productModel.findOne({
-      _id: product_id,
-      isDeleted: false,
-      isPublished: true
+    _id: product_id,
+    isDeleted: false,
+    isPublished: true,
   });
   const checkProduct = await shopProductModel.findOne({
-      shop_id,
-      product_id,
+    shop_id,
+    product_id,
   });
   if (!product || !checkProduct) {
-      return false;
+    return false;
   }
   return true;
 };
@@ -72,13 +71,13 @@ const createProduct = async (payload, file) => {
     throw new BadRequestError("One or more shop_ids are not valid");
   }
   if (!file) {
-    throw new BadRequestError('Image file is required');
+    throw new BadRequestError("Image file is required");
   }
-  const uploadImg = await uploadService.uploadImageFromLocalS3(file)
+  const uploadImg = await uploadService.uploadImageFromLocalS3(file);
   if (!uploadImg) {
     throw new BadRequestError("Failed to upload image");
   }
-  payload.product_thumb = uploadImg
+  payload.product_thumb = uploadImg;
   const newProduct = await productModel.create(payload);
   if (!newProduct) {
     throw new BadRequestError("Failed to create product");
@@ -203,49 +202,43 @@ const getProductsByCategory = async ({
 }) => {
   const skip = (page - 1) * limit;
 
-
   if (!category_id) {
-    throw new BadRequestError("Category ID is required")
+    throw new BadRequestError("Category ID is required");
   }
 
-
-  const checkShopId = await checkShop(shop_id)
+  const checkShopId = await checkShop(shop_id);
   if (!checkShopId) {
-    throw new NotFoundError("Shop not found")
+    throw new NotFoundError("Shop not found");
   }
 
   category_id = toObjectId(category_id.trim());
 
-
-  const existingCategory = await categoryModel.findById(category_id)
+  const existingCategory = await categoryModel.findById(category_id);
   if (!existingCategory) {
-    throw new NotFoundError("Category not found")
+    throw new NotFoundError("Category not found");
   }
 
-
-  const productIds = await productModel.find({ category_id }).distinct("_id")
-
+  const productIds = await productModel.find({ category_id }).distinct("_id");
 
   const availableProducts = await inventoryModel
     .find({
       shop_id: checkShopId._id,
       product_id: { $in: productIds },
-      inven_stock: { $gt: 0 }, 
+      inven_stock: { $gt: 0 },
       isDeleted: false,
     })
     .populate("product_id");
 
   if (!availableProducts || availableProducts.length === 0) {
-    throw new NotFoundError("No available products in this category")
+    throw new NotFoundError("No available products in this category");
   }
-
 
   const products = await shopProductModel
     .find({
       shop_id: checkShopId._id,
       isPublished: true,
       isDeleted: false,
-      product_id: { $in: availableProducts.map(item => item.product_id._id) },
+      product_id: { $in: availableProducts.map((item) => item.product_id._id) },
     })
     .populate("product_id")
     .limit(limit)
@@ -257,9 +250,9 @@ const getProductsByCategory = async ({
 
   return {
     category_name: existingCategory.category_name,
-    products
-  }
-}
+    products,
+  };
+};
 
 //Admin only (lấy ra danh sách tất cả sản phẩm đã published )
 const getPublishedProducts = async ({ limit, page }) => {
@@ -351,7 +344,7 @@ const updateProduct = async ({ user, product_id, updateData, file }) => {
   if (!user) {
     throw new BadRequestError("User not found");
   }
-  
+
   const foundProduct = await productModel.findById(product_id);
   if (!foundProduct) {
     throw new NotFoundError("Product not found");
@@ -381,12 +374,12 @@ const updateProduct = async ({ user, product_id, updateData, file }) => {
 
   // Loại bỏ các thuộc tính undefined trước khi cập nhật
   const cleanDataBeforeUpdate = removeUndefinedObject(updateData);
-  if(file){
-    const uploadImg = await uploadService.uploadImageFromLocalS3(file)
+  if (file) {
+    const uploadImg = await uploadService.uploadImageFromLocalS3(file);
     if (!uploadImg) {
       throw new BadRequestError("Failed to upload image");
     }
-    cleanDataBeforeUpdate.product_thumb = uploadImg
+    cleanDataBeforeUpdate.product_thumb = uploadImg;
   }
   let updateProduct;
 
@@ -395,10 +388,12 @@ const updateProduct = async ({ user, product_id, updateData, file }) => {
     const sideDish = cleanDataBeforeUpdate.sideDish_id;
 
     // Check if the sideDish already exists in the product's sideDish_id array
-    const isSideDishExist = foundProduct.sideDish_id.some(id => id.toString() === sideDish.toString());
+    const isSideDishExist = foundProduct.sideDish_id.some(
+      (id) => id.toString() === sideDish.toString()
+    );
 
     if (isSideDishExist) {
-      throw new BadRequestError('This side dish is already in the product');
+      throw new BadRequestError("This side dish is already in the product");
     } else {
       // Remove sideDish_id from updateData and push it to the array
       delete cleanDataBeforeUpdate.sideDish_id;
@@ -406,7 +401,7 @@ const updateProduct = async ({ user, product_id, updateData, file }) => {
         product_id,
         {
           $set: cleanDataBeforeUpdate,
-          $push: { sideDish_id: sideDish },  // Add the sideDish to the array
+          $push: { sideDish_id: sideDish }, // Add the sideDish to the array
         },
         {
           new: true,
@@ -439,7 +434,6 @@ const updateProduct = async ({ user, product_id, updateData, file }) => {
   return updateProduct;
 };
 
-
 const processProductUnPublishOrDeleteFromAdmin = async (product_id) => {
   try {
     const updatedCarts = await cartModel.updateMany(
@@ -458,7 +452,7 @@ const processProductUnPublishOrDeleteFromAdmin = async (product_id) => {
     const userFavorites = await userModel.updateMany(
       { favorites: product_id },
       { $pull: { favorites: product_id } }
-    )
+    );
     if (userFavorites.matchedCount > 0 && userFavorites.modifiedCount > 0) {
       console.log("remove product from favorites success");
     } else {
@@ -491,41 +485,47 @@ const updateDeleteProduct = async (product_id) => {
 
   return updateProduct;
 };
-const removeVietnameseTones = (str)=> {
+const removeVietnameseTones = (str) => {
   return str
-      .normalize("NFD") // Chuyển ký tự về dạng tổ hợp
-      .replace(/[\u0300-\u036f]/g, "") // Xóa dấu
-      .replace(/đ/g, "d")
-      .replace(/Đ/g, "D");
-}
+    .normalize("NFD") // Chuyển ký tự về dạng tổ hợp
+    .replace(/[\u0300-\u036f]/g, "") // Xóa dấu
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+};
 const searchProductByUser = async (keySearch) => {
   try {
     if (!keyword) {
-        throw new BadRequestError('Search keyword is required')
+      throw new BadRequestError("Search keyword is required");
     }
     const normalizedKeyword = removeVietnameseTones(keyword.toLowerCase());
-    const products = await productModel.find({isPublished: true, isDeleted: false}, 'product_name product_description product_thumb _id')
+    const products = await productModel.find(
+      { isPublished: true, isDeleted: false },
+      "product_name product_description product_thumb _id"
+    );
 
-    const fuseData = products.map(product => ({
-        ...product.toObject(),
-        normalized_name: removeVietnameseTones(product.product_name.toLowerCase()),
-        normalized_description: removeVietnameseTones(product.product_description.toLowerCase())
+    const fuseData = products.map((product) => ({
+      ...product.toObject(),
+      normalized_name: removeVietnameseTones(
+        product.product_name.toLowerCase()
+      ),
+      normalized_description: removeVietnameseTones(
+        product.product_description.toLowerCase()
+      ),
     }));
 
-  
     const options = {
-        keys: ['normalized_name', 'normalized_description'],
-        threshold: 0.2, // Mức độ mờ của tìm kiếm
+      keys: ["normalized_name", "normalized_description"],
+      threshold: 0.2, // Mức độ mờ của tìm kiếm
     };
 
     const fuse = new Fuse(fuseData, options);
     const results = fuse.search(normalizedKeyword);
-    const matchedProducts = results.map(result => result.item)
+    const matchedProducts = results.map((result) => result.item);
 
-    return matchedProducts.slice(0, 10); 
-  }catch (error) {
-      console.error('Error in searchProducts:', error)
-      throw error
+    return matchedProducts.slice(0, 10);
+  } catch (error) {
+    console.error("Error in searchProducts:", error);
+    throw error;
   }
 };
 
@@ -538,14 +538,16 @@ const getProductById = async (product_id) => {
 };
 const getProductByIdOfShop = async (product_id) => {};
 //----------------------------------------------------------------
-const getSideDishInProduct = async (product_id)=>{
+const getSideDishInProduct = async (product_id) => {
   const foundProduct = await productModel.findById(product_id);
   if (!foundProduct) {
     throw new NotFoundError("Product not found");
   }
-  const sideDishes = await sideDishModel.find({_id: {$in: foundProduct.sideDish_id}})
-  return sideDishes
-}
+  const sideDishes = await sideDishModel.find({
+    _id: { $in: foundProduct.sideDish_id },
+  });
+  return sideDishes;
+};
 module.exports = {
   getProductById,
   createProduct,
@@ -566,4 +568,4 @@ module.exports = {
   checkShop,
   checkProductInShop,
   getSideDishInProduct,
-}
+};
