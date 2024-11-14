@@ -1,5 +1,6 @@
 const { model, Schema } = require('mongoose');
 const { convertToVietnamTime } = require('../utils/convertTime');
+const moment = require('moment-timezone')
 const DOCUMENT_NAME = 'Order';
 const COLLECTION_NAME = 'Orders';
 const ExtraSchema = new Schema({
@@ -116,6 +117,10 @@ const orderSchema = new Schema(
       type: String, // Thay vì Date, sử dụng String để lưu chuỗi ISO
       required: true,
     },
+    order_cancellation_cutoff: {
+      type: String,
+      default: null
+    },
     order_discount_code: {
       type: String,
       default: null,
@@ -130,5 +135,12 @@ const orderSchema = new Schema(
     collection: COLLECTION_NAME,
   }
 );
-
+orderSchema.pre('save', function (next) {
+  if (this.estimated_delivery_time) {
+      const estimatedTime = moment.tz(this.estimated_delivery_time, 'Asia/Ho_Chi_Minh');  // Chuyển về giờ Việt Nam
+      const cancellationCutoff = estimatedTime.subtract(15, 'minutes');  // Trừ 15 phút
+      this.order_cancellation_cutoff = cancellationCutoff.format('YYYY-MM-DDTHH:mm:ss');  // Lưu theo định dạng mà không chuyển sang UTC
+  }
+  next();
+})
 module.exports = model(DOCUMENT_NAME, orderSchema);

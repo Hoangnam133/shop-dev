@@ -145,90 +145,6 @@ const addProductToEmptyCartIfAbsent = async ({ user, product, shop }) => {
     }
     return updateCart
 }
-// const updateCartProductQuantity = async ({ user, product, shop }) => {
-//     const { product_id, quantity, sideDish_ids = [] } = product;
-//     const shop_id = shop._id;
-
-//     await checkStockAndProductInShop({ product_id, shop_id, quantity });
-//     const foundCart = await getCartByUserId(user);
-//     const getProduct = await getProductById(product_id);
-
-//     const sideDishes = await sideDishModel.find({
-//         _id: { $in: sideDish_ids }
-//     });
-//     if (sideDishes.length !== sideDish_ids.length) {
-//         throw new BadRequestError('One or more side dishes are not valid');
-//     }
-
-//     let totalPriceSideDish = 0
-//     for(let i = 0; i < sideDishes.length; i++) {
-//         totalPriceSideDish += sideDishes[i].price;
-//     }
-    
-//     // Chuẩn hóa danh sách món phụ để dễ so sánh
-//     const sortedNewSideDishes = sideDishes.map(dish => dish._id.toString()).sort();
-
-//     // Tìm sản phẩm có cùng product_id và sideDishes trong giỏ hàng
-//     let findProductInCart = foundCart.cart_products.find(product => 
-//         product.product_id.toString() === product_id.toString() &&
-//         product.sideDishes.map(d => d.sideDish_id.toString()).sort().every((id, index) => id === sortedNewSideDishes[index])
-//     );
-
-//     if (findProductInCart) {
-//         // Cập nhật số lượng nếu món phụ trùng khớp
-//         console.log(' chạy vào // Cập nhật số lượng nếu món phụ trùng khớp')
-//         const newQuantity = findProductInCart.quantity + quantity;
-//         const newTotalPrice = newQuantity * getProduct.product_price + newQuantity * totalPriceSideDish;
-
-//         const payload = {
-//             $set: {
-//                 'cart_products.$[elem].quantity': newQuantity,
-//                 'cart_products.$[elem].totalPrice': newTotalPrice
-//             }
-//         };
-//         const options = { 
-//             arrayFilters: [
-//                 { 
-//                     "elem.product_id": product_id,
-//                     "elem.sideDishes": { $size: sortedNewSideDishes.length }, // Ensures the correct count of side dishes
-//                     "elem.sideDishes.sideDish_id": { $all: sortedNewSideDishes } // Matches sideDish_id values directly
-//                 }
-//             ], 
-//             new: true 
-//         }
-
-//         const updateCart = await cartModel.findOneAndUpdate({ _id: foundCart._id }, payload, options);
-//         if (!updateCart) {
-//             throw new BadRequestError('Update product quantity in cart failed');
-//         }
-//         return updateCart;
-//     }
-
-//     // Nếu món phụ khác nhau hoặc sản phẩm chưa tồn tại trong giỏ, thêm sản phẩm mới
-//     console.log(' chạy vào // Nếu món phụ khác nhau hoặc sản phẩm chưa tồn tại trong giỏ, thêm sản phẩm mới')
-//     const payload = {
-//         $push: {
-//             cart_products: {
-//                 product_id,
-//                 quantity,
-//                 totalPrice: quantity * getProduct.product_price + totalPriceSideDish * quantity,
-//                 sideDishes: sideDishes.map(dish => ({
-//                     sideDish_id: dish._id,
-//                     quantity: 1,  
-//                     sideDish_name: dish.sideDish_name
-//                 }))
-//             }
-//         }
-//     };
-//     const options = { new: true };
-//     const filter = { _id: foundCart._id };
-
-//     const updateCart = await cartModel.findOneAndUpdate(filter, payload, options);
-//     if (!updateCart) {
-//         throw new BadRequestError('Add product to cart failed');
-//     }
-//     return updateCart;
-// };
 const updateCartProductQuantity = async ({ user, product, shop }) => {
   const { product_id, quantity, sideDish_ids = [] } = product;
   const shop_id = shop._id;
@@ -318,19 +234,7 @@ const addTocart = async({user, product, shop}) => {
     const updateCart =  await updateCartProductQuantity({ user, product, shop})
     return  updateCart.populate(attached)
    
-};
-  if (!foundCart.cart_products.length) {
-    console.log(" chạy vào // Nếu giỏ hàng đã tồn tại nhưng không có sản phẩm");
-    const updateCart = await addProductToEmptyCartIfAbsent({
-      user,
-      product,
-      shop,
-    });
-    return updateCart.populate(attached);
-  }
-  console.log(" chạy vào // Nếu nếu sản phẩm đã tồn tại trogn giỏ hàng");
-  return await updateCartProductQuantity({ user, product, shop });
-};
+}
 
 // xóa sản phẩm khỏi giỏ hàng
 const removeProductFromCart = async ({ user, product}) => {
@@ -395,7 +299,7 @@ const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
             return await removeProductFromCart({ user, product });
         }
     }
-  }
+  
     // Update the quantity and total price of the product in the cart
     findProductInCart.quantity = newQuantity;
     findProductInCart.totalPrice = newQuantity * (getProduct.product_price + totalPriceSideDish); // assuming `getProduct.price` is the base price of the product
@@ -412,7 +316,7 @@ const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
     }
 
     return updatedCart;
-};
+  }
 
 
 

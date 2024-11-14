@@ -11,6 +11,7 @@ const {listOrderCancelledOfUser, listOrderCompletedOfUser, listOrderPendingOfUse
     ,updateStatusCancelled, updateStatusCompleted, listOrderPending, listOrderSuccess, listOrderCancelled, listOrderCompleted
 } = require('../repositories/orderRepository')
 const {runProducer} = require('../message_queue/rabbitmq/producer')
+const moment = require('moment-timezone')
 class OrderServiceV5{
     static async listOrderCancelledOfUser(user){
         return await listOrderCancelledOfUser(user)
@@ -161,7 +162,7 @@ class OrderServiceV5{
                 options_delivery = "asap"
             }
         }
-        const order_time = new Date()
+        const order_time = moment.tz("Asia/Ho_Chi_Minh").format("YYYY-MM-DDTHH:mm:ss")
         const payload = {
             shop_id: shop._id,
             order_checkout:{
