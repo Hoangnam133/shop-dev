@@ -7,9 +7,9 @@ const { asynHandler } = require("../../utils/handler");
 
 router.use(authentication);
 router.post("/addToCart", asynHandler(cartv2Controller.addToCart));
-router.post(
-  "/deleteProductInCart",
-  asynHandler(cartv2Controller.deleteProductInCart)
+router.patch(
+  "/removeProductFromCart",
+  asynHandler(cartv2Controller.removeProductFromCart)
 );
 router.patch(
   "/incProductQuantity",

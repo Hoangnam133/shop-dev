@@ -298,86 +298,92 @@ const addTocart = async({user, product, shop}) => {
 
 
 // xóa sản phẩm khỏi giỏ hàng
-const deleteProductInCart = async({user, product})=>{
-    const {product_id} = product
-    await getCartByUserId (user)
-    const filter = {
-        cart_userId: toObjectId(user._id),
-        cart_status: 'active'
-    },
-    update = {
-        $pull: {
-            cart_products: {
-                product_id: toObjectId(product_id)
-            }
-        }
-    },
-    options = {
-        new: true
-       
-    }
-    const deleteItem = await cartModel.findOneAndUpdate(filter, update, options)
+const removeProductFromCart = async ({ user, product}) => {
+    const { product_id, sideDish_ids = [] } = product
+    const foundCart = await getCartByUserId(user);
+    if (!foundCart) throw new NotFoundError('Cart not found');
 
-    if(!deleteItem){
-        throw new BadRequestError('Failed to remove the product from the cart')
+    const sortedSideDishesToRemove = sideDish_ids.sort();
+    foundCart.cart_products = foundCart.cart_products.filter(product => {
+        const sortedExistingSideDishes = product.sideDishes.map(d => d.sideDish_id.toString()).sort();
+        return !(product.product_id.toString() === product_id.toString() &&
+            JSON.stringify(sortedExistingSideDishes) === JSON.stringify(sortedSideDishesToRemove));
+    });
+
+    // Cập nhật giỏ hàng sau khi xóa sản phẩm
+    const updatedCart = await cartModel.findByIdAndUpdate(foundCart._id, foundCart, { new: true });
+    if(!updatedCart){
+        throw new BadRequestError('remove product in cart');
     }
-    return deleteItem
+    return updatedCart;
 }
-const incOfDecProductQuantity = async({user, product, shop, action}) => {
+
+const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
+    const { product_id, sideDish_ids = [] } = product;
     if (!shop) {
-        throw new BadRequestError('Shop data is missing')
+        throw new BadRequestError('Shop data is missing');
     }
 
-    const {product_id} = product
-    const shop_id = shop._id
+    const shop_id = shop._id;
+    const sideDishes = await sideDishModel.find({ _id: { $in: sideDish_ids } });
+    if (sideDish_ids.length > 0 && sideDishes.length !== sideDish_ids.length) {
+        throw new BadRequestError('Một hoặc nhiều món phụ không hợp lệ');
+    }
+    let totalPriceSideDish = 0
+    for(let i = 0; i < sideDishes.length; i++) {
+        totalPriceSideDish += sideDishes[i].price;
+    }
+    await checkStockAndProductInShop({ product_id, shop_id, quantity: 1 });
+    const foundCart = await getCartByUserId(user);
+    const getProduct = await getProductById(product_id);
 
-    await checkStockAndProductInShop({product_id, shop_id, quantity: 1})
-    const foundCart = await getCartByUserId(user)
-    const getProduct = await getProductById(product_id)
+    // Tìm sản phẩm trong giỏ hàng với ID sản phẩm và danh sách món phụ (sideDish_ids) tương ứng
+    const findProductInCart = foundCart.cart_products.find(product => {
+        const sortedSideDishes = product.sideDishes.map(d => d.sideDish_id.toString()).sort();
+        const sortedSideDishesToRemove = sideDish_ids.sort();
+        return product.product_id.toString() === product_id.toString() && 
+               JSON.stringify(sortedSideDishes) === JSON.stringify(sortedSideDishesToRemove);
+    });
 
-    const findProductInCart = foundCart.cart_products.find(product => product.product_id.toString() === product_id.toString())
     if (!findProductInCart) {
-        throw new NotFoundError('Product not found in cart')
+        throw new NotFoundError('Product not found in cart');
     }
-    
-    const oldQuantity = findProductInCart.quantity
-    let newQuantity = 0
+
+    const oldQuantity = findProductInCart.quantity;
+    let newQuantity = 0;
     if (action === 'inc') {
-        newQuantity = oldQuantity + 1
+        newQuantity = oldQuantity + 1;
     } else {
-        newQuantity = oldQuantity - 1
+        newQuantity = oldQuantity - 1;
         if (newQuantity <= 0) {
             // Nếu số lượng giảm xuống 0, xóa sản phẩm khỏi giỏ hàng
-            return await deleteProductInCart({user, product})
+            return await removeProductFromCart({ user, product });
         }
     }
 
-    const payload = {
-        $set: {
-            'cart_products.$.quantity': newQuantity,
-            'cart_products.$.totalPrice': newQuantity * findProductInCart.totalPrice
-        }
-    };
-    const options = { new: true };
-    const filter = {
-        _id: foundCart._id,
-        'cart_products.product_id': product_id
-    };
-
-    const updateCart = await cartModel.findOneAndUpdate(filter, payload, options)
+    // Update the quantity and total price of the product in the cart
+    findProductInCart.quantity = newQuantity;
+    findProductInCart.totalPrice = newQuantity * (getProduct.product_price + totalPriceSideDish); // assuming `getProduct.price` is the base price of the product
+    console.log(' giá hiện tại ',findProductInCart.totalPrice)
+    // Save the updated cart back to the database
+    const updatedCart = await cartModel.findByIdAndUpdate(foundCart._id, foundCart, { new: true })
         .populate({
             path: 'cart_products.product_id',
             select: 'product_name product_thumb'
         });
-    if (!updateCart) {
-        throw new BadRequestError('Update product quantity in cart failed')
+
+    if (!updatedCart) {
+        throw new BadRequestError('Error while updating cart');
     }
-    return updateCart
+
+    return updatedCart;
 };
+
+
 
 module.exports = {
     addTocart,
-    deleteProductInCart,
+    removeProductFromCart,
     incOfDecProductQuantity,
     getCartByUserId,
     getCart
