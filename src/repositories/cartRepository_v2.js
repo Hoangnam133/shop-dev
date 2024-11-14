@@ -1,114 +1,139 @@
-const cartModel = require('../models/cartModel')
-const {checkProductStockInShop} = require('../repositories/inventoryRepository')
-const {checkProductInShop, getProductById} = require('../repositories/productRepository')
-const {NotFoundError, BadRequestError} = require('../core/errorResponse')
-const {toObjectId} = require('../utils/index')
-const sideDishModel = require('../models/sideDishModel')
+const cartModel = require("../models/cartModel");
+const {
+  checkProductStockInShop,
+} = require("../repositories/inventoryRepository");
+const {
+  checkProductInShop,
+  getProductById,
+} = require("../repositories/productRepository");
+const { NotFoundError, BadRequestError } = require("../core/errorResponse");
+const { toObjectId } = require("../utils/index");
+const sideDishModel = require("../models/sideDishModel");
 // Kiểm tra giỏ hàng xem tồn tại hay không
-const getCartByUserId  = async(user) => {
-    if (!user) throw new NotFoundError('User not found');
-    
-    const foundCart = await cartModel.findOne({ cart_userId: user._id })
-  
-    // if (!foundCart) throw new NotFoundError('Cart not found')
+const getCartByUserId = async (user) => {
+  if (!user) throw new NotFoundError("User not found");
 
-    return foundCart
-}
-const getCart  = async(user) => {
-    if (!user) throw new NotFoundError('User not found');
-    
-    const foundCart = await cartModel.findOne({ cart_userId: user._id })
-    .populate(
-        {
-         path: 'cart_products.product_id',
-         select: 'product_name product_thumb'
-        }
-    )
-  
-    // if (!foundCart) throw new NotFoundError('Cart not found')
+  const foundCart = await cartModel.findOne({ cart_userId: user._id });
 
-    return foundCart
-}
-const checkStockAndProductInShop = async({product_id, shop_id, quantity})=>{
-    // kiểm tra sản phẩm có nằm trong shop này hay không
-    const checkProduct = await checkProductInShop(shop_id, product_id)
-    if(!checkProduct){
-        throw new NotFoundError('Product not found in shop')
-    }
-    // kiểm tra sản phẩm xem có đủ số lượng để thêm vào giỏ hàng hay không
-    const checkQuantityProduct = await checkProductStockInShop({shop_id, product_id, quantity})
-    if(!checkQuantityProduct){
-        throw new BadRequestError('Not enough product in stock')
-    }
-}
-// tạo giỏ hàng 
-const createUserCart = async({user, product, shop})=>{
-    const shop_id = shop._id
-    const {product_id, quantity, sideDish_ids = []} = product
-    console.log('Checking product in shop with shop_id:', shop_id, 'and product_id:', product_id);
-    await checkStockAndProductInShop({product_id, shop_id, quantity})
-    const getProduct = await getProductById(product_id)
-    const sideDishs = await sideDishModel.find({
-        _id: {$in: sideDish_ids}
-    })
-    if(sideDishs.length !== sideDish_ids.length){
-        throw new BadRequestError('One or more side dish are not valid')
-    }
-    let totalPriceSideDish = sideDishs.reduce((total, dish) => total + dish.price, 0)
-    const payload = {
-        cart_userId: user._id,
-        cart_status: 'active',
-        cart_products:[{
-                product_id,
-                quantity,
-                totalPrice: quantity * getProduct.product_price + totalPriceSideDish * quantity,
-                sideDishes: sideDishs.map(dish => ({
-                    sideDish_id: dish._id,
-                    quantity: 1,  
-                    sideDish_name: dish.sideDish_name
-            }))
-        }]
-    }
+  // if (!foundCart) throw new NotFoundError('Cart not found')
 
-    const createCart = await cartModel.create(payload)
-    if(!createCart){
-        throw new BadRequestError('Create cart failed')
-    }
+  return foundCart;
+};
+const getCart = async (user) => {
+  if (!user) throw new NotFoundError("User not found");
 
-    return createCart
-}
+  const foundCart = await cartModel
+    .findOne({ cart_userId: user._id })
+    .populate({
+      path: "cart_products.product_id",
+      select: "product_name product_thumb",
+    });
+
+  // if (!foundCart) throw new NotFoundError('Cart not found')
+
+  return foundCart;
+};
+const checkStockAndProductInShop = async ({
+  product_id,
+  shop_id,
+  quantity,
+}) => {
+  // kiểm tra sản phẩm có nằm trong shop này hay không
+  const checkProduct = await checkProductInShop(shop_id, product_id);
+
+  if (!checkProduct) {
+    throw new NotFoundError("Product not found in shop");
+  }
+  // kiểm tra sản phẩm xem có đủ số lượng để thêm vào giỏ hàng hay không
+  const checkQuantityProduct = await checkProductStockInShop({
+    shop_id,
+    product_id,
+    quantity,
+  });
+  if (!checkQuantityProduct) {
+    throw new BadRequestError("Not enough product in stock");
+  }
+};
+// tạo giỏ hàng
+const createUserCart = async ({ user, product, shop }) => {
+  const shop_id = shop._id;
+  const { product_id, quantity, sideDish_ids = [] } = product;
+  console.log(
+    "Checking product in shop with shop_id:",
+    shop_id,
+    "and product_id:",
+    product_id
+  );
+  await checkStockAndProductInShop({ product_id, shop_id, quantity });
+  const getProduct = await getProductById(product_id);
+  const sideDishs = await sideDishModel.find({
+    _id: { $in: sideDish_ids },
+  });
+  if (sideDishs.length !== sideDish_ids.length) {
+    throw new BadRequestError("One or more side dish are not valid");
+  }
+  let totalPriceSideDish = sideDishs.reduce(
+    (total, dish) => total + dish.price,
+    0
+  );
+  const payload = {
+    cart_userId: user._id,
+    cart_status: "active",
+    cart_products: [
+      {
+        product_id,
+        quantity,
+        totalPrice:
+          quantity * getProduct.product_price + totalPriceSideDish * quantity,
+        sideDishes: sideDishs.map((dish) => ({
+          sideDish_id: dish._id,
+          quantity: 1,
+          sideDish_name: dish.sideDish_name,
+        })),
+      },
+    ],
+  };
+
+  const createCart = await cartModel.create(payload);
+  if (!createCart) {
+    throw new BadRequestError("Create cart failed");
+  }
+
+  return createCart;
+};
 // thêm sản phẩm vào giỏ hàng trống
-const addProductToEmptyCartIfAbsent = async({user, product, shop})=>{
-    const {product_id, quantity, sideDish_ids = []} = product
-    const shop_id = shop._id
+const addProductToEmptyCartIfAbsent = async ({ user, product, shop }) => {
+  const { product_id, quantity, sideDish_ids = [] } = product;
+  const shop_id = shop._id;
 
-    await checkStockAndProductInShop({product_id, shop_id, quantity})
-    const foundCart = await getCartByUserId (user)
-    const getProduct = await getProductById(product_id)
+  await checkStockAndProductInShop({ product_id, shop_id, quantity });
+  const foundCart = await getCartByUserId(user);
+  const getProduct = await getProductById(product_id);
 
-    const sideDishs = await sideDishModel.find({
-        _id: {$in: sideDish_ids}
-    })
-    if(sideDishs.length !== sideDish_ids.length){
-        throw new BadRequestError('One or more side dish are not valid')
-    }
-    let totalPriceSideDish = 0
-    for(let i = 0; i < sideDishs.length; i++) {
-        totalPriceSideDish += sideDishs[i].price;
-    }
-    const payload = {
-        $push:{
-            cart_products: {
-                product_id,
-                quantity,
-                totalPrice: quantity * getProduct.product_price + totalPriceSideDish * quantity,
-                sideDishes: sideDishs.map(dish => ({
-                    sideDish_id: dish._id,
-                    quantity: 1,  
-                    sideDish_name: dish.sideDish_name
-            }))
-            }
-        }
+  const sideDishs = await sideDishModel.find({
+    _id: { $in: sideDish_ids },
+  });
+  if (sideDishs.length !== sideDish_ids.length) {
+    throw new BadRequestError("One or more side dish are not valid");
+  }
+  let totalPriceSideDish = 0;
+  for (let i = 0; i < sideDishs.length; i++) {
+    totalPriceSideDish += sideDishs[i].price;
+  }
+  const payload = {
+      $push: {
+        cart_products: {
+          product_id,
+          quantity,
+          totalPrice:
+            quantity * getProduct.product_price + totalPriceSideDish * quantity,
+          sideDishes: sideDishs.map((dish) => ({
+            sideDish_id: dish._id,
+            quantity: 1,
+            sideDish_name: dish.sideDish_name,
+          })),
+        },
+      },
     },
     options =  {
         new: true
@@ -205,9 +230,8 @@ const addProductToEmptyCartIfAbsent = async({user, product, shop})=>{
 //     return updateCart;
 // };
 const updateCartProductQuantity = async ({ user, product, shop }) => {
-    const { product_id, quantity, sideDish_ids = [] } = product;
-    const shop_id = shop._id;
-
+  const { product_id, quantity, sideDish_ids = [] } = product;
+  const shop_id = shop._id;
     // Kiểm tra tồn kho sản phẩm và số lượng yêu cầu
     await checkStockAndProductInShop({ product_id, shop_id, quantity });
     
@@ -295,7 +319,18 @@ const addTocart = async({user, product, shop}) => {
     return  updateCart.populate(attached)
    
 };
-
+  if (!foundCart.cart_products.length) {
+    console.log(" chạy vào // Nếu giỏ hàng đã tồn tại nhưng không có sản phẩm");
+    const updateCart = await addProductToEmptyCartIfAbsent({
+      user,
+      product,
+      shop,
+    });
+    return updateCart.populate(attached);
+  }
+  console.log(" chạy vào // Nếu nếu sản phẩm đã tồn tại trogn giỏ hàng");
+  return await updateCartProductQuantity({ user, product, shop });
+};
 
 // xóa sản phẩm khỏi giỏ hàng
 const removeProductFromCart = async ({ user, product}) => {
@@ -360,7 +395,7 @@ const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
             return await removeProductFromCart({ user, product });
         }
     }
-
+  }
     // Update the quantity and total price of the product in the cart
     findProductInCart.quantity = newQuantity;
     findProductInCart.totalPrice = newQuantity * (getProduct.product_price + totalPriceSideDish); // assuming `getProduct.price` is the base price of the product
