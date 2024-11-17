@@ -49,13 +49,11 @@ const productSchema = new Schema(
       type: Boolean,
       default: false,
       index: true,
-      select: false,
     },
     isDeleted: {
       type: Boolean,
       default: false,
       index: true,
-      select: false,
     },
     preparation_time: {
       type: Number,
