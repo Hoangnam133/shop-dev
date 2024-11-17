@@ -3,10 +3,17 @@ const express = require("express");
 const router = express.Router();
 
 const productController = require("../../controllers/productController");
+const ElasticsearchController = require("../../controllers/ElasticsearchController");
+
 const { asynHandler } = require("../../utils/handler");
 const { authentication, authorizeRoles } = require("../../auth/authUtils");
 const roles = require("../../utils/roles");
 const {uploadDisk, uploadMemory} = require('../../configs/multer.config')
+router.get("/searchELT", asynHandler(ElasticsearchController.searchProduct));
+
+
+
+
 router.use(authentication);
 // Tạo sản phẩm mới
 // fix update
