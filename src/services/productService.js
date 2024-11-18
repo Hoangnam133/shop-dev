@@ -7,7 +7,6 @@ const {
   // getAllProduct,
   getProductById,
   getAllProductsByShopId,
-  getProductsSortedByRating,
   getPublishedProducts,
   getPublishedProductsManage,
   getDeletedProducts,
@@ -44,8 +43,8 @@ class ProductService {
   //     return await getAllProduct({ limit, sort, page, filter })
   // }
 
-  static async getProductById(product_id) {
-    const product = await getProductById(product_id);
+  static async getProductById(product_id, user) {
+    const product = await getProductById(product_id, user);
     if (!product) {
       throw new NotFoundError("Product not found");
     }

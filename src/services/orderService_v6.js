@@ -312,6 +312,39 @@ class OrderServiceV5 {
     if (!updateOrder) {
       throw new BadRequestError("Failed to cancel order");
     }
-  }
+    // xử lý sản phẩm trong kho (viết ở repository) ok
+    // tích hợp món phụ vào
+    // tích hợp thanh toán
+    // send thông báo khi đặt hàng thành công
+    // đổi điểm nữa
+    static async cancelOrder ({order_id, user}){
+        const order = await orderModel.findOne({
+            _id: order_id,
+            order_userId: user._id,
+            order_status: 'pending'
+        });
+        if (!order) {
+            throw new NotFoundError('Order not found');
+        }
+        const cancellationCutoffTime = order.order_cancellation_cutoff
+        const currentTime = moment.tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DDTHH:mm:ss')
+        if (moment(currentTime).isAfter(cancellationCutoffTime)) {
+            throw new BadRequestError('Cancellation time has passed')
+        }
+        const updateOrder = await orderModel.findOneAndUpdate({
+            _id: order_id,
+            order_userId: user._id
+        },{
+            $set: {
+                order_status: 'cancelled'
+            }
+        },{
+            new: true,
+            lean: true
+        })
+        if (!updateOrder) {
+            throw new BadRequestError('Failed to cancel order')
+        }
+    }
 }
 module.exports = OrderServiceV5;
