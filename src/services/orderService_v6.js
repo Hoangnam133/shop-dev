@@ -312,6 +312,7 @@ class OrderServiceV5 {
     if (!updateOrder) {
       throw new BadRequestError("Failed to cancel order");
     }
+  }
     // xử lý sản phẩm trong kho (viết ở repository) ok
     // tích hợp món phụ vào
     // tích hợp thanh toán
