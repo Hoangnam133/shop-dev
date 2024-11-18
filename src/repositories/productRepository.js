@@ -11,6 +11,7 @@ const shopProductModel = require("../models/shopProductModel");
 const sideDishModel = require("../models/sideDishModel");
 const fuzzy = require("fuzzy");
 const uploadService = require("../services/uploadService");
+const inventoryModel = require("../models/inventoryModel");
 // kiểm tra shop có tồn tại
 const checkShop = async (shop_id) => {
   if (!shop_id) {
@@ -500,7 +501,7 @@ const searchProductByUser = async (keySearch) => {
     const normalizedKeyword = removeVietnameseTones(keyword.toLowerCase());
     const products = await productModel.find(
       { isPublished: true, isDeleted: false },
-      "product_name product_description product_thumb _id"
+      "product_name product_description product_thumb _id product_price"
     );
 
     const fuseData = products.map((product) => ({
@@ -522,7 +523,19 @@ const searchProductByUser = async (keySearch) => {
     const results = fuse.search(normalizedKeyword);
     const matchedProducts = results.map((result) => result.item);
 
-    return matchedProducts.slice(0, 10);
+    const formattedProducts = matchedProducts.slice(0, 10).map((product) => ({
+      product_id: {
+        _id: product._id,
+        product_name: product.product_name,
+        product_description: product.product_description,
+        product_thumb: product.product_thumb,
+        product_price: product.product_price,
+      },
+    }));
+
+    return {
+      products: formattedProducts,
+    };
   } catch (error) {
     console.error("Error in searchProducts:", error);
     throw error;
