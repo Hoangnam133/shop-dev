@@ -1,5 +1,4 @@
-const express = require('express')
-
+const express = require("express");
 const cors = require('cors')
 const { syncProductsToElasticsearch } = require('../src/configs/syncDataToElasticsearch');
 const {runConsumer} = require('../src/message_queue/rabbitmq/consumer')
@@ -9,7 +8,7 @@ app.use(express.json())
 app.use("/uploads", express.static("uploads"));// init mongodb
 require('./configs/initMongodb')
 
-app.use('/',require('./routers/index'))
+app.use("/", require("./routers/index"));
 // handler error
 runConsumer()
 app.use((req, res, next)=>{
