@@ -13,6 +13,7 @@ const fuzzy = require("fuzzy");
 const uploadService = require("../services/uploadService");
 const inventoryModel = require('../models/inventoryModel')
 const Fuse = require('fuse.js');
+const favoritesModel = require('../models/favoriteModel');
 // kiểm tra shop có tồn tại
 const checkShop = async (shop_id) => {
   if (!shop_id) {
@@ -543,12 +544,28 @@ const searchProductByUser = async (keySearch) => {
   }
 };
 
-const getProductById = async (product_id) => {
-  const foundProduct = await productModel.findById(product_id);
+const getProductById = async (product_id, user) => {
+  let favorites_status = false
+  const foundProduct = await productModel.findById(product_id).populate({
+    path: "sideDish_id",
+    select: "sideDish_name price",
+  })
   if (!foundProduct) {
     throw new NotFoundError("Product not found");
   }
-  return foundProduct;
+  const favorite = await favoritesModel.findOne({
+    product_id: foundProduct._id,
+    user_id: user._id,
+  })
+  if (favorite) {
+    favorites_status = true
+  }
+  return {
+    product_details:{
+      product: foundProduct,
+      favorites_status
+    }
+  };
 };
 const getProductByIdOfShop = async (product_id) => {};
 //----------------------------------------------------------------
