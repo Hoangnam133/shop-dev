@@ -29,10 +29,9 @@ class ShopController {
     }).send(res);
   };
   getShopById = async (req, res, next) => {
-    const shop_id  = req.params;
     new SuccessResponse({
       message: "get shop success",
-      metaData: await shopService.getShopById(shop_id)
+      metaData: await shopService.getShopById(req.params.shop_id)
     }).send(res);
   }
   getAllShop = async (req, res, next) => {
