@@ -2,7 +2,7 @@ const shopModel = require("../models/shopModel");
 const { findByEmail, findById } = require("../repositories/userRepository");
 const { BadRequestError } = require("../core/errorResponse");
 const { getInfoData } = require("../utils");
-const { removeUndefinedObject } = require("../utils/index");
+const { removeUndefinedObject, toObjectId } = require("../utils/index");
 const uploadService = require("../services/uploadService");
 class ShopService {
   static createShop = async ({ user, payload, file }) => {
