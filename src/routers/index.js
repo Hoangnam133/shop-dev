@@ -17,4 +17,6 @@ router.use("/v2/api/sideDish", require("./sideDishRouter/index"));
 router.use("/v2/api/rcm", require("./recommen/index"));
 router.use("/v2/api/momo", require("../momo/momoRouter"));
 router.use("/v2/api/momoSuccess", require("./momo/index"));
+router.use("/v2/api/firebase", require("../firebase/Router/index"));
+
 module.exports = router;

@@ -86,7 +86,10 @@ class ShopService {
     return shops
   }
   static async getShopById(shop_id){
-    const shop = await shopModel.findById(shop_id)
+    const shop = await shopModel.findById(shop_id).populate({
+      path: "opening_hours",
+      select: "monday tuesday wednesday thursday friday saturday sunday"
+    })
     if(!shop){
       throw new BadRequestError("not found shop")
     }
