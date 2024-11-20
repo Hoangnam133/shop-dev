@@ -32,6 +32,8 @@ const {
 } = require("../repositories/orderRepository");
 const { runProducer } = require("../message_queue/rabbitmq/producer");
 const moment = require("moment-timezone");
+const {calculateDistance} = require('../utils/Distance')
+const locationModel = require("../models/locationModel");
 class OrderServiceV5 {
   static async listOrderCancelledOfUser(user) {
     return await listOrderCancelledOfUser(user);
@@ -194,6 +196,8 @@ class OrderServiceV5 {
     discount_code,
     selectedDeliveryTime,
     note,
+    userLat,
+    userLon 
   }) {
     const {
       productCheckout,
@@ -217,7 +221,19 @@ class OrderServiceV5 {
       } else {
         throw new BadRequestError("Invalid delivery time");
       }
-    } else {
+    }else {
+      if(!userLat || !userLon) {
+        throw new BadRequestError("User location is required");
+      }
+      const findLocation = await locationModel.findById(shop.location_id)
+      if (!findLocation) {
+        throw new NotFoundError("Location not found");
+      }
+      const caDistance = calculateDistance({userLat, userLon, facilityLat: findLocation.Latitude_x, facilityLon: findLocation.Longitude_y})
+      const minAllowedDistance  = process.env.ALLOWED_RADIUS
+      if (caDistance > minAllowedDistance) {
+        throw new BadRequestError("User location is too far from the shop");
+      }
       const checkTimeImmediate = await checkImmediateDeliveryTime({
         shop_id: shop._id,
         totalMinutes,

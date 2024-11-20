@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require('cors')
 const { syncProductsToElasticsearch } = require('../src/configs/syncDataToElasticsearch');
 const {runConsumer} = require('../src/message_queue/rabbitmq/consumer')
+//const admin = require('../src/configs/firebaseConfig')
 const app = express()
 app.use(cors())
 app.use(express.json())
