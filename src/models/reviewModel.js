@@ -13,14 +13,14 @@ const reviewSchema = new Schema({
         required: true,
         index: true
     },
-    review_img_1:{
-        type: String,
-        required: false
-    },
-    review_img_2:{
-        type: String,
-        required: false
-    },
+    // review_img_1:{
+    //     type: String,
+    //     required: false
+    // },
+    // review_img_2:{
+    //     type: String,
+    //     required: false
+    // },
     review_rating: {
         type: Number,
         min: 1,
