@@ -56,9 +56,17 @@ const getFavorite = async(user)=>{
     }
     const favorites = await favoritesModel.find({ user_id: user._id }).populate({
         path: 'product_id',
-        select: 'product_name product_thumb'
+        select: 'product_name product_thumb product_price'
     })
-    return favorites
+    const fmfavorites = favorites.map(item=> ({
+        product_id: {
+            _id: item.product_id._id,
+            product_name: item.product_id.product_name,
+            product_thumb: item.product_id.product_thumb,
+            product_price: item.product_id.product_price
+        }
+    }))
+    return {products: fmfavorites}
 }
 module.exports = {
     toggleFavorite,
