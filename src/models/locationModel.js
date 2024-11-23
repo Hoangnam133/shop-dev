@@ -22,14 +22,14 @@ const locationShema = new Schema({
         type: String,
         default: ''
     },
-    Latitude_x:{
-        type: String,
-        default: '',
+    latitude: { // Sửa key để sử dụng chính xác trên bản đồ
+        type: Number,
+        required: true,
     },
-    Longitude_y:{
-        type: String,
-        default: '',
-    }
+    longitude: { // Sửa key để sử dụng chính xác trên bản đồ
+        type: Number,
+        required: true,
+    },
 },{
     timestamps: true,
     collection: COLLECTION_NAME
