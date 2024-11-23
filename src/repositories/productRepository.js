@@ -544,7 +544,7 @@ const searchProductByUser = async (keySearch) => {
   }
 };
 
-const getProductById = async (product_id, user) => {
+const getProductByIdDetails = async (product_id, user) => {
   let favorites_status = false
   const foundProduct = await productModel.findById(product_id).populate({
     path: "sideDish_id",
@@ -567,6 +567,18 @@ const getProductById = async (product_id, user) => {
     }
   };
 };
+
+const getProductById = async (product_id) => {
+  const foundProduct = await productModel.findById(product_id).populate({
+    path: "sideDish_id",
+    select: "sideDish_name price",
+  })
+  if (!foundProduct) {
+    throw new NotFoundError("Product not found");
+  }
+  return foundProduct
+};
+
 const getProductByIdOfShop = async (product_id) => {};
 //----------------------------------------------------------------
 const getSideDishInProduct = async (product_id) => {
@@ -599,4 +611,5 @@ module.exports = {
   checkShop,
   checkProductInShop,
   getSideDishInProduct,
+  getProductByIdDetails
 };
