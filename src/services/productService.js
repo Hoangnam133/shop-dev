@@ -16,6 +16,7 @@ const {
   getLatestProducts,
   getProductsSortedBysales_count,
   getDeletedProductsManage,
+  getProductByIdDetails
 } = require("../repositories/productRepository");
 const { getInfoData, toObjectId } = require("../utils/index");
 class ProductService {
@@ -43,8 +44,8 @@ class ProductService {
   //     return await getAllProduct({ limit, sort, page, filter })
   // }
 
-  static async getProductById(product_id, user) {
-    const product = await getProductById(product_id, user);
+  static async getProductByIdDetails(product_id, user) {
+    const product = await getProductByIdDetails(product_id, user);
     if (!product) {
       throw new NotFoundError("Product not found");
     }
