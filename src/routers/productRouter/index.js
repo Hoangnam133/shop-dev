@@ -49,7 +49,7 @@ router.get(
 // Lấy thông tin sản phẩm theo ID
 router.get(
   "/getProductById/:product_id",
-  asynHandler(productController.getProductById)
+  asynHandler(productController.getProductByIdDetails)
 );
 // Lấy sản phẩm theo danh mục
 router.get(
