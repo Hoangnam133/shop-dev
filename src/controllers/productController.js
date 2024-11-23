@@ -63,9 +63,9 @@ class ProductController {
     }).send(res);
   };
 
-  getProductById = async (req, res, next) => {
+  getProductByIdDetails = async (req, res, next) => {
     const { product_id } = req.params;
-    const product = await productService.getProductById(product_id, req.user);
+    const product = await productService.getProductByIdDetails(product_id, req.user);
     new SuccessResponse({
       message: "Fetched product successfully",
       metaData: product,
