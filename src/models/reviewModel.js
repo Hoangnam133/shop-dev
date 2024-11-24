@@ -7,20 +7,6 @@ const reviewSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Order'
     },
-    review_product_id: {
-        type: Schema.Types.ObjectId,
-        ref: 'Product',
-        required: true,
-        index: true
-    },
-    // review_img_1:{
-    //     type: String,
-    //     required: false
-    // },
-    // review_img_2:{
-    //     type: String,
-    //     required: false
-    // },
     review_rating: {
         type: Number,
         min: 1,
@@ -28,7 +14,7 @@ const reviewSchema = new Schema({
         required: true,
         default: 5
     },
-    review_comment: {
+    review_content: {
         type: String,
         required: true
     },
