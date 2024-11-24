@@ -1,15 +1,15 @@
 const express = require('express')
 const {authentication, authorizeRoles} = require('../../auth/authUtils')
 const router = express.Router()
-const {uploadDisk, uploadMemory} = require('../../configs/multer.config')
-const reviewController = require('../../controllers/reviewController')
+const reviewControllerV2 = require('../../controllers/reviewControllerV2')
 const { asynHandler } = require('../../utils/handler')
-router.get('/getAllReviewOfProduct/:product_id', asynHandler(reviewController.getReviewsByProductId))
-router.get('/getReviewWithRate', asynHandler(reviewController.getReviewsByRating))
-router.get('/getReviewsSortedByRating', asynHandler(reviewController.getReviewsSortedByRating))
+
 router.use(authentication)
-router.get('/getOrderProductNotReview', asynHandler(reviewController.orderProductIsNotReview))
-router.get('/getReviewByUser', asynHandler(reviewController.getReviewByUser))
-router.post('/create', asynHandler(reviewController.createReview))
-router.patch('/update/:review_id', asynHandler(reviewController.updateReview))
+router.post('/create/:order_id', asynHandler(reviewControllerV2.createReview))
+router.get('/orderNotBeenReviewed', asynHandler(reviewControllerV2.orderNotBeenReviewed))
+router.get('/orderHasBeenReviewed', asynHandler(reviewControllerV2.orderHasBeenReviewed))
+router.get('/getReviewById/:review_id', asynHandler(reviewControllerV2.getReviewById))
+
+
+
 module.exports = router

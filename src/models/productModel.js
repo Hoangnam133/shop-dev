@@ -42,8 +42,7 @@ const productSchema = new Schema(
     },
     review_count: {
       type: Number,
-      default: 0,
-      min: [0, "Review count cannot be negative"],
+      default: 0
     },
     isPublished: {
       type: Boolean,
