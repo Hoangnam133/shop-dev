@@ -62,7 +62,7 @@ class ElasticsearchService {
         } catch (error) {
             console.error('Lỗi khi tìm kiếm sản phẩm:', error);
             throw new Error('Lỗi trong quá trình tìm kiếm');
-        }
+        }   
     }
     static async reindexAllProducts() {
         try {
