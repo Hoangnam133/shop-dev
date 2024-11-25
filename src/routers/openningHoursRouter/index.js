@@ -7,7 +7,7 @@ const router = express.Router();
 
 
 // Các route cho giờ mở cửa
-router.get('/getTomorrowOpeningTimes/:daysToAdd', authentication,asynHandler(openingHoursController.getOpeningTimes)); 
+router.get('/getOpeningTimesForNextDays', authentication,asynHandler(openingHoursController.getOpeningTimesForNextDays)); 
 
 
 
