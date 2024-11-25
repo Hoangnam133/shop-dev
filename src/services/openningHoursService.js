@@ -6,12 +6,12 @@ const {  createOpeningHours,
     getDeletedOpeningHours,
     getAllOpeningHoursOfShopId,
     restoreOpeningHours,
-    getOpeningTimes
+    getOpeningTimesForNextDays
 } = require('../repositories/openingHoursRepository')
 
 class OpeningHoursService {
-    static async getOpeningTimes(shop, daysToAdd) {
-        return await getOpeningTimes(shop, daysToAdd)
+    static async getOpeningTimesForNextDays(shop) {
+        return await getOpeningTimesForNextDays(shop)
     }
     static async createOpeningHours(payload) {
         return await createOpeningHours(payload)
