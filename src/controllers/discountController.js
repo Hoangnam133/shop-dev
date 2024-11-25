@@ -2,6 +2,12 @@ const discountService = require('../services/discountService')
 const { SuccessResponse } = require('../core/successResponse')
 
 class DiscountController {
+    getValidDiscounts = async (req, res, next) => {
+        new SuccessResponse({
+            message: 'get discount active success',
+            metaData: await discountService.getValidDiscounts()
+        }).send(res)
+    }
     createDiscount = async (req, res, next) => {
         const {file} = req
         if(!file){

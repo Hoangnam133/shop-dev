@@ -6,6 +6,11 @@ const discountController = require("../../controllers/discountController");
 const { asynHandler } = require("../../utils/handler");
 const roles = require("../../utils/roles");
 const {uploadDisk, uploadMemory} = require('../../configs/multer.config')
+
+router.get(
+  "/getValidDiscounts",
+  asynHandler(discountController.getValidDiscounts)
+);
 router.use(authentication);
 // Lấy danh sách tất cả các mã giảm giá
 router.get(
