@@ -3,6 +3,7 @@ const { removeUndefinedObject, toObjectId } = require("../utils/index");
 const { NotFoundError, BadRequestError } = require("../core/errorResponse");
 const { getCurrentDateInTimeZone } = require("../utils/convertTime");
 const uploadService = require("../services/uploadService");
+const moment = require('moment');
 // tạo mã giảm giá
 const createDiscount = async (payload, file) => {
   const existingDiscount = await discountModel.findOne({
@@ -50,11 +51,9 @@ const getActiveDiscounts = async ({ page, limit }) => {
     discount_end_date: { $gte: getCurrentDateInTimeZone() },
     is_deleted: false,
   };
-  const discounts = await discountModel
-    .find(filter)
-    .skip((page - 1) * limit)
-    .limit(limit)
-    .lean();
+  const discounts = await discountModel.find(filter)
+
+
   return discounts;
 };
 // cập nhật discount
@@ -369,6 +368,24 @@ const updateUserToDiscount = async ({ discountCode, user_id }) => {
   }
   return discount;
 };
+const getValidDiscounts = async () =>{
+  const currentDate = moment();
+  const discounts = await discountModel.find({
+    is_deleted: false,
+    discount_end_date: { $gte: currentDate.toDate() }, 
+  }).select('discount_content discount_image discount_end_date discount_code');
+  const validDiscounts = discounts.map(discount => {
+    const daysLeft = moment(discount.discount_end_date).diff(currentDate, 'days'); 
+    return {
+      ...discount.toObject(), 
+      message: `Hết hạn trong ${daysLeft} ngày`
+    };
+  })
+  if(validDiscounts.length == 0){
+    throw new NotFoundError("No active discounts found");
+  }
+  return validDiscounts;
+}
 module.exports = {
   createDiscount,
   getDiscountById,
@@ -388,5 +405,6 @@ module.exports = {
   updateUserToDiscount,
   getActiveDiscounts,
   checkproductAppliedDiscount,
-  calculateDiscountAmount
+  calculateDiscountAmount,
+  getValidDiscounts
 };
