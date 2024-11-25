@@ -6,9 +6,11 @@ const { asynHandler } = require('../../utils/handler');
 const router = express.Router();
 
 
-// router.use(authentication);
-
 // Các route cho giờ mở cửa
+router.get('/getTomorrowOpeningTimes/:daysToAdd', authentication,asynHandler(openingHoursController.getOpeningTimes)); 
+
+
+
 router.post('/create', asynHandler(openingHoursController.createOpeningHours)); // Tạo giờ mở cửa (hoặc có thể là tạo mới)
 router.get('/getAll', asynHandler(openingHoursController.getAllOpeningHours)); // Lấy tất cả giờ mở cửa
 router.patch('/update/:openingHours_id', asynHandler(openingHoursController.updateOpeningHours)); // Cập nhật giờ mở cửa

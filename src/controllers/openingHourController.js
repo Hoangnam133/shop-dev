@@ -2,6 +2,12 @@ const openingHoursService = require('../services/openningHoursService')
 const {SuccessResponse} = require('../core/successResponse')
 
 class OpeningHoursController {
+    getOpeningTimes = async (req, res, next) => {
+        new SuccessResponse({
+            message: 'get tomorrow opening times success',
+            metaData: await openingHoursService.getOpeningTimes(req.shop, req.params.daysToAdd)
+        }).send(res)
+    }
     createOpeningHours = async (req, res, next) => {
         new SuccessResponse({
             message: 'get opening hours success',
