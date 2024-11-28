@@ -1,6 +1,6 @@
 const {addTocart,
     removeProductFromCart,
-    incOfDecProductQuantity, getCart} = require('../repositories/cartRepository_v2')
+    incOfDecProductQuantity, getCart} = require('../repositories/cartRepository_v3')
 
 class CartServiceV2 {
     static async addTocart({user, product, shop}) {

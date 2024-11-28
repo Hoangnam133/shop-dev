@@ -19,7 +19,7 @@ const cartProductSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    sideDishes: [
+    sideDishes:[
       {
         sideDish_id: {
           type: Schema.Types.ObjectId,
@@ -36,11 +36,23 @@ const cartProductSchema = new Schema(
         }
       },
     ],
+    uniqueKey: {
+      type: String
+    },
   },
   {
     _id: false,
   }
 );
+cartProductSchema.pre("save", function (next) {
+  this.sideDishes = this.sideDishes.sort((a, b) => {
+      return a.sideDish_id.toString().localeCompare(b.sideDish_id.toString());
+  });
+  const sideDishIds = this.sideDishes.map(dish => dish.sideDish_id).join("-");
+  this.uniqueKey = sideDishIds ? `${this.product_id}-${sideDishIds}` : `${this.product_id}`;
+  next();
+});
+
 const cartSchema = new Schema(
   {
     cart_status: {
