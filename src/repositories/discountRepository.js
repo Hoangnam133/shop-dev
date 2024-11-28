@@ -36,8 +36,19 @@ const createDiscount = async (payload, file) => {
 // lấy discount theo id
 const getDiscountById = async (discount_id) => {
   const discount = await discountModel.findById(toObjectId(discount_id)).lean();
-  return discount;
+  if (!discount) {
+    throw new NotFoundError("Discount not found");
+  }
+
+  // Tính toán số ngày còn lại
+  const currentDate = moment();
+  const endDate = moment(discount.discount_end_date);
+  const daysRemaining = endDate.diff(currentDate, "days");
+
+  // Thêm số ngày còn lại vào kết quả trả về
+  return { ...discount, days_remaining: daysRemaining > 0 ? daysRemaining : 0 };
 };
+
 // lấy discount theo mã code
 const getDiscountByCode = async (discountCode) => {
   const discount = await discountModel
@@ -373,7 +384,7 @@ const getValidDiscounts = async () =>{
   const discounts = await discountModel.find({
     is_deleted: false,
     discount_end_date: { $gte: currentDate.toDate() }, 
-  }).select('discount_content discount_image discount_end_date discount_code');
+  }).select('discount_content discount_image discount_end_date discount_code min_order_value maximum_discount_value discount_value discount_value_type');
   const validDiscounts = discounts.map(discount => {
     const daysLeft = moment(discount.discount_end_date).diff(currentDate, 'days'); 
     return {
@@ -381,9 +392,6 @@ const getValidDiscounts = async () =>{
       message: `Hết hạn trong ${daysLeft} ngày`
     };
   })
-  if(validDiscounts.length == 0){
-    throw new NotFoundError("No active discounts found");
-  }
   return validDiscounts;
 }
 module.exports = {
