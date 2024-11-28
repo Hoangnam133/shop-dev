@@ -6,7 +6,11 @@ const discountController = require("../../controllers/discountController");
 const { asynHandler } = require("../../utils/handler");
 const roles = require("../../utils/roles");
 const {uploadDisk, uploadMemory} = require('../../configs/multer.config')
-
+// Lấy thông tin mã giảm giá theo discount_id
+router.get(
+  "/getDiscountById/:discount_id",
+  asynHandler(discountController.getDiscountById)
+);
 router.get(
   "/getValidDiscounts",
   asynHandler(discountController.getValidDiscounts)
@@ -36,11 +40,7 @@ router.get(
   "/getDiscountsByCode/:discountCode",
   asynHandler(discountController.getDiscountByCode)
 );
-// Lấy thông tin mã giảm giá theo discount_id
-router.get(
-  "/getDiscountById/:discount_id",
-  asynHandler(discountController.getDiscountById)
-);
+
 // Xóa mềm mã giảm giá theo discount_id (chỉ ADMIN có quyền)
 router.patch(
   "/softDelete/:discount_id",
