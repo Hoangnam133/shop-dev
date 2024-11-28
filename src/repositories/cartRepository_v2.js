@@ -318,8 +318,6 @@ const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
     return updatedCart;
   }
 
-
-
 module.exports = {
     addTocart,
     removeProductFromCart,
