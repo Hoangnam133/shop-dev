@@ -14,8 +14,8 @@ const cartProductSchema = new Schema(
     totalPrice: {
       type: Number,
       required: true,
-    },
-    isDeleted: {
+    },  
+    isDeleted:{
       type: Boolean,
       default: false,
     },
