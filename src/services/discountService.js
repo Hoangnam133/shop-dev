@@ -1,6 +1,6 @@
 const {
     createDiscount, getDiscountById, getDiscountByCode, getActiveDiscounts, updateDiscountById,
-    softDeleteDiscount, isDiscountExpired, getPublicDiscounts, getValidDiscounts
+    softDeleteDiscount, isDiscountExpired, getPublicDiscounts, getValidDiscounts, getDiscountByIdForUser
 } = require('../repositories/discountRepository')
 
 class DiscountService{
@@ -12,6 +12,9 @@ class DiscountService{
     }
     static async getDiscountById(discount_id){
         return await getDiscountById(discount_id)
+    }
+    static async getDiscountByIdForUser({discount_id, user}){
+        return await getDiscountByIdForUser({discount_id, user})
     }
     static async getDiscountByCode(discountCode){
         return await getDiscountByCode(discountCode)

@@ -14,6 +14,10 @@ router.get(
 
 router.use(authentication);
 router.get(
+  "/getDiscountByIdForUser/:discount_id",
+  asynHandler(discountController.getDiscountByIdForUser)
+);
+router.get(
   "/getValidDiscounts",
   asynHandler(discountController.getValidDiscounts)
 );
