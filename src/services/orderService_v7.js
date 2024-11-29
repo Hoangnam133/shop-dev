@@ -115,9 +115,7 @@ class OrderServiceV5 {
   
       // Tính tổng giá trị nhóm sản phẩm
       const totalPriceForProduct = items.reduce((sum, item) => sum + item.totalPrice, 0);
-      if(checkDiscount && (totalPriceForProduct < checkDiscount.min_order_value)){
-        throw new BadRequestError(`Min order value ${checkDiscount.min_order_value} is not enough for product ${foundProduct.product_name}`);
-      }
+   
       // Kiểm tra và áp dụng giảm giá
       let discountForProduct = 0;
       if (checkDiscount && checkDiscount.applicable_to === "product") {
@@ -129,6 +127,9 @@ class OrderServiceV5 {
           );
   
           if (applicableProducts) {
+            if(checkDiscount && (totalPriceForProduct < checkDiscount.min_order_value)){
+              throw new BadRequestError(`Min order value ${checkDiscount.min_order_value} is not enough for product ${foundProduct.product_name}`);
+            }
             discountForProduct = calculateDiscountAmount({
               discountValue: checkTypeDiscount.discount_value,
               totalPrice: totalPriceForProduct,
