@@ -48,7 +48,29 @@ const getDiscountById = async (discount_id) => {
   // Thêm số ngày còn lại vào kết quả trả về
   return { ...discount, days_remaining: daysRemaining > 0 ? daysRemaining : 0 };
 };
+const getDiscountByIdForUser = async ({discount_id, user}) => {
+  if(!user) {
+    throw new BadRequestError("User is required");
+  }
+  const discount = await discountModel.findById(toObjectId(discount_id)).lean();
+  if (!discount) {
+    throw new NotFoundError("Discount not found");
+  }
 
+  // Tính toán số ngày còn lại
+  const currentDate = moment();
+  const endDate = moment(discount.discount_end_date);
+  const daysRemaining = endDate.diff(currentDate, "days");
+  const userUsage = discount.discount_user_used.find(
+    (usage) => usage.dbu_userId.toString() === user._id.toString()
+  )
+
+  const usedCount = userUsage ? userUsage.count_used : 0;
+  const remainingUses = discount.max_uses_per_user - usedCount;
+
+  // Thêm số ngày còn lại vào kết quả trả về
+  return { ...discount, days_remaining: daysRemaining > 0 ? daysRemaining : 0,  remainingUses: Math.max(0, remainingUses) };
+};
 // lấy discount theo mã code
 const getDiscountByCode = async (discountCode) => {
   const discount = await discountModel
@@ -431,5 +453,6 @@ module.exports = {
   getActiveDiscounts,
   checkproductAppliedDiscount,
   calculateDiscountAmount,
-  getValidDiscounts
+  getValidDiscounts,
+  getDiscountByIdForUser
 };
