@@ -5,7 +5,7 @@ class DiscountController {
     getValidDiscounts = async (req, res, next) => {
         new SuccessResponse({
             message: 'get discount active success',
-            metaData: await discountService.getValidDiscounts()
+            metaData: await discountService.getValidDiscounts(req.user)
         }).send(res)
     }
     createDiscount = async (req, res, next) => {
