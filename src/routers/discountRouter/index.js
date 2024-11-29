@@ -11,11 +11,12 @@ router.get(
   "/getDiscountById/:discount_id",
   asynHandler(discountController.getDiscountById)
 );
+
+router.use(authentication);
 router.get(
   "/getValidDiscounts",
   asynHandler(discountController.getValidDiscounts)
 );
-router.use(authentication);
 // Lấy danh sách tất cả các mã giảm giá
 router.get(
   "/getAllDiscounts",
