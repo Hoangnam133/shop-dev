@@ -15,7 +15,7 @@ app.use("/", require("./routers/index"));
 
 // handler error
 runConsumer()
-//initRedis()
+initRedis()
 app.use((req, res, next)=>{
     const error = new Error('Not Found')
     error.status = 404

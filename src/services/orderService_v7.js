@@ -1,5 +1,6 @@
-const { getCartByUserId } = require("../repositories/cartRepository_v2");
+const { getCartByUserId, getCart } = require("../repositories/cartRepository_v4");
 const { BadRequestError, NotFoundError } = require("../core/errorResponse");
+const mongoose = require("mongoose");
 const userModel = require("../models/userModel");
 const shopModel = require("../models/shopModel");
 const rewardSettingModel = require("../models/rewardSettingModel");
@@ -34,6 +35,7 @@ const { runProducer } = require("../message_queue/rabbitmq/producer");
 const moment = require("moment-timezone");
 const {calculateDistance} = require('../utils/Distance')
 const locationModel = require("../models/locationModel");
+const { toObjectId } = require("../utils");
 class OrderServiceV5 {
   static async listOrderCancelledOfUser(user) {
     return await listOrderCancelledOfUser(user);
@@ -65,36 +67,62 @@ class OrderServiceV5 {
   static async listOrderCompleted({ limit = 10, page = 1 }) {
     return await listOrderCompleted({ limit, page });
   }
-  static async checkoutPreview({ user, shop, discount_code }) {
-    const foundUser = await userModel.findById(user._id);
-    const foundShop = await shopModel.findById(shop._id);
-  
-    if (!foundUser || !foundShop) {
-      throw new NotFoundError("User or shop not found");
-    }
-  
-    const cart = await getCartByUserId(foundUser._id);
-    if (!cart) {
-      throw new NotFoundError("Cart not found");
-    }
-  
-    let productCheckout = [];
-    let totalDiscount = 0;
-    let finalPrice = 0;
-    let totalPrice = 0;
-    let totalMinutes = 0;
-  
-    const checkDiscount = await getDiscountByCode(discount_code);
-  
-    // **Nhóm các sản phẩm trong giỏ hàng theo `product_id`**
-    const groupedProducts = cart.cart_products.reduce((group, item) => {
-      if (!group[item.product_id]) {
-        group[item.product_id] = [];
+    static async checkoutPreview({ user, shop, discount_code }) {
+      const foundUser = await userModel.findById(user._id);
+      const foundShop = await shopModel.findById(shop._id);
+    
+      if (!foundUser || !foundShop) {
+        throw new NotFoundError("User or shop not found");
       }
-      group[item.product_id].push(item);
-      return group;
+    
+      const cart = await getCart(foundUser._id);
+      if (!cart) {
+        throw new NotFoundError("Cart not found");
+      }
+    
+      let productCheckout = [];
+      let totalDiscount = 0;
+      let finalPrice = 0;
+      let totalPrice = 0;
+      let totalMinutes = 0;
+      
+      const checkDiscount = await getDiscountByCode(discount_code);
+      if(!checkDiscount){
+        throw new BadRequestError("Invalid discount code");
+      }
+      // **Nhóm các sản phẩm trong giỏ hàng theo `product_id`**
+      // const groupedProducts = cart.cart_products.reduce((group, item) => {
+      //   if (!group[item.product_id]) {
+      //     group[item.product_id] = [];
+      //   }
+      //   group[item.product_id].push(item);
+      //   return group;
+      // }, {});
+      // Nhóm các sản phẩm trong giỏ hàng theo `product_id`
+      const groupedProducts = cart.cart_products.reduce((group, item) => {
+        let productId = item.product_id; 
+    
+
+        console.log("product_id:", productId);
+        console.log("Type of product_id:", typeof productId);
+    
+        if (typeof productId === 'object' && productId._id) {
+            console.log("Extracting _id from object");
+            productId = productId._id;
+        }
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            throw new BadRequestError(`Invalid product_id: ${JSON.stringify(productId)}`);
+        }
+        const validProductId = toObjectId(productId);
+    
+        if (!group[validProductId]) {
+            group[validProductId] = [];
+        }
+        group[validProductId].push(item);
+        return group;
     }, {});
-  
+    
+
     // **Áp dụng giảm giá cho từng nhóm sản phẩm**
     for (const [productId, items] of Object.entries(groupedProducts)){
       const foundProduct = await productModel.findById(productId);
