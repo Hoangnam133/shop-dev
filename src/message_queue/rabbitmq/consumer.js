@@ -1,5 +1,4 @@
 const amqp = require('amqplib');
-const OrderService = require('../../services/orderService_v6');
 const orderModel = require('../../models/orderModel')
 const {deductStockAfterPayment} = require('../../repositories/inventoryRepository')
 const {BadRequestError} = require('../../core/errorResponse')

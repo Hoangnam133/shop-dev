@@ -3,18 +3,37 @@ const { NotFoundError } = require('../core/errorResponse');  // Assuming NotFoun
 const cartModel = require('../models/cartModel'); // Your cart model file
 
 // Cart-related Redis functions
-const saveCartToRedis = (userId, cartData) => {
+const saveCartToRedis = async (userId, cartData) => {
   const redisClient = getRedis(); // Get Redis client instance
   redisClient.set(`cart_${userId}`, JSON.stringify(cartData), 'EX', 3600); 
 };
-
-const syncCartToDatabase = async (userId) => {
-    const redisClient = getRedis(); // Get Redis client instance
-    const redisCartData = await redisClient.get(`cart_${userId}`);
-    if (redisCartData) {
-        const cart = JSON.parse(redisCartData);
-        // Update or save the cart in MongoDB
-        await cartModel.findOneAndUpdate({ cart_userId: userId }, cart, { upsert: true });
+const syncCartToDatabase = async (userId, cartData) => {
+    try {
+        await cartModel.findOneAndUpdate({ cart_userId: userId }, cartData, { upsert: true });
+        console.log(`Cart for user ${userId} synced to database`);
+        const redisClient = getRedis();
+        await redisClient.del(`cart_${userId}`);
+    } catch (error) {
+        console.error(`Error syncing cart for user ${userId}:`, error);
+    }
+};
+const syncAllCartsToDatabase = async () => {
+    const redisClient = getRedis();
+    try {
+        const keys = await redisClient.keys('cart_*'); // Lấy tất cả các keys có dạng 'cart_*'
+        
+        // Đồng bộ tất cả giỏ hàng từ Redis vào MongoDB
+        for (const key of keys) {
+            const userId = key.split('_')[1]; // Lấy userId từ key
+            const redisCartData = await redisClient.get(key); // Lấy dữ liệu giỏ hàng từ Redis
+            if (redisCartData) {
+                const cart = JSON.parse(redisCartData);
+                await syncCartToDatabase(userId, cart); // Đồng bộ giỏ hàng vào MongoDB
+            }
+        }
+        console.log('All carts synced to database');
+    } catch (err) {
+        console.error('Error syncing carts to database:', err);
     }
 };
 
@@ -29,21 +48,21 @@ const handleUserLogout = async (userId) => {
     }
 };
 
-const getCartRedis = async (user) => {
+const getCartRedis = async (userId) => {
     const redisClient = getRedis(); // Get Redis client instance
-    const cartKey = `cart:${user._id}`;
+    const cartKey = `cart_${userId}`;
     try {
-        const cart = await redisClient.hGetAll(cartKey);
-        if (!cart) throw new NotFoundError('Cart not found');
-        return cart; // Return the user's full cart
+        const cart = await redisClient.get(cartKey);
+        console.log("TÌM THẤY TRONG REDIS",JSON.parse(cart))
+        return cart ? JSON.parse(cart) : null
     } catch (err) {
-        throw new NotFoundError('Cart not found');
+        console.error(err);
     }
 };
 
-const removeProductFromCartRedis = async ({ user, product }) => {
+const removeProductFromCartRedis = async ({ userId, product }) => {
     const redisClient = getRedis(); // Get Redis client instance
-    const cartKey = `cart:${user._id}`;
+    const cartKey = `cart:${userId}`;
     const { product_id, sideDish_ids = [] } = product;
     const uniqueKey = `${product_id}-${sideDish_ids.sort().join('-')}`;
   
@@ -56,10 +75,29 @@ const removeProductFromCartRedis = async ({ user, product }) => {
     }
 };
 
+
+const autoSyncCartBeforeExpire = () => {
+    const redisClient = getRedis();
+    redisClient.keys('cart_*', async (err, keys) => {
+        if (err) throw err;
+        
+        for (const key of keys) {
+            const userId = key.split('_')[1];
+            const redisCartData = await redisClient.get(key);
+            if (redisCartData) {
+                const cart = JSON.parse(redisCartData);
+                await cartModel.findOneAndUpdate({ cart_userId: userId }, cart, { upsert: true });
+            }
+        }
+    });
+};
+
+// setInterval(autoSyncCartBeforeExpire, 30 * 60 * 1000);
+
 module.exports = {
     saveCartToRedis,
-    syncCartToDatabase,
     handleUserLogout,
     getCartRedis,
-    removeProductFromCartRedis
+    removeProductFromCartRedis,
+    syncAllCartsToDatabase
 };

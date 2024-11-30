@@ -78,21 +78,20 @@ const getRedis = () => {
     return redisClient;
 };
 
-// Close Redis connection when needed (optional)
-const closeRedis = () => {
-    if (redisClient) {
-        redisClient.quit()
-            .then(() => {
-                console.log('Redis connection closed.');
-            })
-            .catch((err) => {
-                console.error('Error while closing Redis connection', err);
-            });
-    }
-};
+// // Close Redis connection when needed (optional)
+// const closeRedis = () => {
+//     if (redisClient) {
+//         redisClient.quit()
+//             .then(() => {
+//                 console.log('Redis connection closed.');
+//             })
+//             .catch((err) => {
+//                 console.error('Error while closing Redis connection', err);
+//             });
+//     }
+// };
 
 module.exports = {
     initRedis,
     getRedis,
-    closeRedis
 };
