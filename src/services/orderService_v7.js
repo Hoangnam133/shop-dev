@@ -85,10 +85,12 @@ class OrderServiceV5 {
       let finalPrice = 0;
       let totalPrice = 0;
       let totalMinutes = 0;
-      
-      const checkDiscount = await getDiscountByCode(discount_code);
-      if(!checkDiscount){
-        throw new BadRequestError("Invalid discount code");
+      var checkDiscount
+      if(discount_code){
+        checkDiscount = await getDiscountByCode(discount_code);
+        if(!checkDiscount){
+          throw new BadRequestError("Invalid discount code");
+        }
       }
       // **Nhóm các sản phẩm trong giỏ hàng theo `product_id`**
       // const groupedProducts = cart.cart_products.reduce((group, item) => {
