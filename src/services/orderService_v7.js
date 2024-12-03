@@ -271,10 +271,10 @@ class OrderServiceV5 {
       if (!findLocation) {
         throw new NotFoundError("Location not found");
       }
-      const caDistance = calculateDistance({userLat, userLon, facilityLat: findLocation.Latitude_x, facilityLon: findLocation.Longitude_y})
+      const caDistance = calculateDistance({userLat, userLon, facilityLat: findLocation.latitude, facilityLon: findLocation.longitude})
       const minAllowedDistance  = process.env.ALLOWED_RADIUS
       if (caDistance > minAllowedDistance) {
-        throw new BadRequestError("User location is too far from the shop");
+        throw new BadRequestError("You are outside the delivery radius for immediate pickup. Please choose another option.");
       }
       const checkTimeImmediate = await checkImmediateDeliveryTime({
         shop_id: shop._id,
@@ -325,17 +325,8 @@ class OrderServiceV5 {
 
     console.log("đã  chạy đến đây LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
     await runProducer(payload);
-    // const newOrder = await orderModel.create(payload)
-    // if(!newOrder){
-    //     throw new BadRequestError('order creation failed')
-    // }
-    // return newOrder
   }
-  // xử lý sản phẩm trong kho (viết ở repository) ok
-  // tích hợp món phụ vào
-  // tích hợp thanh toán
-  // send thông báo khi đặt hàng thành công
-  // đổi điểm nữa
+
   static async cancelOrder({ order_id, user }) {
     const order = await orderModel.findOne({
       _id: order_id,

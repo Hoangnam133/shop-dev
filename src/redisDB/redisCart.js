@@ -21,7 +21,6 @@ const syncAllCartsToDatabase = async () => {
     const redisClient = getRedis();
     try {
         const keys = await redisClient.keys('cart_*'); // Lấy tất cả các keys có dạng 'cart_*'
-        
         // Đồng bộ tất cả giỏ hàng từ Redis vào MongoDB
         for (const key of keys) {
             const userId = key.split('_')[1]; // Lấy userId từ key
