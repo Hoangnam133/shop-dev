@@ -11,7 +11,12 @@ const handleShutdown = async (signal) => {
     
     try {
         console.log('Starting cart synchronization...');
-        await syncAllCartsToDatabase(); // Đồng bộ giỏ hàng vào MongoDB
+        const syncToDB = await syncAllCartsToDatabase(); // Đồng bộ giỏ hàng vào MongoDB
+        if (syncToDB) {
+            console.log('Cart synchronization completed successfully.');
+        } else {
+            console.log('No carts to synchronize.');
+        }
         console.log('Cart synchronization completed successfully.');
     } catch (error) {
         console.error('Error during cart synchronization:', error);
