@@ -15,7 +15,9 @@ router.use("/v2/api/inventory", require("./inventoryRouter/index"));
 router.use("/v2/api/openningHours", require("./openningHoursRouter/index"));
 router.use("/v2/api/sideDish", require("./sideDishRouter/index"));
 router.use("/v2/api/rcm", require("./recommen/index"));
+
 router.use("/v2/api/momoSuccess", require("./momo/index"));
+
 router.use("/v2/api/firebase", require("../firebase/Router/index"));
 router.use("/v2/api/RedeemPoints", require("./redeemPointsRouter/index"));
 module.exports = router;
