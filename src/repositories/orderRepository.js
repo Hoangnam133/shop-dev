@@ -1,5 +1,7 @@
 const orderModel = require("../models/orderModel");
 const { NotFoundError, BadRequestError } = require("../core/errorResponse");
+const userModel = require("../models/userModel");
+const { sendNotification } = require("../utils/notification");
 const listOrderPendingOfUser = async (user) => {
   const query = {
     order_userId: user._id,
@@ -53,25 +55,37 @@ const updateStatusCompleted = async (order_id) => {
     order_status: "pending",
     "order_payment.payment_status": "success",
   };
+
   const updateOrder = await orderModel.findOneAndUpdate(
     query,
-    {
-      $set: {
-        order_status: "completed",
-      },
-    },
-    {
-      new: true,
-      lean: true,
-    }
+    { $set: { order_status: "completed" } },
+    { new: true, lean: true }
   );
+
   if (!updateOrder) {
     throw new BadRequestError(
       "Update order failed: either payment was not successful or order is no longer pending."
     );
   }
+
+  // Gửi thông báo đẩy
+  const user = await userModel.findById(updateOrder.order_userId); // Tìm người dùng liên quan
+  console.log("ầdfadfasfdfas" + user.deviceToken);
+
+  if (user && user.deviceToken) {
+    const title = "Đơn hàng đã hoàn thành";
+    const body = `Đơn hàng ${updateOrder._id} của bạn đã hoàn thành.`;
+    const data = {
+      order_id: updateOrder._id,
+      status: "completed",
+    };
+
+    await sendNotification(user.deviceToken, title, body, data); // Gửi thông báo
+  }
+
   return updateOrder;
 };
+
 const updateStatusCancelled = async (order_id) => {
   const query = {
     _id: order_id,
