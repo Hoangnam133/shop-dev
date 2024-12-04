@@ -4,7 +4,7 @@ const router = express.Router();
 const { runProducer } = require('../../message_queue/rabbitmq/producer');
 
 router.get('/getSuccess', async (req, res) => {
-    const { orderInfo, message } = req.query;
+    const { orderInfo, message, extraData } = req.query;
     const errorCode = parseInt(req.query.errorCode, 10); // Chuyển errorCode thành số nguyên
     
     try {
@@ -14,7 +14,7 @@ router.get('/getSuccess', async (req, res) => {
         if (errorCode === 0 && message === 'Success') {
             let payload = {
                 orderInfo,
-                shop_id: req.shop_id || 'Unknown Shop ID', // Kiểm tra shop_id nếu không có
+                shop_id: extraData || 'Unknown Shop ID', // Kiểm tra shop_id nếu không có
             };
             console.log('Payload gửi tới RabbitMQ:', payload);
 
