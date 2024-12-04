@@ -4,6 +4,7 @@ const {
   syncProductsToElasticsearch,
 } = require("../src/configs/syncDataToElasticsearch");
 const { runConsumer } = require("../src/message_queue/rabbitmq/consumer");
+//const admin = require('../src/configs/firebaseConfig')
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -11,6 +12,7 @@ app.use("/uploads", express.static("uploads")); // init mongodb
 require("./configs/initMongodb");
 
 app.use("/", require("./routers/index"));
+
 // handler error
 runConsumer();
 app.use((req, res, next) => {

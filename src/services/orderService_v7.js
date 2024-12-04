@@ -1,5 +1,6 @@
-const { getCartByUserId } = require("../repositories/cartRepository_v2");
+const { getCartByUserId, getCart } = require("../repositories/cartRepository_v4");
 const { BadRequestError, NotFoundError } = require("../core/errorResponse");
+const mongoose = require("mongoose");
 const userModel = require("../models/userModel");
 const shopModel = require("../models/shopModel");
 const rewardSettingModel = require("../models/rewardSettingModel");
@@ -34,6 +35,7 @@ const { runProducer } = require("../message_queue/rabbitmq/producer");
 const moment = require("moment-timezone");
 const {calculateDistance} = require('../utils/Distance')
 const locationModel = require("../models/locationModel");
+const { toObjectId } = require("../utils");
 class OrderServiceV5 {
   static async listOrderCancelledOfUser(user) {
     return await listOrderCancelledOfUser(user);
@@ -65,103 +67,142 @@ class OrderServiceV5 {
   static async listOrderCompleted({ limit = 10, page = 1 }) {
     return await listOrderCompleted({ limit, page });
   }
-  static async checkoutPreview({ user, shop, discount_code }) {
-    const foundUser = await userModel.findById(user._id);
-    const foundShop = await shopModel.findById(shop._id);
-    if (!foundUser || !foundShop) {
-      throw new NotFoundError("User or shop not found");
-    }
-
-    const cart = await getCartByUserId(foundUser._id);
-    if (!cart) {
-      throw new NotFoundError("Cart not found");
-    }
-
-    let productCheckout = [];
-    let totalDiscount = 0;
-    let finalPrice = 0;
-    let totalPrice = 0;
-    let totalMinutes = 0;
-
-    const checkDiscount = await getDiscountByCode(discount_code);
-
-    // Duyệt qua các sản phẩm trong giỏ hàng
-    for (const product of cart.cart_products) {
-      const foundProduct = await productModel.findOne({
-        _id: product.product_id,
-      });
-      if (!foundProduct) {
-        throw new NotFoundError(`${product.product_id} not found`);
+    static async checkoutPreview({ user, shop, discount_code }) {
+      const foundUser = await userModel.findById(user._id);
+      const foundShop = await shopModel.findById(shop._id);
+    
+      if (!foundUser || !foundShop) {
+        throw new NotFoundError("User or shop not found");
       }
+    
+      const cart = await getCart(foundUser._id);
+      if (!cart) {
+        throw new NotFoundError("Cart not found");
+      }
+    
+      let productCheckout = [];
+      let totalDiscount = 0;
+      let finalPrice = 0;
+      let totalPrice = 0;
+      let totalMinutes = 0;
+      var checkDiscount
+      if(discount_code){
+        checkDiscount = await getDiscountByCode(discount_code);
+        if(!checkDiscount){
+          throw new BadRequestError("Invalid discount code");
+        }
+      }
+      // **Nhóm các sản phẩm trong giỏ hàng theo `product_id`**
+      // const groupedProducts = cart.cart_products.reduce((group, item) => {
+      //   if (!group[item.product_id]) {
+      //     group[item.product_id] = [];
+      //   }
+      //   group[item.product_id].push(item);
+      //   return group;
+      // }, {});
+      // Nhóm các sản phẩm trong giỏ hàng theo `product_id`
+      const groupedProducts = cart.cart_products.reduce((group, item) => {
+        let productId = item.product_id; 
+    
 
+        console.log("product_id:", productId);
+        console.log("Type of product_id:", typeof productId);
+    
+        if (typeof productId === 'object' && productId._id) {
+            console.log("Extracting _id from object");
+            productId = productId._id;
+        }
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            throw new BadRequestError(`Invalid product_id: ${JSON.stringify(productId)}`);
+        }
+        const validProductId = toObjectId(productId);
+    
+        if (!group[validProductId]) {
+            group[validProductId] = [];
+        }
+        group[validProductId].push(item);
+        return group;
+    }, {});
+    
+
+    // **Áp dụng giảm giá cho từng nhóm sản phẩm**
+    for (const [productId, items] of Object.entries(groupedProducts)){
+      const foundProduct = await productModel.findById(productId);
+      if (!foundProduct) {
+        throw new NotFoundError(`${productId} not found`);
+      }
+  
+      // Kiểm tra tồn kho sản phẩm
+      const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
       const checkStockProduct = await checkProductStockInShop({
         shop_id: foundShop._id,
-        quantity: product.quantity,
-        product_id: product.product_id,
+        quantity: totalQuantity,
+        product_id: productId,
       });
       if (!checkStockProduct) {
-        throw new BadRequestError(
-          `${foundProduct.product_name} Not enough stock`
-        );
+        throw new BadRequestError(`${foundProduct.product_name} not enough stock`);
       }
-
-      totalMinutes += product.quantity * foundProduct.preparation_time;
-      const itemTotalPrice = product.totalPrice;
-      totalPrice += itemTotalPrice;
-
+  
+      // Tính tổng giá trị nhóm sản phẩm
+      const totalPriceForProduct = items.reduce((sum, item) => sum + item.totalPrice, 0);
+   
+      // Kiểm tra và áp dụng giảm giá
       let discountForProduct = 0;
       if (checkDiscount && checkDiscount.applicable_to === "product") {
-        const checkTypeDiscount = await checkDiscountApplicable(
-          checkDiscount,
-          "product"
-        );
-        if (!checkTypeDiscount) {
-          throw new BadRequestError("Invalid discount code");
-        } else {
+        const checkTypeDiscount = await checkDiscountApplicable(checkDiscount, "product");
+        if (checkTypeDiscount) {
           const applicableProducts = await checkproductAppliedDiscount(
             checkTypeDiscount,
             foundProduct
           );
+  
           if (applicableProducts) {
+            if(checkDiscount && (totalPriceForProduct < checkDiscount.min_order_value)){
+              throw new BadRequestError(`Min order value ${checkDiscount.min_order_value} is not enough for product ${foundProduct.product_name}`);
+            }
             discountForProduct = calculateDiscountAmount({
               discountValue: checkTypeDiscount.discount_value,
-              totalPrice: itemTotalPrice,
+              totalPrice: totalPriceForProduct,
               discountValueType: checkTypeDiscount.discount_value_type,
               maxValueDiscount: checkTypeDiscount.maximum_discount_value,
             });
           }
         }
       }
-
-      finalPrice += itemTotalPrice - discountForProduct;
-      totalDiscount += discountForProduct;
-
-      const sideDishes = product.sideDishes.map((sideDish) => ({
-        sideDish_id: sideDish.sideDish_id,
-        quantity: sideDish.quantity,
-        sideDish_name: sideDish.sideDish_name,
-      }));
-
-      productCheckout.push({
-        product_id: foundProduct._id,
-        product_thumb: foundProduct.product_thumb,
-        product_name: foundProduct.product_name,
-        extra: sideDishes,
-        quantity: product.quantity,
-        totalPrice: itemTotalPrice,
-        discountForProduct,
+  
+      // Phân bổ giảm giá cho từng mục trong nhóm
+      items.forEach((item) => {
+        const proportion = item.totalPrice / totalPriceForProduct;
+        const itemDiscount = discountForProduct * proportion;
+  
+        totalMinutes += item.quantity * foundProduct.preparation_time;
+        productCheckout.push({
+          product_id: foundProduct._id,
+          product_thumb: foundProduct.product_thumb,
+          product_name: foundProduct.product_name,
+          extra: item.sideDishes.map((sideDish) => ({
+            sideDish_id: sideDish.sideDish_id,
+            quantity: sideDish.quantity,
+            sideDish_name: sideDish.sideDish_name,
+          })),
+          quantity: item.quantity,
+          totalPrice: item.totalPrice,
+          discountForProduct: itemDiscount,
+        });
       });
+  
+      // Cập nhật tổng giảm giá và tổng giá trị cuối cùng
+      finalPrice += totalPriceForProduct - discountForProduct;
+      totalDiscount += discountForProduct;
+      totalPrice += totalPriceForProduct;
     }
-
-    // Giảm giá toàn đơn hàng nếu cần
+    if(checkDiscount && (totalPrice < checkDiscount.min_order_value)){
+      throw new BadRequestError(`Min order value ${checkDiscount.min_order_value} is not enough for total order`);
+    }
+    // **Giảm giá toàn đơn hàng (nếu cần)**
     if (checkDiscount && totalDiscount === 0) {
-      const checkTypeDiscount = await checkDiscountApplicable(
-        checkDiscount,
-        "order"
-      );
-      if (!checkTypeDiscount) {
-        throw new BadRequestError("Invalid discount code");
-      } else {
+      const checkTypeDiscount = await checkDiscountApplicable(checkDiscount, "order");
+      if (checkTypeDiscount) {
         totalDiscount = calculateDiscountAmount({
           discountValue: checkTypeDiscount.discount_value,
           totalPrice,
@@ -171,24 +212,25 @@ class OrderServiceV5 {
         finalPrice = totalPrice - totalDiscount;
       }
     }
-
-    const rewardSetting = await rewardSettingModel.findOne({ isActive: true }); // Tìm cài đặt điểm đang hoạt động
-    let pointsEarned = 0; // Mặc định không có điểm thưởng
+  
+    // **Tính điểm thưởng (nếu có hệ thống điểm)**
+    const rewardSetting = await rewardSettingModel.findOne({ isActive: true });
+    let pointsEarned = 0;
     if (rewardSetting) {
-      const pointRate = rewardSetting.pointRate; // Lấy tỷ lệ quy đổi
-      pointsEarned = Math.floor(totalPrice * pointRate); // Tính điểm thưởng
+      const pointRate = rewardSetting.pointRate;
+      pointsEarned = Math.floor(totalPrice * pointRate);
     }
-    console.log(pointsEarned);
-
+  
     return {
       productCheckout,
       totalPrice,
       totalDiscount,
       finalPrice,
       totalMinutes,
-      pointsEarned, // Ghi nhận số điểm đã sử dụng
+      pointsEarned,
     };
   }
+  
 
   static async checkout({
     user,
@@ -229,10 +271,10 @@ class OrderServiceV5 {
       if (!findLocation) {
         throw new NotFoundError("Location not found");
       }
-      const caDistance = calculateDistance({userLat, userLon, facilityLat: findLocation.Latitude_x, facilityLon: findLocation.Longitude_y})
+      const caDistance = calculateDistance({userLat, userLon, facilityLat: findLocation.latitude, facilityLon: findLocation.longitude})
       const minAllowedDistance  = process.env.ALLOWED_RADIUS
       if (caDistance > minAllowedDistance) {
-        throw new BadRequestError("User location is too far from the shop");
+        throw new BadRequestError("You are outside the delivery radius for immediate pickup. Please choose another option.");
       }
       const checkTimeImmediate = await checkImmediateDeliveryTime({
         shop_id: shop._id,
@@ -283,17 +325,8 @@ class OrderServiceV5 {
 
     console.log("đã  chạy đến đây LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
     await runProducer(payload);
-    // const newOrder = await orderModel.create(payload)
-    // if(!newOrder){
-    //     throw new BadRequestError('order creation failed')
-    // }
-    // return newOrder
   }
-  // xử lý sản phẩm trong kho (viết ở repository) ok
-  // tích hợp món phụ vào
-  // tích hợp thanh toán
-  // send thông báo khi đặt hàng thành công
-  // đổi điểm nữa
+
   static async cancelOrder({ order_id, user }) {
     const order = await orderModel.findOne({
       _id: order_id,

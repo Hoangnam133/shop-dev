@@ -18,7 +18,6 @@ const discountUsedByUsersSchema = new Schema(
 const discountSchema = new Schema(
   {
     discount_name: { type: String, required: true }, // Tên chương trình giảm giá
-    discount_content: { type: String, required: true },
     discount_image: { type: String, required: true },
     discount_code: { type: String, required: true }, // Mã giảm giá
     discount_start_date: { type: Date, required: true }, // Thời gian bắt đầu sử dụng mã
@@ -35,7 +34,7 @@ const discountSchema = new Schema(
     max_uses_per_user: { type: Number, required: true, default: 1 }, // Lượt sử dụng tối đa của mỗi người
     is_deleted: { type: Boolean, default: false },
     applicable_products: [{ type: Schema.Types.ObjectId, ref: "Product" }], // Các sản phẩm được áp dụng
-    applicable_to: { type: String, required: true, enum: ["product", "order"] },
+    applicable_to: { type: String, required: true, enum: ["product", "order"] }, // áp dụng cho tổng giá order hay các sản phẩm riêng biệt trong order
     discount_user_used: { type: [discountUsedByUsersSchema], default: [] }, // ai đã sử dụng mã này
   },
   {
