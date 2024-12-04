@@ -26,6 +26,17 @@ class DiscountController {
             metaData: await discountService.createDiscount(req.body, file)
         }).send(res)
 
+    }
+    // ở đây
+    getDiscountById = async (req, res, next) => {
+        const discount_id = req.params.discount_id
+        new SuccessResponse({
+            message: 'get discount by id success',
+            metaData: await discountService.getDiscountById(discount_id)
+        }).send(res)
+    }
+
+
   createDiscount = async (req, res, next) => {
     const { file } = req;
     if (!file) {
