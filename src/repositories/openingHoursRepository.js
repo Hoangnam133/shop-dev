@@ -322,6 +322,75 @@ const getOpeningTimes = async (shop, daysToAdd) => {
   }
 };
 
+const getOpeningTimesForNextDays = async (shop) => {
+    try {
+        const timezone = 'Asia/Ho_Chi_Minh';
+        const now = moment().tz(timezone); // Thời gian hiện tại
+        const foundShop = await shopModel.findById(shop._id);
+        if (!foundShop) {
+            throw new NotFoundError('Shop not found');
+        }
+        const openingHours = await openingHoursModel.findById(foundShop.opening_hours);
+        if (!openingHours || openingHours.isDeleted) {
+            throw new NotFoundError('Shop opening hours not found');
+        }
+
+        // Tiêu đề các ngày
+        const dayTitles = ['Today', 'Tomorrow', 'InTwoDays'];
+
+        // Dữ liệu trả về
+        const result = {};
+
+        // Duyệt qua 3 ngày (Today, Tomorrow, The day after tomorrow)
+        for (let daysToAdd = 0; daysToAdd < 3; daysToAdd++) {
+            const targetDay = moment().tz(timezone).add(daysToAdd, 'day');
+            const dayOfWeek = targetDay.format('dddd').toLowerCase(); // monday, tuesday,...
+            const titleKey = dayTitles[daysToAdd]; // Lấy tiêu đề phù hợp: Today, Tomorrow,...
+
+            const hours = openingHours[dayOfWeek];
+            if (!hours || hours.isClosed) {
+                continue; // Nếu ngày đóng cửa, bỏ qua ngày này
+            }
+
+            // Tính toán thời gian bắt đầu
+            const dateKey = targetDay.format('YYYY-MM-DD');
+            const openTime = moment.tz(`${dateKey}T${hours.open}`, timezone);
+            let startTime = openTime;
+
+            // Nếu là ngày hôm nay, bắt đầu từ thời gian hiện tại hoặc giờ mở cửa
+            if (daysToAdd === 0) {
+                const nowRounded = now.clone().add(30 - (now.minute() % 30), 'minutes').startOf('minute'); // Làm tròn đến nửa giờ kế tiếp
+                startTime = nowRounded.isAfter(openTime) ? nowRounded : openTime;
+            }
+
+            const lastAvailableTime = moment
+                .tz(`${dateKey}T${hours.close}`, timezone)
+                .subtract(1, 'hour');
+
+            const times = {};
+            let currentTime = startTime;
+            while (currentTime.isBefore(lastAvailableTime)) {
+                const timeKey = currentTime.format('HH:mm'); // Key là giờ:phút
+                times[timeKey] = currentTime.format('YYYY-MM-DDTHH:mm:ss'); // Value là thời gian đầy đủ
+                currentTime = currentTime.add(30, 'minutes'); // Tăng 30 phút
+            }
+
+            if (Object.keys(times).length > 0) {
+                result[titleKey] = times; // Chỉ lưu kết quả nếu có dữ liệu
+            }
+        }
+
+        return result;
+    } catch (error) {
+        console.error(error);
+        throw new BadRequestError('Error getting opening times');
+    }
+};
+
+// ở đây
+
+
+
 module.exports = {
   createOpeningHours,
   getAllOpeningHours,
