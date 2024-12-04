@@ -3,7 +3,7 @@ const { removeUndefinedObject, toObjectId } = require("../utils/index");
 const { NotFoundError, BadRequestError } = require("../core/errorResponse");
 const { getCurrentDateInTimeZone } = require("../utils/convertTime");
 const uploadService = require("../services/uploadService");
-const moment = require('moment');
+const moment = require("moment");
 // tạo mã giảm giá
 const createDiscount = async (payload, file) => {
   const existingDiscount = await discountModel.findOne({
@@ -20,9 +20,9 @@ const createDiscount = async (payload, file) => {
     );
   }
   if (!file) {
-    throw new BadRequestError('Image file is required');
+    throw new BadRequestError("Image file is required");
   }
-  const uploadImg = await uploadService.uploadImageFromLocalS3(file)
+  const uploadImg = await uploadService.uploadImageFromLocalS3(file);
   if (!uploadImg) {
     throw new BadRequestError("Failed to upload image");
   }
@@ -48,8 +48,8 @@ const getDiscountById = async (discount_id) => {
   // Thêm số ngày còn lại vào kết quả trả về
   return { ...discount, days_remaining: daysRemaining > 0 ? daysRemaining : 0 };
 };
-const getDiscountByIdForUser = async ({discount_id, user}) => {
-  if(!user) {
+const getDiscountByIdForUser = async ({ discount_id, user }) => {
+  if (!user) {
     throw new BadRequestError("User is required");
   }
   const discount = await discountModel.findById(toObjectId(discount_id)).lean();
@@ -63,13 +63,17 @@ const getDiscountByIdForUser = async ({discount_id, user}) => {
   const daysRemaining = endDate.diff(currentDate, "days");
   const userUsage = discount.discount_user_used.find(
     (usage) => usage.dbu_userId.toString() === user._id.toString()
-  )
+  );
 
   const usedCount = userUsage ? userUsage.count_used : 0;
   const remainingUses = discount.max_uses_per_user - usedCount;
 
   // Thêm số ngày còn lại vào kết quả trả về
-  return { ...discount, days_remaining: daysRemaining > 0 ? daysRemaining : 0,  remainingUses: Math.max(0, remainingUses) };
+  return {
+    ...discount,
+    days_remaining: daysRemaining > 0 ? daysRemaining : 0,
+    remainingUses: Math.max(0, remainingUses),
+  };
 };
 // lấy discount theo mã code
 const getDiscountByCode = async (discountCode) => {
@@ -84,8 +88,7 @@ const getActiveDiscounts = async ({ page, limit }) => {
     discount_end_date: { $gte: getCurrentDateInTimeZone() },
     is_deleted: false,
   };
-  const discounts = await discountModel.find(filter)
-
+  const discounts = await discountModel.find(filter);
 
   return discounts;
 };
@@ -214,7 +217,7 @@ const getPublicDiscounts = async ({ limit, page }) => {
   return discounts;
 };
 // hàm này kiểm tra xem giảm giá này áp dụng có đúng loại (order / product ) không (xem chi tiết ở models)
-const checkDiscountApplicable = async (discount, applicableTo ) => {
+const checkDiscountApplicable = async (discount, applicableTo) => {
   // truyền vô discount luôn
   const getDiscount = await getDiscountById(discount._id);
   if (getDiscount.applicable_to !== applicableTo) {
@@ -401,6 +404,7 @@ const updateUserToDiscount = async ({ discountCode, user_id }) => {
   }
   return discount;
 };
+
 const getValidDiscounts = async (user) => {
   const currentDate = moment();
 
@@ -433,6 +437,8 @@ const getValidDiscounts = async (user) => {
   return validDiscounts;
 };
 // o day ne
+
+
 module.exports = {
   createDiscount,
   getDiscountById,
@@ -453,6 +459,4 @@ module.exports = {
   getActiveDiscounts,
   checkproductAppliedDiscount,
   calculateDiscountAmount,
-  getValidDiscounts,
-  getDiscountByIdForUser
 };

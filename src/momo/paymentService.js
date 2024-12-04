@@ -3,19 +3,33 @@ const { config } = require('../momo/config');
 const { generateSignature, signSHA256 } = require('./gen_signature');
 const { BadRequestError } = require('../core/errorResponse');
 const { exec } = require('child_process');
-const openUrl = (url) => {
-    const command = process.platform === 'win32' ? `start "" "${url}"` :  // Thêm "" để xử lý URL có tham số
-                    process.platform === 'darwin' ? `open ${url}` :
-                    `xdg-open ${url}`;  // Dành cho Linux
+function openLink(url) {
+    try {
+        const platform = process.platform; // Kiểm tra hệ điều hành
+        let command;
 
-    exec(command, (err, stdout, stderr) => {
-        if (err) {
-            console.error('Error opening URL:', err);
-            return;
+        if (platform === 'win32') {
+            // Windows
+            command = `start "" "${url}"`; // Bọc URL trong dấu ngoặc kép
+        } else if (platform === 'darwin') {
+            // macOS
+            command = `open "${url}"`;
+        } else {
+            // Linux
+            command = `xdg-open "${url}"`;
         }
-        console.log('URL opened successfully');
-    });
-};
+
+        exec(command, (error) => {
+            if (error) {
+                console.error('Không thể mở liên kết:', error.message);
+            } else {
+                console.log(`Đã mở liên kết: ${url}`);
+            }
+        });
+    } catch (error) {
+        console.error('Lỗi xảy ra:', error.message);
+    }
+}
 
 async function processMoMoPayment({ orderId, totalPrice }) {
     const requestId = `${config.partnerCode}-${Date.now()}`;
@@ -74,15 +88,13 @@ async function processMoMoPayment({ orderId, totalPrice }) {
             throw new BadRequestError('Cannot make payment request');
         }
         console.log('Response from MoMo:', response.data);
-
-        openUrl(response.data.payUrl)
-
+        openLink(response.data.payUrl)
         return response.data.deeplink; // Return payUrl
     } catch (error) {
         throw new Error('MoMo payment request failed: ' + error.message);
     }
 }
-// push
+
 module.exports = {
     processMoMoPayment,
 };
