@@ -5,6 +5,11 @@ const COLLECTION_NAME = 'RewardSettings';
 const DOCUMENT_NAME = 'RewardSetting';
 
 const rewardSettingSchema = new Schema({
+    name:{
+        type: String,
+        required: true,
+        unique: true,
+    },
     pointRate: {
         type: Number,
         default: 0.01, // Tỷ lệ quy đổi, ví dụ 0.01 tương đương 1% của giá trị mua hàng
