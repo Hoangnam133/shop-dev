@@ -2,6 +2,7 @@ const axios = require('axios');
 const { config } = require('../momo/config');
 const { generateSignature, signSHA256 } = require('./gen_signature');
 const { BadRequestError } = require('../core/errorResponse');
+
 const { exec } = require('child_process');
 function openLink(url) {
     try {
@@ -30,6 +31,7 @@ function openLink(url) {
         console.error('Lỗi xảy ra:', error.message);
     }
 }
+
 
 async function processMoMoPayment({ orderId, totalPrice }) {
     const requestId = `${config.partnerCode}-${Date.now()}`;
@@ -88,7 +90,9 @@ async function processMoMoPayment({ orderId, totalPrice }) {
             throw new BadRequestError('Cannot make payment request');
         }
         console.log('Response from MoMo:', response.data);
+
         openLink(response.data.payUrl)
+
         return response.data.deeplink; // Return payUrl
     } catch (error) {
         throw new Error('MoMo payment request failed: ' + error.message);
