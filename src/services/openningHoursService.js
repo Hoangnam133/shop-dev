@@ -8,6 +8,7 @@ const {
   getAllOpeningHoursOfShopId,
   restoreOpeningHours,
   getOpeningTimes,
+  getOpeningTimesForNextDays
 } = require("../repositories/openingHoursRepository");
 
 class OpeningHoursService {
