@@ -4,22 +4,29 @@ const router = express.Router();
 const { runProducer } = require('../../message_queue/rabbitmq/producer');
 
 router.get('/getSuccess', async (req, res) => {
-    const { orderInfo, message, extraData } = req.query;
-    const errorCode = parseInt(req.query.errorCode, 10); // Chuyển errorCode thành số nguyên
+    const { orderInfo, message, extraData, amount } = req.query;
+    const errorCode = parseInt(req.query.errorCode, 10); 
     
     try {
         console.log('Thông tin nhận được:', req.query);
-        res.sendFile(path.resolve(__dirname, '../../public/fontE/index.html'));
-
         if (errorCode === 0 && message === 'Success') {
             let payload = {
                 orderInfo,
-                shop_id: extraData || 'Unknown Shop ID', // Kiểm tra shop_id nếu không có
+                shop_id: extraData || 'Unknown Shop ID', 
+                amount
             };
             console.log('Payload gửi tới RabbitMQ:', payload);
-
-            // Gửi payload tới RabbitMQ
             await runProducer(payload);
+            res.status(200).send({
+                status: 200,
+                message: 'Thanh toán thành công. Cảm ơn bạn đã mua hàng!'
+            }); 
+        }
+        else{
+            res.status(500).send({
+                status: 500,
+                message: 'Có lỗi xảy ra trong quá trình xử lý thanh toán. Vui lòng thử lại sau.'
+            });
         }
     } catch (error) {
         console.error('Lỗi xảy ra:', error);

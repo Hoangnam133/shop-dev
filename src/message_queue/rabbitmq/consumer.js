@@ -22,7 +22,7 @@ const runConsumer = async () => {
                  
                     const orderData = JSON.parse(msg.content.toString());
                     console.log(`Received order: ${JSON.stringify(orderData)}`);
-                    const {orderInfo, shop_id} = orderData;
+                    const {orderInfo, shop_id, amount} = orderData;
                     const newOrder = await orderModel.findByIdAndUpdate(
                         orderInfo, 
                         { 
@@ -58,7 +58,7 @@ const runConsumer = async () => {
                     let pointsEarned = 0;
                     if (rewardSetting) {
                       const pointRate = rewardSetting.pointRate;
-                      pointsEarned = Math.floor(newOrder.order_checkout.finalPrice * pointRate);
+                      pointsEarned = Math.floor(amount * pointRate);
                     }
                     const updatePoint = await userModel.findByIdAndUpdate(newOrder.order_userId,{
                         $inc: { points: pointsEarned } 
