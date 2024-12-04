@@ -9,8 +9,7 @@ const router = express.Router();
 // Các route cho giờ mở cửa
 router.get('/getOpeningTimesForNextDays', authentication,asynHandler(openingHoursController.getOpeningTimesForNextDays)); 
 
-
-
+// fixx
 router.post('/create', asynHandler(openingHoursController.createOpeningHours)); // Tạo giờ mở cửa (hoặc có thể là tạo mới)
 router.get('/getAll', asynHandler(openingHoursController.getAllOpeningHours)); // Lấy tất cả giờ mở cửa
 router.patch('/update/:openingHours_id', asynHandler(openingHoursController.updateOpeningHours)); // Cập nhật giờ mở cửa
