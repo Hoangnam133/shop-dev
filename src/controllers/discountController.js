@@ -2,10 +2,35 @@ const discountService = require("../services/discountService");
 const { SuccessResponse } = require("../core/successResponse");
 
 class DiscountController {
+
+    // ở đây
+    getValidDiscounts = async (req, res, next) => {
+        new SuccessResponse({
+            message: 'get discount active success',
+            metaData: await discountService.getValidDiscounts(req.user)
+        }).send(res)
+    }
+    getDiscountByIdForUser = async (req, res, next) => {
+        new SuccessResponse({
+            message: 'get discount active success',
+            metaData: await discountService.getDiscountByIdForUser({discount_id: req.params.discount_id, user: req.user})
+        }).send(res)
+    }
+    createDiscount = async (req, res, next) => {
+        const {file} = req
+        if(!file){
+            throw new Error('file missing')
+        }
+        new SuccessResponse({
+            message: 'create discount success',
+            metaData: await discountService.createDiscount(req.body, file)
+        }).send(res)
+
   createDiscount = async (req, res, next) => {
     const { file } = req;
     if (!file) {
       throw new Error("file missing");
+
     }
     new SuccessResponse({
       message: "create discount success",
