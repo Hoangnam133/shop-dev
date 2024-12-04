@@ -33,7 +33,7 @@ function openLink(url) {
 }
 
 
-async function processMoMoPayment({ orderId, totalPrice }) {
+async function processMoMoPayment({ orderId, totalPrice, shop_id }) {
     const requestId = `${config.partnerCode}-${Date.now()}`;
     const orderIdMoMo = `${config.partnerCode}-${orderId}-${Date.now()}`;
     const endpoint = config.MomoApiUrl;
@@ -43,7 +43,7 @@ async function processMoMoPayment({ orderId, totalPrice }) {
     const notifyUrl = config.notifyUrl;
     const partnerCode = config.partnerCode;
     const orderInfo = String(orderId);
-    const extraData = '';
+    const extraData = String(shop_id);
     const amount = String(Math.floor(totalPrice)); // Convert to string after flooring
 
     const rawHash =

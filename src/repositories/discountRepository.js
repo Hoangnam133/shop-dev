@@ -459,4 +459,5 @@ module.exports = {
   getActiveDiscounts,
   checkproductAppliedDiscount,
   calculateDiscountAmount,
+  getValidDiscounts
 };
