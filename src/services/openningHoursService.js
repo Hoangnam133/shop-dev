@@ -8,7 +8,6 @@ const {
   getAllOpeningHoursOfShopId,
   restoreOpeningHours,
   getOpeningTimes,
-  getAvailableTimes,
 } = require("../repositories/openingHoursRepository");
 
 class OpeningHoursService {
@@ -38,9 +37,6 @@ class OpeningHoursService {
   }
   static async restoreOpeningHours(openingHours_id) {
     return await restoreOpeningHours(openingHours_id);
-  }
-  static async getAvailableTimes(shop, daysToAdd) {
-    return await getAvailableTimes(shop, daysToAdd);
   }
 }
 module.exports = OpeningHoursService;

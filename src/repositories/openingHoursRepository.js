@@ -321,78 +321,6 @@ const getOpeningTimes = async (shop, daysToAdd) => {
     throw new BadRequestError("Error getting opening times");
   }
 };
-const getAvailableTimes = async (shop, daysToAdd) => {
-  try {
-    const timezone = "Asia/Ho_Chi_Minh";
-    const foundShop = await shopModel.findById(shop._id);
-    if (!foundShop) {
-      throw new Error("Shop not found");
-    }
-
-    const openingHours = await openingHoursModel.findById(
-      foundShop.opening_hours
-    );
-    console.log(openingHours);
-
-    if (!openingHours || openingHours.isDeleted) {
-      throw new Error("Shop opening hours not found");
-    }
-
-    const targetDay = moment().tz(timezone).add(daysToAdd, "days");
-    const dayOfWeek = targetDay.format("dddd").toLowerCase();
-    const hours = openingHours[dayOfWeek];
-
-    if (!hours || hours.isClosed) {
-      return []; // Shop is closed on this day
-    }
-
-    const openTime = moment
-      .tz(`${targetDay.format("YYYY-MM-DD")}T${hours.open}`, timezone)
-      .add(30, "minutes"); // Giờ mở cửa cộng 30 phút
-    const closeTime = moment
-      .tz(`${targetDay.format("YYYY-MM-DD")}T${hours.close}`, timezone)
-      .subtract(1, "hour"); // Giờ đóng cửa trừ 1 tiếng
-    const now = moment.tz(timezone);
-
-    const availableTimes = [];
-    let currentTime;
-
-    // Xử lý logic cho ngày hôm nay
-    if (daysToAdd === 0) {
-      if (now.isBefore(closeTime)) {
-        // Nếu trong giờ mở cửa
-        if (now.isBefore(openTime)) {
-          // Nếu trước giờ mở cửa, bắt đầu từ giờ mở cửa
-          currentTime = openTime.clone();
-        } else {
-          // Nếu sau giờ mở cửa, bắt đầu từ hiện tại
-          availableTimes.push("Càng sớm càng tốt 15 - 30ph");
-          currentTime = now
-            .clone()
-            .add(15, "minutes")
-            .startOf("minute")
-            .minutes(now.minutes() > 30 ? 60 : 30); // Làm tròn mốc 30 phút tiếp theo
-        }
-      } else {
-        return []; // Ngoài giờ mở cửa
-      }
-    } else {
-      // Xử lý logic cho ngày hôm sau
-      currentTime = openTime.clone();
-    }
-
-    // Thêm các mốc thời gian 30 phút
-    while (currentTime.isBefore(closeTime)) {
-      availableTimes.push(currentTime.format("HH:mm"));
-      currentTime.add(30, "minutes");
-    }
-
-    return availableTimes;
-  } catch (error) {
-    console.error(error);
-    throw new Error("Error getting available times");
-  }
-};
 
 module.exports = {
   createOpeningHours,
@@ -406,5 +334,4 @@ module.exports = {
   checkDeliveryTimeForShop,
   checkImmediateDeliveryTime,
   getOpeningTimes,
-  getAvailableTimes,
 };

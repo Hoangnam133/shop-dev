@@ -71,21 +71,5 @@ class OpeningHoursController {
       ),
     }).send(res);
   };
-  getAvailableTimes = async (req, res, next) => {
-    try {
-      const availableTimes = await openingHoursService.getAvailableTimes(
-        req.shop,
-        req.params.daysToAdd
-      );
-      console.log(availableTimes);
-
-      new SuccessResponse({
-        message: "Get available times success",
-        metaData: availableTimes,
-      }).send(res);
-    } catch (error) {
-      next(error);
-    }
-  };
 }
 module.exports = new OpeningHoursController();

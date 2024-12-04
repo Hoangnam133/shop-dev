@@ -1,5 +1,5 @@
 const moment = require("moment-timezone");
-const getCurrentDateInTimeZone = () => {
+const   getCurrentDateInTimeZone = () => {
   const date = new Date();
   const timeZone = "Asia/Ho_Chi_Minh";
   const format = "YYYY-MM-DD HH:mm:ss";
