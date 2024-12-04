@@ -61,12 +61,7 @@ class UserService {
   //       token: token,
   //     };
   //   };
-  static loginUser = async ({
-    email,
-    password,
-    shop_id,
-    refreshToken = null,
-  }) => {
+  static loginUser = async ({ email, password, shop_id, deviceToken }) => {
     const checkUser = await findByEmail(email);
     if (!checkUser || checkUser.roles !== roles.USER) {
       throw new NotFoundError("user not found");
@@ -76,17 +71,24 @@ class UserService {
     if (!matchPassword) {
       throw new NotFoundError("user not found");
     }
+
     const publicKey = process.env.PUBLIC_KEY;
     const privateKey = process.env.PRIVATE_KEY;
-    console.log(`private::: ${privateKey}, puplickey:::${publicKey}`);
+
+    // **Lưu deviceToken vào user**
+    checkUser.deviceToken = deviceToken; // Cập nhật token mới
+    await checkUser.save(); // Lưu thay đổi vào cơ sở dữ liệu
+
     const token = await createTokenPair(
       { userId: checkUser._id, roles: checkUser.roles, shop_id },
       publicKey,
       privateKey
     );
+
     if (!token) {
       throw new BadRequestError("create token fail");
     }
+
     const keyToken = await keyTokenService.createKeyToken({
       userId: checkUser._id,
       publicKey,
@@ -97,12 +99,13 @@ class UserService {
 
     return {
       user: getInfoData({
-        fileds: ["_id", "email", "name", "avatar"],
+        fileds: ["_id", "email", "name", "avatar", "deviceToken"], // Bao gồm deviceToken khi trả về
         object: checkUser,
       }),
-      token: token,
+      token,
     };
   };
+
   static loginAdmin = async ({ email, password, refreshToken = null }) => {
     const checkUser = await findByEmail(email);
     if (!checkUser || checkUser.roles !== roles.ADMIN) {
