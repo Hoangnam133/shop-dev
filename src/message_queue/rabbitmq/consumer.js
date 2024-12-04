@@ -34,9 +34,11 @@ const runConsumer = async () => {
                         throw new BadRequestError('order creation failed')
                     }
                     await deleteCartToRedis(newOrder.order_userId)
-                    const foundCart = await cartModel.findById(newOrder.order_userId)
+                    const foundCart = await cartModel.findOne({
+                        cart_userId: newOrder.order_userId
+                    })
                     if (foundCart) {
-                        const updateCart = await cartModel.findByIdAndUpdate(newOrder.order_userId,
+                        const updateCart = await cartModel.findByIdAndUpdate(foundCart._id,
                             { $set: { cart_products: [] } },{
                                new: true,
                                lean: true
