@@ -1,7 +1,7 @@
 const amqp = require('amqplib');
 const orderModel = require('../../models/orderModel');
 
-const runProducer = async (orderData) => {
+const runProducer = async (payload) => {
     try {
         const connection = await amqp.connect('amqp://localhost');
         const channel = await connection.createChannel();
@@ -9,7 +9,7 @@ const runProducer = async (orderData) => {
         await channel.assertQueue(queue_name, { durable: true });
 
      
-        const message = JSON.stringify(orderData);
+        const message = JSON.stringify(payload);
         channel.sendToQueue(queue_name, Buffer.from(message));
         console.log(`Message sent: ${message}`);
 
