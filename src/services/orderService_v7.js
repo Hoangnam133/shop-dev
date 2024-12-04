@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const userModel = require("../models/userModel");
 const shopModel = require("../models/shopModel");
 const rewardSettingModel = require("../models/rewardSettingModel");
+const {processMoMoPayment} = require('../momo/paymentService')
 const {
   checkProductStockInShop,
 } = require("../repositories/inventoryRepository");
@@ -299,7 +300,7 @@ class OrderServiceV5 {
       },
       order_payment: {
         payment_method: "online_payment",
-        payment_status: "success",
+        payment_status: "pending",
       },
       options_delivery,
       order_product: productCheckout,
@@ -311,20 +312,16 @@ class OrderServiceV5 {
       note,
       points_earned: pointsEarned,
     };
-    const foundUser = await userModel.findById(user._id); // Lấy người dùng từ cơ sở dữ liệu
-    if (!foundUser) {
-      throw new NotFoundError("User not found");
+    const createOrder = await orderModel.create(payload)
+    if(!createOrder){
+      throw new BadRequestError("Failed to create order");
     }
-
-    if (pointsEarned > 0) {
-      foundUser.points += pointsEarned; // Chỉ cộng điểm nếu có
-      await foundUser.save();
-      console.log("Updated points successfully:", foundUser.points); // Lưu thay đổi vào database
+    const deeplink = await processMoMoPayment({orderId: createOrder.order_trackingNumber, totalPrice: createOrder.order_checkout.finalPrice})
+    if(!deeplink){
+      throw new BadRequestError("Failed to process MoMo payment");
     }
-    console.log(foundUser);
-
-    console.log("đã  chạy đến đây LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
-    await runProducer(payload);
+    console.log("MoMo payment link app---------------------", deeplink);
+    return deeplink
   }
 
   static async cancelOrder({ order_id, user }) {

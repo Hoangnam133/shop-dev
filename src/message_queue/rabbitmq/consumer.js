@@ -18,10 +18,22 @@ const runConsumer = async () => {
                  
                     const orderData = JSON.parse(msg.content.toString());
                     console.log(`Received order: ${JSON.stringify(orderData)}`);
-                  
-                    const newOrder = await orderModel.create(orderData);
+                    const {orderInfo, shop_id} = orderData;
+                    const newOrder = await orderModel.findByIdAndUpdate(
+                        orderInfo, 
+                        { 
+                          "order_payment.payment_status": "Success" 
+                        }, 
+                        { new: true } 
+                      );
                     if(!newOrder){
                         throw new BadRequestError('order creation failed')
+                    }
+                    for(const product of newOrder.order_product){
+                        const updateStock = await deductStockAfterPayment({shop_id, product_id: product.product_id, quantity: product.quantity})
+                        if(!updateStock){
+                            throw new BadRequestError('Failed to deduct stock')
+                        }
                     }
                     channel.ack(msg);
                     console.log('Message acknowledged and order processed successfully');
