@@ -432,7 +432,7 @@ const getValidDiscounts = async (user) => {
 
   return validDiscounts;
 };
-
+// o day ne
 module.exports = {
   createDiscount,
   getDiscountById,
