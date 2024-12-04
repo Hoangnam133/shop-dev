@@ -2,6 +2,7 @@ const openingHoursService = require('../services/openningHoursService')
 const {SuccessResponse} = require('../core/successResponse')
 
 class OpeningHoursController {
+    // ở đây
     getOpeningTimesForNextDays = async (req, res, next) => {
         new SuccessResponse({
             message: 'get tomorrow opening times success',

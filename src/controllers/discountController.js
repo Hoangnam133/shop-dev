@@ -2,6 +2,7 @@ const discountService = require('../services/discountService')
 const { SuccessResponse } = require('../core/successResponse')
 
 class DiscountController {
+    // ở đây
     getValidDiscounts = async (req, res, next) => {
         new SuccessResponse({
             message: 'get discount active success',
