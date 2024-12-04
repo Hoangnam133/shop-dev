@@ -10,6 +10,7 @@ const {  createOpeningHours,
 } = require('../repositories/openingHoursRepository')
 
 class OpeningHoursService {
+    // ở đây nữa
     static async getOpeningTimesForNextDays(shop) {
         return await getOpeningTimesForNextDays(shop)
     }
