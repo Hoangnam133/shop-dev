@@ -58,6 +58,10 @@ const userSchema = new Schema(
       type: Number,
       default: 0,
     },
+    deviceToken: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

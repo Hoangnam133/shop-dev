@@ -18,7 +18,6 @@ const discountUsedByUsersSchema = new Schema(
 const discountSchema = new Schema(
   {
     discount_name: { type: String, required: true }, // Tên chương trình giảm giá
-    discount_content: { type: String, required: true },// nội dung giảm giá
     discount_image: { type: String, required: true },
     discount_code: { type: String, required: true }, // Mã giảm giá
     discount_start_date: { type: Date, required: true }, // Thời gian bắt đầu sử dụng mã
