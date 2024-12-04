@@ -316,7 +316,7 @@ class OrderServiceV5 {
     if(!createOrder){
       throw new BadRequestError("Failed to create order");
     }
-    const deeplink = await processMoMoPayment({orderId: createOrder.order_trackingNumber, totalPrice: createOrder.order_checkout.finalPrice})
+    const deeplink = await processMoMoPayment({orderId: createOrder._id, totalPrice: createOrder.order_checkout.finalPrice})
     if(!deeplink){
       throw new BadRequestError("Failed to process MoMo payment");
     }
