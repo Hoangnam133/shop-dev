@@ -216,47 +216,6 @@ const checkImmediateDeliveryTime  = async ({shop_id, totalMinutes}) => {
 
     return formattedTime;
 };
-// lấy ra thời gian để chọn
-// const getOpeningTimes = async (shop, daysToAdd) => {
-//     try {
-//         const timezone = 'Asia/Ho_Chi_Minh';
-//         const foundShop = await shopModel.findById(shop._id);
-//         if (!foundShop) {
-//             throw new NotFoundError('Shop not found');
-//         }
-//         const openingHours = await openingHoursModel.findById(foundShop.opening_hours);
-//         if (!openingHours || openingHours.isDeleted) {
-//             throw new NotFoundError('Shop opening hours not found');
-//         }
-
-//         // Lấy thông tin ngày muốn tính (theo daysToAdd)
-//         const targetDay = moment().tz(timezone).add(daysToAdd, 'day');
-//         const dayOfWeek = targetDay.format('dddd').toLowerCase();
-
-//         const hours = openingHours[dayOfWeek];
-//         if (!hours || hours.isClosed) {
-//             return [];
-//         }
-
-//         const openTime = moment.tz(`${targetDay.format('YYYY-MM-DD')}T${hours.open}`, timezone);
-//         const lastAvailableTime = moment.tz(`${targetDay.format('YYYY-MM-DD')}T${hours.close}`, timezone).subtract(1, 'hour');
-
-//         const times = {};
-//         let currentTime = openTime;
-//         while (currentTime.isBefore(lastAvailableTime)) {
-//             // Lấy key là giờ:phút và value là thời gian đầy đủ
-//             const timeKey = currentTime.format('HH:mm'); // Key là giờ:phút
-//             times[timeKey] = currentTime.format('YYYY-MM-DDTHH:mm:ss'); // Value là thời gian đầy đủ
-
-//             currentTime = currentTime.add(30, 'minutes');
-//         }
-
-//         return times;
-//     } catch (error) {
-//         console.error(error);
-//         throw new BadRequestError('Error getting opening times');
-//     }
-// };
 const getOpeningTimesForNextDays = async (shop) => {
     try {
         const timezone = 'Asia/Ho_Chi_Minh';
@@ -322,7 +281,7 @@ const getOpeningTimesForNextDays = async (shop) => {
     }
 };
 
-
+// ở đây
 module.exports = {
     createOpeningHours,
     getAllOpeningHours,
