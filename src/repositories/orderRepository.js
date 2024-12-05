@@ -6,7 +6,7 @@ const listOrderPendingOfUser = async (user) => {
   const query = {
     order_userId: user._id,
     order_status: "pending",
-    "order_payment.payment_status": "success",
+    "order_payment.payment_status": "Success",
   };
   const findOrder = await orderModel.find(query).sort({ createdAt: -1 });
   console.log(findOrder);

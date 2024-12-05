@@ -10,6 +10,7 @@ router.use(authentication)
 router.patch('/cancelOrder/:order_id',asynHandler(orderControllerV5.cancelOrder))
 router.post('/checkoutPreview',asynHandler(orderControllerV5.checkoutPreview))
 router.post('/checkout',asynHandler(orderControllerV5.checkout))
+
 router.get('/listOrderCancelledOfUser',asynHandler(orderControllerV5.listOrderCancelledOfUser))
 router.get('/listOrderCompletedOfUser',asynHandler(orderControllerV5.listOrderCompletedOfUser))
 router.get('/listOrderPendingOfUser',asynHandler(orderControllerV5.listOrderPendingOfUser))
