@@ -23,7 +23,7 @@ router.get('/getSuccess', async (req, res) => {
             await runProducer(payload);
             
             // Lưu kết quả thanh toán thành công
-            paymentResults[orderInfo] = { status: 'success', amount };
+            paymentResults= { status: 'success', amount };
 
             res.status(200).send({
                 status: 200,
@@ -31,7 +31,7 @@ router.get('/getSuccess', async (req, res) => {
             });
         } else {
             // Lưu kết quả thanh toán thất bại
-            paymentResults[orderInfo] = { status: 'failed', message: 'Thanh toán thất bại. Vui lòng thử lại.' };
+            paymentResults = { status: 'failed', message: 'Thanh toán thất bại. Vui lòng thử lại.' };
 
             res.status(500).send({
                 status: 500,
