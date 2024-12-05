@@ -5,8 +5,8 @@ const config = {
     partnerCode: 'MOMO',
     // returnUrl: 'http://localhost:3000/v2/api/momoSuccess/getSuccess', // URL sẽ nhận kết quả sau thanh toán
     // notifyUrl: 'http://localhost:3000/v2/api/momoSuccess/getSuccess', // URL callback nhận thông báo từ MoMo
-    returnUrl: 'https://2b76-14-191-230-55.ngrok-free.app/v2/api/momoSuccess/getSuccess', // URL nhận kết quả thanh toán
-    notifyUrl: 'https://2b76-14-191-230-55.ngrok-free.app/v2/api/momoSuccess/getSuccess', // URL callback từ MoMo
+    returnUrl: 'http://localhost:3000/v2/api/momoSuccess/getSuccess', // URL nhận kết quả thanh toán
+    notifyUrl: 'http://localhost:3000/v2/api/momoSuccess/getSuccess', // URL callback từ MoMo
     requestType: 'captureMoMoWallet',
     partnerCode: 'MOMO',
     orderInfo: 'pay with MoMo',
