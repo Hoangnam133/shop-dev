@@ -7,7 +7,8 @@ const {
   softDeleteDiscount,
   isDiscountExpired,
   getPublicDiscounts,
-  getValidDiscounts
+  getValidDiscounts,
+  getDiscountByIdForUser
 } = require("../repositories/discountRepository");
 
 class DiscountService {
