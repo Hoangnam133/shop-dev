@@ -309,8 +309,7 @@ class OrderServiceV5 {
       estimated_delivery_time: estimated_delivery,
       order_time,
       order_userId: user._id,
-      note,
-      points_earned: pointsEarned,
+      note
     };
     const createOrder = await orderModel.create(payload)
     if(!createOrder){

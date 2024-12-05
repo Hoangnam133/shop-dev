@@ -17,6 +17,17 @@ const syncCartToDatabase = async (userId, cartData) => {
         console.error(`Error syncing cart for user ${userId}:`, error);
     }
 };
+const deleteCartToRedis = async (userId) => {
+    const redisClient = getRedis(); 
+    const cartKey = `cart_${userId}`;
+    try {
+        await redisClient.del(cartKey); // Không cần kiểm tra khóa tồn tại
+        console.log(`Deleted cart for user ${userId}`);
+    } catch (error) {
+        console.error(`Error deleting cart for user ${userId}:`, error);
+    }
+};
+
 const syncAllCartsToDatabase = async () => {
     const redisClient = getRedis();
     try {
@@ -98,5 +109,6 @@ module.exports = {
     handleUserLogout,
     getCartRedis,
     removeProductFromCartRedis,
-    syncAllCartsToDatabase
+    syncAllCartsToDatabase,
+    deleteCartToRedis
 };

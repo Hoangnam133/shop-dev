@@ -45,13 +45,17 @@ const removeUndefinedObject = (obj) => {
   if (!obj || typeof obj !== "object") {
     return {}; // Trả về đối tượng rỗng nếu obj là null hoặc undefined
   }
+
+  console.log("Before removing undefined:", obj); // Log kiểm tra đối tượng đầu vào
+
   return Object.keys(obj).reduce((acc, key) => {
-    if (obj[key] !== undefined) {
+    if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
       acc[key] = obj[key];
     }
     return acc;
   }, {});
 };
+
 const updateNestedObjectParser = (obj) => {
   const final = {};
   Object.keys(obj).forEach((k) => {
