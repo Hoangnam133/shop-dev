@@ -2,12 +2,16 @@ const express = require("express");
 const path = require("path");
 const router = express.Router();
 const { runProducer } = require('../../message_queue/rabbitmq/producer');
+const { asynHandler } = require("../../utils/handler");
+const { authentication, authorizeRoles } = require("../../auth/authUtils")
 const axios = require('axios');
+const moMoRefundController = require("../../controllers/moMoRefundController");
 
+router.post('/refunds', authentication, asynHandler(moMoRefundController.refund))
 let paymentResults = {}; 
 
 router.get('/getSuccess', async (req, res) => {
-    const { orderInfo, message, extraData, amount } = req.query;
+    const { orderInfo, message, extraData, amount, transId  } = req.query;
     const errorCode = parseInt(req.query.errorCode, 10); 
     
     try {
@@ -17,7 +21,8 @@ router.get('/getSuccess', async (req, res) => {
             let payload = {
                 orderInfo,
                 shop_id: extraData || 'Unknown Shop ID', 
-                amount
+                amount,
+                transId
             };
             console.log('Payload gửi tới RabbitMQ:', payload);
             await runProducer(payload);
