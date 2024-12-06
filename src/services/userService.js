@@ -392,9 +392,15 @@ class UserService {
     if (!user) {
       throw new BadRequestError("data missing user");
     }
+
+    // Kiểm tra trước khi gọi removeUndefinedObject
+    console.log("Data received in updatePr:", updateData); // Kiểm tra dữ liệu nhận được
     const cleanData = removeUndefinedObject(updateData);
-    return await updateUser({ user, cleanData });
+
+    console.log("Clean Data After Removing Undefined:", cleanData); // Kiểm tra sau khi xử lý
+    return await updateUser({ user, updateData: cleanData });
   };
+
   static getUserInfo = async ({ userId }) => {
     const user = await userModel.findById(userId);
     if (!user) {

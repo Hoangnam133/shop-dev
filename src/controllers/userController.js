@@ -1,5 +1,8 @@
 const userService = require("../services/userService");
 const { SuccessResponse } = require("../core/successResponse");
+const streamifier = require("streamifier");
+
+const cloudinary = require("../configs/cloudinary");
 class UserController {
   signUp = async (req, res, next) => {
     new SuccessResponse({
@@ -77,19 +80,42 @@ class UserController {
       }),
     }).send(res);
   };
+  // Trong hàm controller của bạn
   updatePr = async (req, res, next) => {
     try {
-      const user = req.user;
-      const updateData = req.body;
+      console.log("req.file:", req.file); // Kiểm tra file
 
+      const user = req.user; // Lấy thông tin người dùng từ middleware
+      const updateData = req.body; // Dữ liệu cập nhật từ body request
+
+      // Kiểm tra nếu có file được upload
       if (req.file) {
-        updateData.avatar = `uploads/${req.file.filename}`;
+        const streamUpload = (buffer) => {
+          return new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+              {
+                folder: "user_avatars",
+                allowed_formats: ["jpg", "jpeg", "png"],
+              },
+              (error, result) => {
+                if (error) {
+                  reject(error);
+                }
+                resolve(result);
+              }
+            );
+            streamifier.createReadStream(buffer).pipe(stream); // Sử dụng streamifier để tạo stream từ buffer
+          });
+        };
+
+        const result = await streamUpload(req.file.buffer); // Upload bằng stream từ buffer
+        updateData.avatar = result.secure_url; // Cập nhật URL của ảnh vào data
+      } else {
+        console.log("No avatar file uploaded"); // Kiểm tra trường hợp không có file
       }
 
-      const updatedUser = await userService.updatePr({
-        user,
-        updateData,
-      });
+      // Cập nhật thông tin người dùng với dữ liệu mới
+      const updatedUser = await userService.updatePr({ user, updateData });
 
       new SuccessResponse({
         message: "Update profile success",
@@ -99,6 +125,7 @@ class UserController {
       next(error);
     }
   };
+
   getUserInfo = async (req, res, next) => {
     new SuccessResponse({
       message: "Get user info success",

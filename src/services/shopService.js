@@ -103,7 +103,7 @@ class ShopService {
           path: "location_id",
           select: "location_name latitude longitude googleMapsLink", // Chỉ lấy các trường cần thiết
         });
-
+      console.log("Danh sách cửa hàng sau khi populate:", shops);
       // Định dạng lại dữ liệu trả về
       return shops.map((shop) => ({
         shop_name: shop.shop_name,
