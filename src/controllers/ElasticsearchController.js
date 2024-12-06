@@ -19,7 +19,7 @@ class ELSController {
                 metaData: products
             }).send(res);
         } catch (error) {
-            next(error); // Truyền lỗi cho middleware xử lý
+            next(error); 
         }
     }
 }
