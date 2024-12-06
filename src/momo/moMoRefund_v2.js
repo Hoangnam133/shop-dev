@@ -1,8 +1,7 @@
 const axios = require('axios');
 const { config } = require('../momo/config');
-const { generateSignature, signSHA256 } = require('./gen_signature');
+const { signSHA256 } = require('./gen_signature');
 const { BadRequestError } = require('../core/errorResponse');
-
 const { exec } = require('child_process');
 function openLink(url) {
     try {
@@ -31,9 +30,7 @@ function openLink(url) {
         console.error('Lỗi xảy ra:', error.message);
     }
 }
-
-
-async function processMoMoPayment({ orderId, totalPrice, shop_id }) {
+async function processMoMoRefund(orderId, trans_Id ,totalPrice ) {
     const requestId = `${config.partnerCode}-${Date.now()}`;
     const orderIdMoMo = `${config.partnerCode}-${orderId}-${Date.now()}`;
     const endpoint = config.MomoApiUrl;
@@ -43,8 +40,8 @@ async function processMoMoPayment({ orderId, totalPrice, shop_id }) {
     const notifyUrl = config.notifyUrl;
     const partnerCode = config.partnerCode;
     const orderInfo = String(orderId);
-    const extraData = String(shop_id);
     const amount = String(Math.floor(totalPrice)); // Convert to string after flooring
+    const transId = String(trans_Id);
 
     const rawHash =
         'partnerCode=' +
@@ -63,8 +60,8 @@ async function processMoMoPayment({ orderId, totalPrice, shop_id }) {
         returnUrl +
         '&notifyUrl=' +
         notifyUrl +
-        '&extraData=' +
-        extraData;
+        '&transId=' + 
+        transId;
 
     const signature = signSHA256(rawHash, secretKey);
 
@@ -72,13 +69,13 @@ async function processMoMoPayment({ orderId, totalPrice, shop_id }) {
         partnerCode,
         accessKey,
         requestId,
-        amount, // amount is now a string
+        amount, 
         orderId: orderIdMoMo,
         orderInfo,
         returnUrl,
         notifyUrl,
-        extraData,
-        requestType: config.requestType,
+        transId,
+        requestType: 'refundMoMoWallet',
         signature,
     };
 
@@ -91,8 +88,6 @@ async function processMoMoPayment({ orderId, totalPrice, shop_id }) {
         }
         console.log('Response from MoMo:', response.data);
 
-        openLink(response.data.payUrl)
-
         return response.data.deeplink; // Return payUrl
     } catch (error) {
         throw new Error('MoMo payment request failed: ' + error.message);
@@ -100,5 +95,5 @@ async function processMoMoPayment({ orderId, totalPrice, shop_id }) {
 }
 
 module.exports = {
-    processMoMoPayment,
+    processMoMoRefund,
 };

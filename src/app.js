@@ -1,12 +1,16 @@
 const express = require("express");
+const app = express();
 const cors = require("cors");
+app.use(cors());
+const path = require("path");
 const {
   syncProductsToElasticsearch,
 } = require("../src/configs/syncDataToElasticsearch");
 const { runConsumer } = require("../src/message_queue/rabbitmq/consumer");
+const { initRedis } = require("../src/redisDB/initRedis_docker");
 //const admin = require('../src/configs/firebaseConfig')
-const app = express();
-app.use(cors());
+
+app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use("/uploads", express.static("uploads")); // init mongodb
 require("./configs/initMongodb");
@@ -15,6 +19,7 @@ app.use("/", require("./routers/index"));
 
 // handler error
 runConsumer();
+initRedis();
 app.use((req, res, next) => {
   const error = new Error("Not Found");
   error.status = 404;

@@ -309,14 +309,13 @@ class OrderServiceV5 {
       estimated_delivery_time: estimated_delivery,
       order_time,
       order_userId: user._id,
-      note,
-      points_earned: pointsEarned,
+      note
     };
     const createOrder = await orderModel.create(payload)
     if(!createOrder){
       throw new BadRequestError("Failed to create order");
     }
-    const deeplink = await processMoMoPayment({orderId: createOrder.order_trackingNumber, totalPrice: createOrder.order_checkout.finalPrice})
+    const deeplink = await processMoMoPayment({orderId: createOrder._id, totalPrice: createOrder.order_checkout.finalPrice, shop_id: shop._id})
     if(!deeplink){
       throw new BadRequestError("Failed to process MoMo payment");
     }

@@ -129,6 +129,14 @@ const orderSchema = new Schema(
       type: String,
       default: null,
     },
+    isRefunded:{
+      type: Boolean,
+      default: false,
+    },
+    transId:{
+      type: String,
+      default: null,
+    }
   },
   {
     timestamps: true,

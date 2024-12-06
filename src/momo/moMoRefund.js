@@ -1,8 +1,7 @@
 const axios = require('axios');
 const { config } = require('../momo/config');
-const { generateSignature, signSHA256 } = require('./gen_signature');
+const { signSHA256 } = require('./gen_signature');
 const { BadRequestError } = require('../core/errorResponse');
-
 const { exec } = require('child_process');
 function openLink(url) {
     try {
@@ -31,9 +30,7 @@ function openLink(url) {
         console.error('Lỗi xảy ra:', error.message);
     }
 }
-
-
-async function processMoMoPayment({ orderId, totalPrice, shop_id }) {
+async function processMoMoRefund(orderId, transId ,totalPrice  ) {
     const requestId = `${config.partnerCode}-${Date.now()}`;
     const orderIdMoMo = `${config.partnerCode}-${orderId}-${Date.now()}`;
     const endpoint = config.MomoApiUrl;
@@ -43,8 +40,8 @@ async function processMoMoPayment({ orderId, totalPrice, shop_id }) {
     const notifyUrl = config.notifyUrl;
     const partnerCode = config.partnerCode;
     const orderInfo = String(orderId);
-    const extraData = String(shop_id);
-    const amount = String(Math.floor(totalPrice)); // Convert to string after flooring
+    const amount = String(Math.floor(totalPrice)); 
+
 
     const rawHash =
         'partnerCode=' +
@@ -63,42 +60,43 @@ async function processMoMoPayment({ orderId, totalPrice, shop_id }) {
         returnUrl +
         '&notifyUrl=' +
         notifyUrl +
-        '&extraData=' +
-        extraData;
+        '&transId=' + 
+        transId;
 
+  
     const signature = signSHA256(rawHash, secretKey);
 
     const body = {
         partnerCode,
         accessKey,
         requestId,
-        amount, // amount is now a string
+        amount, 
         orderId: orderIdMoMo,
         orderInfo,
         returnUrl,
         notifyUrl,
-        extraData,
-        requestType: config.requestType,
+        transId, 
+        requestType: 'refundMoMoWallet', 
         signature,
     };
 
     console.log(body);
 
     try {
+        // Gửi yêu cầu hoàn tiền
         const response = await axios.post(endpoint, body);
-        if (!response) {
-            throw new BadRequestError('Cannot make payment request');
+        console.log('phản hồi của momo khi hoàn tiền nè-----------',response);
+        if (!response || response.data.resultCode !== 0) {
+            throw new BadRequestError('Cannot process refund request');
         }
-        console.log('Response from MoMo:', response.data);
-
         openLink(response.data.payUrl)
-
-        return response.data.deeplink; // Return payUrl
+        console.log('Response from MoMo:', response.data);
+        return response.data; 
     } catch (error) {
-        throw new Error('MoMo payment request failed: ' + error.message);
+        throw new Error('MoMo refund request failed: ' + error.message);
     }
 }
 
 module.exports = {
-    processMoMoPayment,
+    processMoMoRefund,
 };
