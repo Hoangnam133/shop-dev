@@ -26,7 +26,8 @@ const runConsumer = async () => {
                     const newOrder = await orderModel.findByIdAndUpdate(
                         orderInfo, 
                         { 
-                          "order_payment.payment_status": "Success" 
+                          "order_payment.payment_status": "Success" ,
+                          transId: orderData.transId
                         }, 
                         { new: true } 
                       );
