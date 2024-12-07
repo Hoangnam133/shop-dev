@@ -1,6 +1,12 @@
 const productService = require("../services/productService");
 const { SuccessResponse } = require("../core/successResponse");
 class ProductController {
+  getAllProducts = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Get all products success",
+      metaData: await productService.getAllProducts(),
+    }).send(res);
+  }
   createProduct = async (req, res, next) => {
     const {file} = req
     if(!file){

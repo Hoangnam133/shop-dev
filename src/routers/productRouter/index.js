@@ -14,6 +14,7 @@ router.get("/searchELT", asynHandler(ElasticsearchController.searchProduct));
 
 
 
+router.get("/getAllProducts", asynHandler(productController.getAllProducts));
 router.use(authentication);
 // Tạo sản phẩm mới
 // fix update
