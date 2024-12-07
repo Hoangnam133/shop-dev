@@ -591,6 +591,13 @@ const getSideDishInProduct = async (product_id) => {
   });
   return sideDishes;
 };
+const getAllProducts = async () => {
+  const products = await productModel.find()
+  if(!products.length){
+    throw new NotFoundError("No products found")
+  }
+  return products
+}
 module.exports = {
   getProductById,
   createProduct,
@@ -611,5 +618,6 @@ module.exports = {
   checkShop,
   checkProductInShop,
   getSideDishInProduct,
-  getProductByIdDetails
+  getProductByIdDetails,
+  getAllProducts
 };
