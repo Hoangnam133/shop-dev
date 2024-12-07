@@ -99,7 +99,7 @@ class UserService {
 
     return {
       user: getInfoData({
-        fileds: ["_id", "email", "name", "avatar", "deviceToken"], // Bao gồm deviceToken khi trả về
+        fileds: ["_id", "email", "name", "avatar", "deviceToken","points"], 
         object: checkUser,
       }),
       token,
