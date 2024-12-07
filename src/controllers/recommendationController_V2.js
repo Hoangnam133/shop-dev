@@ -9,10 +9,10 @@ class RecommendationController{
         if(recommendedProductIds){
             products = await productModel.find({
                 _id: { $in: recommendedProductIds }
-            }).select('product_thumb product_price').limit(10);
+            }).select('product_thumb product_price product_name').limit(10);
         }
         else{
-            products = await productModel.find({}).select('product_thumb product_price').sort({ createdAt: -1 }).limit(10)
+            products = await productModel.find({}).select('product_thumb product_price product_name').sort({ createdAt: -1 }).limit(10)
         }
         new SuccessResponse({
             message: 'Recommendations fetched successfully',

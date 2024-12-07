@@ -362,11 +362,6 @@ class OrderServiceV5 {
       throw new BadRequestError("Failed to cancel order");
     }
   }
-    // xử lý sản phẩm trong kho (viết ở repository) ok
-    // tích hợp món phụ vào
-    // tích hợp thanh toán
-    // send thông báo khi đặt hàng thành công
-    // đổi điểm nữa
     static async cancelOrder ({order_id, user}){
         const order = await orderModel.findOne({
             _id: order_id,
