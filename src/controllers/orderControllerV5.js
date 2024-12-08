@@ -22,7 +22,6 @@ class OrderControllerV5 {
     }).send(res);
   };
   cancelOrder = async (req, res, next) => {
-    
     new SuccessResponse({
       message: "cancal order success",
       metaData: await OrderServiceV5.cancelOrder({
@@ -65,6 +64,8 @@ class OrderControllerV5 {
 
   // Cập nhật trạng thái đơn hàng thành hoàn thành
   updateStatusCompleted = async (req, res, next) => {
+    console.log(req.params.order_id);
+
     new SuccessResponse({
       message: "update order status to completed",
       metaData: await OrderServiceV5.updateStatusCompleted(req.params.order_id),
