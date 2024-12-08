@@ -2,9 +2,11 @@ function checkRequiredFields(model) {
   return (req, res, next) => {
     const requiredFields = [];
 
-    // Duyệt qua các path của schema để lấy các trường có thuộc tính `required`
+    // Lấy các trường có thuộc tính `required` từ schema
     for (const [key, value] of Object.entries(model.schema.paths)) {
-      if (value.isRequired) requiredFields.push(key);
+      if (value.options && value.options.required) {
+        requiredFields.push(key);
+      }
     }
 
     // Lọc các trường bị thiếu trong yêu cầu
