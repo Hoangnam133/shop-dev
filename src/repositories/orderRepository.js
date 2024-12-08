@@ -53,7 +53,7 @@ const updateStatusCompleted = async (order_id) => {
   const query = {
     _id: order_id,
     order_status: "pending",
-    "order_payment.payment_status": "success",
+    "order_payment.payment_status": "Success",
   };
 
   const updateOrder = await orderModel.findOneAndUpdate(
