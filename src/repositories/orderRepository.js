@@ -2,6 +2,7 @@ const orderModel = require("../models/orderModel");
 const { NotFoundError, BadRequestError } = require("../core/errorResponse");
 const userModel = require("../models/userModel");
 const { sendNotification } = require("../utils/notification");
+const {toObjectId} = require("../utils/index");
 const listOrderPendingOfUser = async (user) => {
   const query = {
     order_userId: user._id,
@@ -190,6 +191,78 @@ const getOrderDetail = async (user, orderId) => {
   }
   return findOrder;
 };
+const listBestSellingProductsInShop = async (shopId, limit) => {
+  const bestSellingProducts = await orderModel.aggregate([
+    {
+      $match: {
+        order_shopId: toObjectId(shopId),
+        order_status: 'completed',
+        'order_payment.payment_status': 'Success',
+      },
+    },
+
+    {
+      $project: {
+        order_product: 1,
+      },
+    },
+ 
+    {
+      $unwind: {
+        path: '$order_product',
+        preserveNullAndEmptyArrays: true,  
+      },
+    },
+   
+    {
+      $group: {
+        _id: '$order_product.product_id',  
+        totalSold: { $sum: '$order_product.quantity' },  
+        productName: { $first: '$order_product.product_name' },  
+        productThumb: { $first: '$order_product.product_thumb' },  
+      },
+    },
+   
+    { $sort: { totalSold: -1 } },
+  
+    { $limit: limit },
+  ]);
+
+  return bestSellingProducts;
+};
+
+const getTotalRevenueInShop = async (shopId) => {
+  const totalRevenue = await orderModel.aggregate([
+    {
+      $match: {
+        order_shopId: toObjectId(shopId), 
+        order_status: 'completed', 
+        'order_payment.payment_status': 'Success' 
+      },
+    },
+    { 
+      $project: {
+        order_product: 1
+      }
+    },
+    { 
+      $unwind: {
+        path: '$order_product',
+        preserveNullAndEmptyArrays: true 
+      }
+    },
+    {
+      $group: {
+        _id: null,  
+        totalRevenue: { $sum: '$order_product.totalPrice' } 
+      },
+    }
+  ]);
+
+  return totalRevenue.length > 0 ? totalRevenue[0].totalRevenue : 0;
+};
+
+
 module.exports = {
   listOrderPendingOfUser,
   listOrderCompletedOfUser,
@@ -202,4 +275,6 @@ module.exports = {
   listOrderCancelled,
   listOrderCompleted,
   getOrderDetail,
+  listBestSellingProductsInShop,
+  getTotalRevenueInShop
 };

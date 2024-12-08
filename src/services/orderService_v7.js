@@ -31,7 +31,9 @@ const {
   listOrderSuccess,
   listOrderCancelled,
   listOrderCompleted,
-  getOrderDetail
+  getOrderDetail,
+  listBestSellingProductsInShop,
+  getTotalRevenueInShop
 } = require("../repositories/orderRepository");
 const { runProducer } = require("../message_queue/rabbitmq/producer");
 const moment = require("moment-timezone");
@@ -39,6 +41,13 @@ const {calculateDistance} = require('../utils/Distance')
 const locationModel = require("../models/locationModel");
 const { toObjectId } = require("../utils");
 class OrderServiceV5 {
+  getTotalRevenueInShop
+  static async getTotalRevenueInShop(shop_id) {
+    return await getTotalRevenueInShop(shop_id);
+  }
+  static async listBestSellingProductsInShop(shop_id, limit) {
+    return await listBestSellingProductsInShop(shop_id, limit);
+  }
   static async getOrderDetail(user, orderId) {
     return await getOrderDetail(user, orderId);
   }
@@ -64,7 +73,7 @@ class OrderServiceV5 {
     return await listOrderPending({ limit, page, shop });
   }
   static async listOrderSuccess({ limit = 10, page = 1, shop }) {
-    return await listOrderSuccess({ limit, page });
+    return await listOrderSuccess({ limit, page, shop });
   }
   static async listOrderCancelled({ limit = 10, page = 1, shop }) {
     return await listOrderCancelled({ limit, page, shop });
@@ -79,7 +88,6 @@ class OrderServiceV5 {
       if (!foundUser || !foundShop) {
         throw new NotFoundError("User or shop not found");
       }
-    
       const cart = await getCart(foundUser._id);
       if (!cart) {
         throw new NotFoundError("Cart not found");

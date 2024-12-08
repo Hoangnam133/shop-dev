@@ -18,6 +18,7 @@ const {
 const { createTokenPair } = require("../auth/authUtils");
 const { getInfoData, removeUndefinedObject } = require("../utils/index");
 const sendEmail = require("../utils/email");
+const shopModel = require("../models/shopModel");
 const roles = {
   ADMIN: "101",
   USER: "102",
@@ -157,7 +158,6 @@ class UserService {
     shop_id,
     refreshToken = null,
   }) => {
-    const checkUser = await findByEmail(email);
     if (
       !checkUser ||
       checkUser.roles !== roles.EMPLOYEE ||
@@ -165,7 +165,10 @@ class UserService {
     ) {
       throw new NotFoundError("User not found or shop_id does not match");
     }
-
+    const foundShops = await shopModel.findById(shop_id)
+    if(!foundShops){
+      throw new NotFoundError("shop not found");
+    }
     const matchPassword = await bcrypt.compare(password, checkUser.password);
     if (!matchPassword) {
       throw new NotFoundError("user not found");
@@ -174,7 +177,7 @@ class UserService {
     const privateKey = process.env.PRIVATE_KEY;
     console.log(`private::: ${privateKey}, puplickey:::${publicKey}`);
     const token = await createTokenPair(
-      { userId: checkUser._id, roles: checkUser.roles },
+      { userId: checkUser._id, roles: checkUser.roles, shop_id },
       publicKey,
       privateKey
     );
@@ -190,7 +193,7 @@ class UserService {
     if (!keyToken) throw new BadRequestError("create key token error");
     return {
       user: getInfoData({
-        fileds: ["_id", "email", "name", "avatar", "shop_id", "roles"],
+        fileds: ["_id", "email", "name", "avatar", "roles"],
         object: checkUser,
       }),
       token: token,
@@ -219,7 +222,7 @@ class UserService {
     const privateKey = process.env.PRIVATE_KEY;
     console.log(`private::: ${privateKey}, puplickey:::${publicKey}`);
     const token = await createTokenPair(
-      { userId: checkUser._id, roles: checkUser.roles },
+      { userId: checkUser._id, roles: checkUser.roles, shop_id },
       publicKey,
       privateKey
     );

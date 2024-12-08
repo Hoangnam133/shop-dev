@@ -1,7 +1,24 @@
 const OrderServiceV5 = require("../services/orderService_v7");
 const { SuccessResponse } = require("../core/successResponse");
 class OrderControllerV5 {
-
+  getTotalRevenueInShop = async (req, res, next) => {
+    new SuccessResponse({
+      message: "list best selling products success",
+      metaData: await OrderServiceV5.getTotalRevenueInShop(
+       req.params.shop_id,
+      ),
+    }).send(res);
+  }
+  listBestSellingProductsInShop = async (req, res, next) => {
+    const limit = parseInt(req.query.limit) || 10; 
+    new SuccessResponse({
+      message: "list best selling products success",
+      metaData: await OrderServiceV5.listBestSellingProductsInShop(
+       req.params.shop_id,
+       limit
+      ),
+    }).send(res);
+  }
   getOrderDetail = async (req, res, next) => {
     this.user = req.user;
     this.orderId = req.params.order_id;
