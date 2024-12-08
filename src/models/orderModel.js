@@ -127,6 +127,11 @@ const orderSchema = new Schema(
       type: String,
       default: null,
     },
+    order_shopId:{
+      type: Schema.Types.ObjectId,
+      ref: 'Shop',
+      required: true,
+    },
     note: {
       type: String,
       default: null,
