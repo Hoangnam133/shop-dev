@@ -6,6 +6,9 @@ const orderControllerV5 = require('../../controllers/orderControllerV5')
 const roles = require("../../utils/roles");
 const { asynHandler } = require('../../utils/handler')
 
+router.get('/getTotalRevenueInShop/:shop_id',asynHandler(orderControllerV5.getTotalRevenueInShop))
+
+router.get('/listBestSellingProductsInShop/:shop_id',asynHandler(orderControllerV5.listBestSellingProductsInShop))
 router.use(authentication)
 router.get('/getOrderDetail/:order_id',asynHandler(orderControllerV5.getOrderDetail))
 
