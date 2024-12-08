@@ -151,10 +151,19 @@ class UserService {
       token: token,
     };
   };
-  static loginEmployee = async ({ email, password, refreshToken = null }) => {
+  static loginEmployee = async ({
+    email,
+    password,
+    shop_id,
+    refreshToken = null,
+  }) => {
     const checkUser = await findByEmail(email);
-    if (!checkUser || checkUser.roles !== roles.EMPLOYEE) {
-      throw new NotFoundError("user not found");
+    if (
+      !checkUser ||
+      checkUser.roles !== roles.EMPLOYEE ||
+      checkUser.shop_id.toString() !== shop_id
+    ) {
+      throw new NotFoundError("User not found or shop_id does not match");
     }
 
     const matchPassword = await bcrypt.compare(password, checkUser.password);
@@ -190,11 +199,16 @@ class UserService {
   static loginBranchManager = async ({
     email,
     password,
+    shop_id,
     refreshToken = null,
   }) => {
     const checkUser = await findByEmail(email);
-    if (!checkUser || checkUser.roles !== roles.BRANCH_MANAGER) {
-      throw new NotFoundError("user not found");
+    if (
+      !checkUser ||
+      checkUser.roles !== roles.BRANCH_MANAGER ||
+      checkUser.shop_id.toString() !== shop_id
+    ) {
+      throw new NotFoundError("User not found or shop_id does not match");
     }
 
     const matchPassword = await bcrypt.compare(password, checkUser.password);
@@ -425,13 +439,6 @@ class UserService {
   };
   static createEmployee = async (payload) => {
     const { name, email, password, shop_id } = payload;
-    const missingFields = userModel.prototype.checkRequiredFields(payload);
-
-    if (missingFields.length > 0) {
-      throw new BadRequestError(
-        `Missing required fields: ${missingFields.join(", ")}`
-      );
-    }
     const checkUser = await findByEmail(email);
     if (checkUser) {
       throw new BadRequestError("email already registed");
@@ -473,13 +480,6 @@ class UserService {
 
   static createBranchManager = async (payload) => {
     const { name, email, password, shop_id } = payload;
-    const missingFields = userModel.prototype.checkRequiredFields(payload);
-
-    if (missingFields.length > 0) {
-      throw new BadRequestError(
-        `Missing required fields: ${missingFields.join(", ")}`
-      );
-    }
     const checkUser = await findByEmail(email);
     if (checkUser) {
       throw new BadRequestError("email already registed");
