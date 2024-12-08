@@ -50,10 +50,10 @@ const userSchema = new Schema(
       type: String,
       default: null,
     },
-    shop_id: {
-      type: Schema.Types.ObjectId,
-      ref: "Shop",
-    },
+    // shop_id: {
+    //   type: Schema.Types.ObjectId,
+    //   ref: "Shop",
+    // },
     points: {
       type: Number,
       default: 0,

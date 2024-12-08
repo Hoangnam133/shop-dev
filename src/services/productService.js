@@ -16,10 +16,15 @@ const {
   getLatestProducts,
   getProductsSortedBysales_count,
   getDeletedProductsManage,
-  getProductByIdDetails
+  getProductByIdDetails,
+  getAllProducts
 } = require("../repositories/productRepository");
 const { getInfoData, toObjectId } = require("../utils/index");
 class ProductService {
+  
+  static async getAllProducts() {
+    return await getAllProducts();
+  }
   static async createProduct(payload, file) {
     return await createProduct(payload, file);
   }

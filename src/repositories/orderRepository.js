@@ -53,7 +53,7 @@ const updateStatusCompleted = async (order_id) => {
   const query = {
     _id: order_id,
     order_status: "pending",
-    "order_payment.payment_status": "success",
+    "order_payment.payment_status": "Success",
   };
 
   const updateOrder = await orderModel.findOneAndUpdate(
@@ -61,6 +61,7 @@ const updateStatusCompleted = async (order_id) => {
     { $set: { order_status: "completed" } },
     { new: true, lean: true }
   );
+  console.log(updateOrder);
 
   if (!updateOrder) {
     throw new BadRequestError(
@@ -175,6 +176,16 @@ const listOrderCompleted = async ({ limit, page }) => {
   }
   return findOrder;
 };
+const getOrderDetail = async (user, orderId) => {
+  const findOrder = await orderModel.findOne({
+    _id: orderId,
+    order_userId: user._id,
+  });
+  if (!findOrder) {
+    throw new NotFoundError("Order not found");
+  }
+  return findOrder;
+};
 module.exports = {
   listOrderPendingOfUser,
   listOrderCompletedOfUser,
@@ -186,4 +197,5 @@ module.exports = {
   listOrderSuccess,
   listOrderCancelled,
   listOrderCompleted,
+  getOrderDetail,
 };
