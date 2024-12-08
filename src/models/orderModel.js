@@ -57,6 +57,7 @@ const orderSchema = new Schema(
     order_userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
+      index: true
     },
     order_checkout: {
       type: checkOutSchema,
@@ -103,6 +104,7 @@ const orderSchema = new Schema(
       type: String,
       enum: ["pending", "completed", "cancelled", "success"],
       default: "pending",
+      index: true,
     },
     order_time: {
       type: String, // Thay vì Date, sử dụng String để lưu chuỗi ISO
@@ -151,4 +153,10 @@ orderSchema.pre('save', function (next) {
   }
   next();
 })
+orderSchema.index({ order_userId: 1 });
+orderSchema.index({ order_status: 1 }); 
+orderSchema.index({ createdAt: -1 }); 
+orderSchema.index({ estimated_delivery_time: 1 }); 
+orderSchema.index({ 'order_product.product_id': 1 }); 
+
 module.exports = model(DOCUMENT_NAME, orderSchema);
