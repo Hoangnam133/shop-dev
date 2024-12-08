@@ -77,6 +77,7 @@ class UserService {
 
     // **Lưu deviceToken vào user**
     checkUser.deviceToken = deviceToken; // Cập nhật token mới
+    console.log(checkUser.deviceToken);
     await checkUser.save(); // Lưu thay đổi vào cơ sở dữ liệu
 
     const token = await createTokenPair(
@@ -99,7 +100,15 @@ class UserService {
 
     return {
       user: getInfoData({
-        fileds: ["_id", "email", "name", "avatar", "deviceToken","points"], 
+        fileds: [
+          "_id",
+          "email",
+          "name",
+          "avatar",
+          "deviceToken",
+          "points",
+          "roles",
+        ],
         object: checkUser,
       }),
       token,
@@ -136,7 +145,7 @@ class UserService {
     if (!keyToken) throw new BadRequestError("create key token error");
     return {
       user: getInfoData({
-        fileds: ["_id", "email", "name", "avatar"],
+        fileds: ["_id", "email", "name", "avatar", "roles"],
         object: checkUser,
       }),
       token: token,
@@ -172,7 +181,7 @@ class UserService {
     if (!keyToken) throw new BadRequestError("create key token error");
     return {
       user: getInfoData({
-        fileds: ["_id", "email", "name", "avatar", "shop_id"],
+        fileds: ["_id", "email", "name", "avatar", "shop_id", "roles"],
         object: checkUser,
       }),
       token: token,
@@ -212,7 +221,7 @@ class UserService {
     if (!keyToken) throw new BadRequestError("create key token error");
     return {
       user: getInfoData({
-        fileds: ["_id", "email", "name", "avatar", "shop_id"],
+        fileds: ["_id", "email", "name", "avatar", "shop_id", "roles"],
         object: checkUser,
       }),
       token: token,
@@ -411,8 +420,8 @@ class UserService {
         fileds: ["_id", "name", "email", "avatar", "points"],
         object: user,
       }),
-      shopId
-    }
+      shopId,
+    };
   };
   static createEmployee = async (payload) => {
     const { name, email, password, shop_id } = payload;

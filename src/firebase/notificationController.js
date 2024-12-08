@@ -1,4 +1,4 @@
-const firebaseService = require('./firebaseService');
+const firebaseService = require("./firebaseService");
 
 // Controller gửi thông báo
 const sendNotification = async (req, res) => {
@@ -7,7 +7,7 @@ const sendNotification = async (req, res) => {
   if (!token || !title || !body) {
     return res.status(400).json({
       success: false,
-      message: 'Token, title, và body là bắt buộc!',
+      message: "Token, title, và body là bắt buộc!",
     });
   }
 

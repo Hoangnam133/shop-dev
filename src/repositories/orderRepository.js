@@ -61,6 +61,7 @@ const updateStatusCompleted = async (order_id) => {
     { $set: { order_status: "completed" } },
     { new: true, lean: true }
   );
+  console.log(updateOrder);
 
   if (!updateOrder) {
     throw new BadRequestError(
@@ -184,7 +185,7 @@ const getOrderDetail = async (user, orderId) => {
     throw new NotFoundError("Order not found");
   }
   return findOrder;
-}
+};
 module.exports = {
   listOrderPendingOfUser,
   listOrderCompletedOfUser,
@@ -196,5 +197,5 @@ module.exports = {
   listOrderSuccess,
   listOrderCancelled,
   listOrderCompleted,
-  getOrderDetail
+  getOrderDetail,
 };

@@ -41,6 +41,8 @@ const authentication = asynHandler(async (req, res, next) => {
     throw new Unauthorized("Unauthorized - No access token provided");
   }
   const token = accessToken;
+  console.log(token);
+
   try {
     const decoded = JWT.verify(token, process.env.PUBLIC_KEY);
 
@@ -66,6 +68,7 @@ const authentication = asynHandler(async (req, res, next) => {
     req.keyStore = findKeyStore;
     req.user = existingUser;
     req.userId = existingUser._id;
+    console.log("sdadfasđs" + req.userId);
 
     next();
   } catch (error) {
