@@ -77,6 +77,7 @@ class UserService {
 
     // **Lưu deviceToken vào user**
     checkUser.deviceToken = deviceToken; // Cập nhật token mới
+    console.log(checkUser.deviceToken);
     await checkUser.save(); // Lưu thay đổi vào cơ sở dữ liệu
 
     const token = await createTokenPair(
