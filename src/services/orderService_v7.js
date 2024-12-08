@@ -31,6 +31,7 @@ const {
   listOrderSuccess,
   listOrderCancelled,
   listOrderCompleted,
+  getOrderDetail
 } = require("../repositories/orderRepository");
 const { runProducer } = require("../message_queue/rabbitmq/producer");
 const moment = require("moment-timezone");
@@ -38,6 +39,9 @@ const {calculateDistance} = require('../utils/Distance')
 const locationModel = require("../models/locationModel");
 const { toObjectId } = require("../utils");
 class OrderServiceV5 {
+  static async getOrderDetail(user, orderId) {
+    return await getOrderDetail(user, orderId);
+  }
   static async listOrderCancelledOfUser(user) {
     return await listOrderCancelledOfUser(user);
   }
@@ -358,11 +362,6 @@ class OrderServiceV5 {
       throw new BadRequestError("Failed to cancel order");
     }
   }
-    // xử lý sản phẩm trong kho (viết ở repository) ok
-    // tích hợp món phụ vào
-    // tích hợp thanh toán
-    // send thông báo khi đặt hàng thành công
-    // đổi điểm nữa
     static async cancelOrder ({order_id, user}){
         const order = await orderModel.findOne({
             _id: order_id,

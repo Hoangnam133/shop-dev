@@ -129,7 +129,7 @@ class UserController {
   getUserInfo = async (req, res, next) => {
     new SuccessResponse({
       message: "Get user info success",
-      metaData: await userService.getUserInfo({ userId: req.user._id }),
+      metaData: await userService.getUserInfo({ userId: req.user._id, shopId: req.shop._id }),
     }).send(res);
   };
   createEmployee = async (req, res, next) => {

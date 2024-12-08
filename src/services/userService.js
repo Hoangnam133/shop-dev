@@ -100,7 +100,7 @@ class UserService {
 
     return {
       user: getInfoData({
-        fileds: ["_id", "email", "name", "avatar", "deviceToken"], // Bao gồm deviceToken khi trả về
+        fileds: ["_id", "email", "name", "avatar", "deviceToken","points"], 
         object: checkUser,
       }),
       token,
@@ -402,15 +402,18 @@ class UserService {
     return await updateUser({ user, updateData: cleanData });
   };
 
-  static getUserInfo = async ({ userId }) => {
+  static getUserInfo = async ({ userId, shopId }) => {
     const user = await userModel.findById(userId);
     if (!user) {
       throw new NotFoundError("User not found");
     }
-    return getInfoData({
-      fileds: ["_id", "name", "email", "avatar", "shop_id"],
-      object: user,
-    });
+    return {
+      user: getInfoData({
+        fileds: ["_id", "name", "email", "avatar", "points"],
+        object: user,
+      }),
+      shopId
+    }
   };
   static createEmployee = async (payload) => {
     const { name, email, password, shop_id } = payload;

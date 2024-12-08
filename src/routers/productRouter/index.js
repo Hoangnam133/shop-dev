@@ -3,10 +3,11 @@ const express = require("express");
 const router = express.Router();
 
 const productController = require("../../controllers/productController");
-const ElasticsearchController = require("../../controllers/ElasticsearchController");
+const recommendationController = require("../../controllers/recommendationController_V2");
 
+const ElasticsearchController = require("../../controllers/ElasticsearchController");
+const { authentication, authorizeRoles } = require("../../auth/authUtils")
 const { asynHandler } = require("../../utils/handler");
-const { authentication, authorizeRoles } = require("../../auth/authUtils");
 const roles = require("../../utils/roles");
 const {uploadDisk, uploadMemory} = require('../../configs/multer.config')
 router.get("/searchELT", asynHandler(ElasticsearchController.searchProduct));
@@ -14,7 +15,12 @@ router.get("/searchELT", asynHandler(ElasticsearchController.searchProduct));
 
 
 
+router.get("/getAllProducts", asynHandler(productController.getAllProducts));
 router.use(authentication);
+router.get(
+  "/getRecommendationsForUser",
+  asynHandler(recommendationController.getRecommendations)
+)
 // Tạo sản phẩm mới
 // fix update
 router.post(

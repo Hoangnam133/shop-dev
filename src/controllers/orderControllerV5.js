@@ -1,6 +1,15 @@
 const OrderServiceV5 = require("../services/orderService_v7");
 const { SuccessResponse } = require("../core/successResponse");
 class OrderControllerV5 {
+
+  getOrderDetail = async (req, res, next) => {
+    this.user = req.user;
+    this.orderId = req.params.order_id;
+    new SuccessResponse({
+      message: "order detail success",
+      metaData: await OrderServiceV5.getOrderDetail(this.user, this.orderId),
+    }).send(res);
+  }
   checkoutPreview = async (req, res, next) => {
     new SuccessResponse({
       message: "checkout review success",
