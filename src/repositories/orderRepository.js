@@ -112,10 +112,11 @@ const updateStatusCancelled = async (order_id) => {
   }
   return updateOrder;
 };
-const listOrderPending = async ({ limit, page }) => {
+const listOrderPending = async ({ limit, page, shop }) => {
   const skip = (page - 1) * limit;
   const query = {
     order_status: "pending",
+    order_shopId: shop._id,
   };
   const findOrder = await orderModel
     .find(query)
@@ -128,10 +129,11 @@ const listOrderPending = async ({ limit, page }) => {
   }
   return findOrder;
 };
-const listOrderSuccess = async ({ limit, page }) => {
+const listOrderSuccess = async ({ limit, page, shop }) => {
   const skip = (page - 1) * limit;
   const query = {
     order_status: "success",
+    order_shopId: shop._id,
   };
   const findOrder = await orderModel
     .find(query)
@@ -144,10 +146,11 @@ const listOrderSuccess = async ({ limit, page }) => {
   }
   return findOrder;
 };
-const listOrderCancelled = async ({ limit, page }) => {
+const listOrderCancelled = async ({ limit, page, shop }) => {
   const skip = (page - 1) * limit;
   const query = {
     order_status: "cancelled",
+    order_shopId: shop._id,
   };
   const findOrder = await orderModel
     .find(query)
@@ -160,10 +163,11 @@ const listOrderCancelled = async ({ limit, page }) => {
   }
   return findOrder;
 };
-const listOrderCompleted = async ({ limit, page }) => {
+const listOrderCompleted = async ({ limit, page, shop }) => {
   const skip = (page - 1) * limit;
   const query = {
     order_status: "completed",
+    order_shopId: shop._id,
   };
   const findOrder = await orderModel
     .find(query)

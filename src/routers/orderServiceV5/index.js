@@ -18,7 +18,7 @@ router.get('/listOrderCompletedOfUser',asynHandler(orderControllerV5.listOrderCo
 router.get('/listOrderPendingOfUser',asynHandler(orderControllerV5.listOrderPendingOfUser))
 router.get('/listOrderSuccessOfUser',asynHandler(orderControllerV5.listOrderSuccessOfUser))
 
-router.use(authorizeRoles(roles.ADMIN))
+router.use(authorizeRoles(roles.EMPLOYEE))
 router.patch('/updateStatusCompleted/:order_id',asynHandler(orderControllerV5.updateStatusCompleted))
 router.get('/listOrderPending',asynHandler(orderControllerV5.listOrderPending))
 router.get('/listOrderCompleted',asynHandler(orderControllerV5.listOrderCompleted))

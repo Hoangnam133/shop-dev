@@ -60,17 +60,17 @@ class OrderServiceV5 {
   static async updateStatusCompleted(order_id) {
     return await updateStatusCompleted(order_id);
   }
-  static async listOrderPending({ limit = 10, page = 1 }) {
-    return await listOrderPending({ limit, page });
+  static async listOrderPending({ limit = 10, page = 1, shop }) {
+    return await listOrderPending({ limit, page, shop });
   }
-  static async listOrderSuccess({ limit = 10, page = 1 }) {
+  static async listOrderSuccess({ limit = 10, page = 1, shop }) {
     return await listOrderSuccess({ limit, page });
   }
-  static async listOrderCancelled({ limit = 10, page = 1 }) {
-    return await listOrderCancelled({ limit, page });
+  static async listOrderCancelled({ limit = 10, page = 1, shop }) {
+    return await listOrderCancelled({ limit, page, shop });
   }
-  static async listOrderCompleted({ limit = 10, page = 1 }) {
-    return await listOrderCompleted({ limit, page });
+  static async listOrderCompleted({ limit = 10, page = 1, shop }) {
+    return await listOrderCompleted({ limit, page, shop });
   }
     static async checkoutPreview({ user, shop, discount_code }) {
       const foundUser = await userModel.findById(user._id);
@@ -313,6 +313,7 @@ class OrderServiceV5 {
       estimated_delivery_time: estimated_delivery,
       order_time,
       order_userId: user._id,
+      order_shopId: shop._id,
       note
     };
     const createOrder = await orderModel.create(payload)
