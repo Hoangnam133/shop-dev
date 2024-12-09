@@ -158,6 +158,7 @@ class UserService {
     shop_id,
     refreshToken = null,
   }) => {
+    const checkUser = await findByEmail(email);
     if (
       !checkUser ||
       checkUser.roles !== roles.EMPLOYEE ||
@@ -165,8 +166,8 @@ class UserService {
     ) {
       throw new NotFoundError("User not found or shop_id does not match");
     }
-    const foundShops = await shopModel.findById(shop_id)
-    if(!foundShops){
+    const foundShops = await shopModel.findById(shop_id);
+    if (!foundShops) {
       throw new NotFoundError("shop not found");
     }
     const matchPassword = await bcrypt.compare(password, checkUser.password);

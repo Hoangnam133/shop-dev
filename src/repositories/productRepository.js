@@ -45,7 +45,7 @@ const checkProductInShop = async (shop_id, product_id) => {
 };
 // tạo sản phẩm
 const createProduct = async (payload, file) => {
-  let { category_id, shop_ids } = payload;
+  let { category_id, shop_ids, sideDish_ids } = payload;
 
   const findcategory = await categoryModel.findById(
     toObjectId(category_id.trim())
@@ -92,7 +92,20 @@ const createProduct = async (payload, file) => {
       product_id: newProduct._id,
     });
   }
+  if (sideDish_ids && Array.isArray(sideDish_ids) && sideDish_ids.length > 0) {
+    const validSideDishes = await sideDishModel.find(
+      { _id: { $in: sideDish_ids.map((id) => toObjectId(id.trim())) },
+      isDeleted: false },
+      "_id"
+    );
+    if (validSideDishes.length !== sideDish_ids.length) {
+      throw new BadRequestError("One or more sideDish_ids are not valid");
+    }
 
+    payload.sideDish_id = validSideDishes.map((dish) => dish._id);
+  } else {
+    payload.sideDish_id = []; 
+  }
   return newProduct;
 };
 // lấy ra sản phẩm mới nhất (limit)
