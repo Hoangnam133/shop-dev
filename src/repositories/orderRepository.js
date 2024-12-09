@@ -410,12 +410,13 @@ const getCategorySales = async (timeRangeKey) => {
   }
 
   try {
+    // Tính tổng doanh thu theo từng category
     const orders = await orderModel.aggregate([
       { $match: { createdAt: { $gte: startDate } } },
       { $unwind: "$order_product" },
       {
         $group: {
-          _id: "$order_product.product_id",
+          _id: "$order_product.product_id",  // Sản phẩm được chọn trong đơn hàng
           totalRevenue: {
             $sum: { $multiply: ["$order_product.totalPrice", "$order_product.quantity"] },
           },
@@ -423,29 +424,43 @@ const getCategorySales = async (timeRangeKey) => {
       },
       {
         $lookup: {
-          from: "Products",
+          from: "Products",  // Kết nối với bảng Products
           localField: "_id",
           foreignField: "_id",
           as: "productInfo",
         },
       },
-      { $unwind: "$productInfo" },
+      { $unwind: "$productInfo" },  // Chắc chắn chỉ có 1 sản phẩm ở mỗi mục
       {
         $group: {
-          _id: "$productInfo.category_id",
+          _id: "$productInfo.category_id",  // Tính tổng doanh thu theo từng category
           categoryRevenue: { $sum: "$totalRevenue" },
         },
       },
       { $sort: { categoryRevenue: -1 } },
     ]);
 
-    if (!orders.length) {
-      return [];
-    }
+    // Lấy tất cả categoryIds từ kết quả trên
+    const categoryIds = orders.map((category) => category._id);
 
+    // Tính tổng doanh thu của tất cả sản phẩm trong các category đã tính ở trên
     const totalRevenue = await orderModel.aggregate([
       { $match: { createdAt: { $gte: startDate } } },
       { $unwind: "$order_product" },
+      {
+        $lookup: {
+          from: "Products",  // Kết nối với bảng Products để lấy thông tin về category_id
+          localField: "order_product.product_id",
+          foreignField: "_id",
+          as: "productInfo",
+        },
+      },
+      { $unwind: "$productInfo" },
+      {
+        $match: {
+          "productInfo.category_id": { $in: categoryIds },  // Lọc các sản phẩm thuộc các category đã tính
+        },
+      },
       {
         $group: {
           _id: null,
@@ -457,23 +472,46 @@ const getCategorySales = async (timeRangeKey) => {
     ]);
 
     const total = totalRevenue[0] ? totalRevenue[0].totalRevenue : 0;
-    console.log("Total Revenue:", total);  // Kiểm tra tổng doanh thu
 
-    const categorySalesPercentage = orders.map((category) => ({
-      categoryId: category._id,
-      categoryRevenue: category.categoryRevenue,
-      percentage: total > 0 ? (category.categoryRevenue / total) * 100 : 0,
-    }));
+    // Lọc và tính tỷ lệ phần trăm và doanh thu cho các category
+    const categorySalesPercentage = orders.map((category) => {
+      const percentage = total > 0 ? (category.categoryRevenue / total) * 100 : 0;
+      return {
+        categoryId: category._id,
+        categoryRevenue: percentage > 0 ? category.categoryRevenue : 0, // Chỉ tính categoryRevenue nếu tỷ lệ phần trăm > 0
+        percentage: percentage,
+        revenueAmount: percentage > 0 ? (percentage / 100) * total : 0, // Tính doanh thu nếu tỷ lệ phần trăm > 0
+      };
+    });
 
-    console.log("Category Sales Percentage:", categorySalesPercentage);  // Kiểm tra tỷ lệ phần trăm
-
-    const categoryIds = categorySalesPercentage.map((category) => category.categoryId);
+    // Lấy thông tin chi tiết các category, bao gồm tất cả các category, không phụ thuộc vào doanh thu
     const categories = await categoryModel.find({ _id: { $in: categoryIds } });
 
+    // Gắn thông tin category vào kết quả
     for (let category of categorySalesPercentage) {
       const categoryInfo = categories.find((c) => c._id.toString() === category.categoryId.toString());
       category.categoryInfo = categoryInfo || null;
     }
+
+    // Lấy danh sách tất cả category từ categoryModel để chắc chắn mọi category đều có mặt
+    const allCategories = await categoryModel.find();
+
+    // Gắn thông tin của tất cả các category vào kết quả trả về
+    for (let cat of allCategories) {
+      // Nếu category không có trong categorySalesPercentage, thêm nó vào với categoryRevenue = 0 và percentage = 0
+      if (!categorySalesPercentage.some(category => category.categoryId.toString() === cat._id.toString())) {
+        categorySalesPercentage.push({
+          categoryId: cat._id,
+          categoryRevenue: 0,
+          percentage: 0,
+          revenueAmount: 0,
+          categoryInfo: cat,
+        });
+      }
+    }
+
+    // Sắp xếp lại danh sách theo categoryRevenue giảm dần
+    categorySalesPercentage.sort((a, b) => b.categoryRevenue - a.categoryRevenue);
 
     return categorySalesPercentage;
   } catch (error) {
@@ -481,6 +519,9 @@ const getCategorySales = async (timeRangeKey) => {
     throw error;
   }
 };
+
+
+
 
 
 module.exports = {
