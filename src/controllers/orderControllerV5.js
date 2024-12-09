@@ -4,21 +4,19 @@ class OrderControllerV5 {
   getTotalRevenueInShop = async (req, res, next) => {
     new SuccessResponse({
       message: "list best selling products success",
-      metaData: await OrderServiceV5.getTotalRevenueInShop(
-       req.params.shop_id,
-      ),
+      metaData: await OrderServiceV5.getTotalRevenueInShop(req.params.shop_id),
     }).send(res);
-  }
+  };
   listBestSellingProductsInShop = async (req, res, next) => {
-    const limit = parseInt(req.query.limit) || 10; 
+    const limit = parseInt(req.query.limit) || 10;
     new SuccessResponse({
       message: "list best selling products success",
       metaData: await OrderServiceV5.listBestSellingProductsInShop(
-       req.params.shop_id,
-       limit
+        req.params.shop_id,
+        limit
       ),
     }).send(res);
-  }
+  };
   getOrderDetail = async (req, res, next) => {
     this.user = req.user;
     this.orderId = req.params.order_id;
@@ -26,7 +24,7 @@ class OrderControllerV5 {
       message: "order detail success",
       metaData: await OrderServiceV5.getOrderDetail(this.user, this.orderId),
     }).send(res);
-  }
+  };
   checkoutPreview = async (req, res, next) => {
     new SuccessResponse({
       message: "checkout review success",
@@ -100,6 +98,7 @@ class OrderControllerV5 {
 
   // Cập nhật trạng thái đơn hàng thành đã hủy
   updateStatusCancelled = async (req, res, next) => {
+    console.log(req.params.order_id);
     new SuccessResponse({
       message: "update order status to cancelled",
       metaData: await OrderServiceV5.updateStatusCancelled(req.params.order_id),
@@ -108,56 +107,56 @@ class OrderControllerV5 {
 
   // Lấy danh sách đơn hàng đang chờ xử lý (cho admin)
   listOrderPending = async (req, res, next) => {
-    const limit = parseInt(req.query.limit) || 10; 
-    const page = parseInt(req.query.page) || 1;   
+    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page) || 1;
     new SuccessResponse({
       message: "list of pending orders",
       metaData: await OrderServiceV5.listOrderPending({
         limit,
         page,
-        shop: req.shop
+        shop: req.shop,
       }),
     }).send(res);
   };
 
   // Lấy danh sách đơn hàng đã hoàn thành (cho admin)
   listOrderCompleted = async (req, res, next) => {
-    const limit = parseInt(req.query.limit) || 10; 
-    const page = parseInt(req.query.page) || 1;   
+    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page) || 1;
     new SuccessResponse({
       message: "list of completed orders",
       metaData: await OrderServiceV5.listOrderCompleted({
         limit,
         page,
-        shop: req.shop
+        shop: req.shop,
       }),
     }).send(res);
   };
 
   // Lấy danh sách đơn hàng đã hủy (cho admin)
   listOrderCancelled = async (req, res, next) => {
-    const limit = parseInt(req.query.limit) || 10; 
-    const page = parseInt(req.query.page) || 1;   
+    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page) || 1;
     new SuccessResponse({
       message: "list of cancelled orders",
       metaData: await OrderServiceV5.listOrderCancelled({
         limit,
         page,
-        shop: req.shop
+        shop: req.shop,
       }),
     }).send(res);
   };
 
   // Lấy danh sách đơn hàng thành công (cho admin)
   listOrderSuccess = async (req, res, next) => {
-    const limit = parseInt(req.query.limit) || 10; 
-    const page = parseInt(req.query.page) || 1;   
+    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page) || 1;
     new SuccessResponse({
       message: "list of successful orders",
       metaData: await OrderServiceV5.listOrderSuccess({
         limit,
         page,
-        shop: req.shop
+        shop: req.shop,
       }),
     }).send(res);
   };
