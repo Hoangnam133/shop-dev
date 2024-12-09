@@ -53,8 +53,16 @@ class ElasticsearchService {
                     _id: hit._id,
                     product_name: hit._source.product_name,
                     product_description: hit._source.product_description,
-                    product_thumb: hit._source.product_thumb, // Hoặc sử dụng `product_thumb` nếu có trường này
-                    product_price: hit._source.product_price // Thêm trường giá sản phẩm nếu có
+                    product_thumb: hit._source.product_thumb, 
+                    product_price: hit._source.product_price,
+                    isDelete: hit.isDeleted,
+                    isPublish: hit.isPublished,
+                    product_description: hit.product_description,
+                    product_ratingAverage: hit.product_ratingAverage,
+                    preparation_time: hit.preparation_time,
+                    required_points: hit.required_points,
+                    createdAt: hit.createdAt,
+                    sideDish_id: hit.sideDish_id
                 }
             }));
             return { products : formattedProducts}
