@@ -41,13 +41,11 @@ class ElasticsearchService {
                 console.log('Ảnh sản phẩm:', hit._source.product_thumb);
                 console.log('---');
             });
-
             // Kiểm tra nếu có sản phẩm tìm thấy
             if (result.hits.hits.length === 0) {
                 console.log('Không có sản phẩm nào được tìm thấy.');
                 return [];
             }
-
             const formattedProducts = result.hits.hits.map(hit => ({
                 product_id: {
                     _id: hit._id,
