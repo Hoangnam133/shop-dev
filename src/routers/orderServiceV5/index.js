@@ -5,9 +5,14 @@ const router = express.Router()
 const orderControllerV5 = require('../../controllers/orderControllerV5')
 const roles = require("../../utils/roles");
 const { asynHandler } = require('../../utils/handler')
+// all stores
 
+router.get('/getCategorySales',asynHandler(orderControllerV5.getCategorySales))
+router.get('/getBestSellingProducts',asynHandler(orderControllerV5.getBestSellingProducts))
+router.get('/getStatistics',asynHandler(orderControllerV5.getStatistics))
+
+// branch
 router.get('/getTotalRevenueInShop/:shop_id',asynHandler(orderControllerV5.getTotalRevenueInShop))
-
 router.get('/listBestSellingProductsInShop/:shop_id',asynHandler(orderControllerV5.listBestSellingProductsInShop))
 router.use(authentication)
 router.get('/getOrderDetail/:order_id',asynHandler(orderControllerV5.getOrderDetail))

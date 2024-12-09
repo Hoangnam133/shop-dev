@@ -33,7 +33,10 @@ const {
   listOrderCompleted,
   getOrderDetail,
   listBestSellingProductsInShop,
-  getTotalRevenueInShop
+  getTotalRevenueInShop,
+  getStatistics,
+  getBestSellingProducts,
+  getCategorySales
 } = require("../repositories/orderRepository");
 const { runProducer } = require("../message_queue/rabbitmq/producer");
 const moment = require("moment-timezone");
@@ -41,7 +44,15 @@ const {calculateDistance} = require('../utils/Distance')
 const locationModel = require("../models/locationModel");
 const { toObjectId } = require("../utils");
 class OrderServiceV5 {
-  getTotalRevenueInShop
+  static async getCategorySales(timeRange) {
+    return await getCategorySales(timeRange);
+  }
+  static async getBestSellingProducts(timeRange) {
+    return await getBestSellingProducts(timeRange);
+  }
+  static async getStatistics(timeRange) {
+    return await getStatistics(timeRange);
+  }
   static async getTotalRevenueInShop(shop_id) {
     return await getTotalRevenueInShop(shop_id);
   }
