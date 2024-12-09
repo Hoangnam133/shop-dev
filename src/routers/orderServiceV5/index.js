@@ -18,7 +18,6 @@ router.get('/listBestSellingProductsInShop/:shop_id',asynHandler(orderController
 router.use(authentication)
 router.get('/getOrderDetail/:order_id',asynHandler(orderControllerV5.getOrderDetail))
 
-const { asynHandler } = require("../../utils/handler");
 
 router.get(
   "/getTotalRevenueInShop/:shop_id",
