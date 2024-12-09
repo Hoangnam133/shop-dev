@@ -2,7 +2,7 @@ const orderModel = require("../models/orderModel");
 const { NotFoundError, BadRequestError } = require("../core/errorResponse");
 const userModel = require("../models/userModel");
 const { sendNotification } = require("../utils/notification");
-const {toObjectId} = require("../utils/index");
+const { toObjectId } = require("../utils/index");
 const listOrderPendingOfUser = async (user) => {
   const query = {
     order_userId: user._id,
@@ -76,7 +76,9 @@ const updateStatusCompleted = async (order_id) => {
 
   if (user && user.deviceToken) {
     const title = "Đơn hàng đã hoàn thành";
-    const body = `Đơn hàng ${updateOrder._id} của bạn đã hoàn thành.`;
+    const body = `Đơn hàng ${
+      updateOrder.order_product?.map((product) => product.product_name) || []
+    } của bạn đã hoàn thành.`;
     const data = {
       order_id: updateOrder._id,
       status: "completed",
@@ -92,7 +94,7 @@ const updateStatusCancelled = async (order_id) => {
   const query = {
     _id: order_id,
     order_status: "pending",
-    "order_payment.payment_status": "success",
+    "order_payment.payment_status": "Success",
   };
   const updateOrder = await orderModel.findOneAndUpdate(
     query,
@@ -106,11 +108,23 @@ const updateStatusCancelled = async (order_id) => {
       lean: true,
     }
   );
-  if (!updateOrder) {
-    throw new BadRequestError(
-      "Update order failed: either payment was not successful or order is no longer pending."
-    );
+  // Gửi thông báo đẩy
+  const user = await userModel.findById(updateOrder.order_userId); // Tìm người dùng liên quan
+  console.log("ầdfadfasfdfas: " + user.deviceToken);
+
+  if (user && user.deviceToken) {
+    const title = "Đơn hàng đã bị huỷ";
+    const body = `Đơn hàng ${
+      updateOrder.order_product?.map((product) => product.product_name) || []
+    } của bạn đã bị huỷ.`;
+    const data = {
+      order_id: updateOrder._id,
+      status: "cancelled",
+    };
+
+    await sendNotification(user.deviceToken, title, body, data); // Gửi thông báo
   }
+
   return updateOrder;
 };
 const listOrderPending = async ({ limit, page, shop }) => {
@@ -196,8 +210,8 @@ const listBestSellingProductsInShop = async (shopId, limit) => {
     {
       $match: {
         order_shopId: toObjectId(shopId),
-        order_status: 'completed',
-        'order_payment.payment_status': 'Success',
+        order_status: "completed",
+        "order_payment.payment_status": "Success",
       },
     },
 
@@ -206,25 +220,25 @@ const listBestSellingProductsInShop = async (shopId, limit) => {
         order_product: 1,
       },
     },
- 
+
     {
       $unwind: {
-        path: '$order_product',
-        preserveNullAndEmptyArrays: true,  
+        path: "$order_product",
+        preserveNullAndEmptyArrays: true,
       },
     },
-   
+
     {
       $group: {
-        _id: '$order_product.product_id',  
-        totalSold: { $sum: '$order_product.quantity' },  
-        productName: { $first: '$order_product.product_name' },  
-        productThumb: { $first: '$order_product.product_thumb' },  
+        _id: "$order_product.product_id",
+        totalSold: { $sum: "$order_product.quantity" },
+        productName: { $first: "$order_product.product_name" },
+        productThumb: { $first: "$order_product.product_thumb" },
       },
     },
-   
+
     { $sort: { totalSold: -1 } },
-  
+
     { $limit: limit },
   ]);
 
@@ -235,33 +249,32 @@ const getTotalRevenueInShop = async (shopId) => {
   const totalRevenue = await orderModel.aggregate([
     {
       $match: {
-        order_shopId: toObjectId(shopId), 
-        order_status: 'completed', 
-        'order_payment.payment_status': 'Success' 
+        order_shopId: toObjectId(shopId),
+        order_status: "completed",
+        "order_payment.payment_status": "Success",
       },
     },
-    { 
+    {
       $project: {
-        order_product: 1
-      }
+        order_product: 1,
+      },
     },
-    { 
+    {
       $unwind: {
-        path: '$order_product',
-        preserveNullAndEmptyArrays: true 
-      }
+        path: "$order_product",
+        preserveNullAndEmptyArrays: true,
+      },
     },
     {
       $group: {
-        _id: null,  
-        totalRevenue: { $sum: '$order_product.totalPrice' } 
+        _id: null,
+        totalRevenue: { $sum: "$order_product.totalPrice" },
       },
-    }
+    },
   ]);
 
   return totalRevenue.length > 0 ? totalRevenue[0].totalRevenue : 0;
 };
-
 
 module.exports = {
   listOrderPendingOfUser,
@@ -276,5 +289,5 @@ module.exports = {
   listOrderCompleted,
   getOrderDetail,
   listBestSellingProductsInShop,
-  getTotalRevenueInShop
+  getTotalRevenueInShop,
 };
