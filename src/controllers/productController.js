@@ -1,6 +1,12 @@
 const productService = require("../services/productService");
 const { SuccessResponse } = require("../core/successResponse");
 class ProductController {
+  getAllProductsWeb = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Get all products success",
+      metaData: await productService.getAllProductsWeb(),
+    }).send(res);
+  }
   getAllProducts = async (req, res, next) => {
     new SuccessResponse({
       message: "Get all products success",

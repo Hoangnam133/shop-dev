@@ -598,6 +598,29 @@ const getAllProducts = async () => {
   }
   return products
 }
+const getAllProductsWeb = async () => {
+  const products = await productModel.find()
+  if(!products.length){
+    throw new NotFoundError("No products found")
+  }
+  const formattedProducts = products.map(product => ({
+    product_id: {
+        _id: product._id,
+        product_thumb: product.product_thumb,
+        product_price: product.product_price,
+        product_name: product.product_name, 
+        isDelete: product.isDeleted,
+        isPublish: product.isPublished,
+        product_description: product.product_description,
+        product_ratingAverage: product.product_ratingAverage,
+        preparation_time: product.preparation_time,
+        required_points: product.required_points,
+        createdAt: product.createdAt
+    }
+}));
+
+return { products: formattedProducts };
+}
 module.exports = {
   getProductById,
   createProduct,
@@ -619,5 +642,6 @@ module.exports = {
   checkProductInShop,
   getSideDishInProduct,
   getProductByIdDetails,
-  getAllProducts
+  getAllProducts,
+  getAllProductsWeb
 };

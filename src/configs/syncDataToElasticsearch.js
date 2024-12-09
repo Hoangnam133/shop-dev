@@ -61,9 +61,14 @@ const syncProductsToElasticsearch = async () => {
                         product_data: product.product_name + " " + product.product_description,
                         product_thumb: product.product_thumb,
                         product_price: product.product_price,
-                        product_name: product.product_name,
+                        product_name: product.product_name, 
                         isDelete: product.isDeleted,
-                        isPublish: product.isPublished
+                        isPublish: product.isPublished,
+                        product_description: product.product_description,
+                        product_ratingAverage: product.product_ratingAverage,
+                        preparation_time: product.preparation_time,
+                        required_points: product.required_points,
+                        createdAt: product.createdAt
                     },
                     doc_as_upsert: true // Nếu không có tài liệu, sẽ tạo mới
                 }
