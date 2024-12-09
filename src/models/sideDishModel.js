@@ -14,10 +14,10 @@ const sideDishSchema = new Schema({
         type: Boolean,
         default: true, 
     },
-    sideDish_image: {
-        type: String,
-        required: true 
-    }
+    // sideDish_image: {
+    //     type: String,
+    //     required: true 
+    // }
 }, {
     timestamps: true, // Tự động tạo timestamps (createdAt, updatedAt)
     collection: 'SideDishes', // Tên collection trong MongoDB

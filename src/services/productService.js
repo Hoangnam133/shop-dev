@@ -17,11 +17,14 @@ const {
   getProductsSortedBysales_count,
   getDeletedProductsManage,
   getProductByIdDetails,
-  getAllProducts
+  getAllProducts,
+  getAllProductsWeb
 } = require("../repositories/productRepository");
 const { getInfoData, toObjectId } = require("../utils/index");
 class ProductService {
-  
+  static async getAllProductsWeb() {
+    return await getAllProductsWeb();
+  }
   static async getAllProducts() {
     return await getAllProducts();
   }
