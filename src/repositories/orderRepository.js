@@ -1,4 +1,6 @@
 const orderModel = require("../models/orderModel");
+const categoryModel = require("../models/categoryModel");
+
 const { NotFoundError, BadRequestError } = require("../core/errorResponse");
 const userModel = require("../models/userModel");
 const { sendNotification } = require("../utils/notification");
@@ -276,6 +278,212 @@ const getTotalRevenueInShop = async (shopId) => {
   return totalRevenue.length > 0 ? totalRevenue[0].totalRevenue : 0;
 };
 
+
+const getStatistics = async (timeRange) => {
+  const now = new Date(); // Ngày hiện tại
+
+  // Kiểm tra nếu `timeRange` không hợp lệ
+  if (!timeRanges[timeRange]) {
+    throw new Error(`Invalid time range: ${timeRange}. Please choose one of ${Object.keys(timeRanges).join(', ')}`);
+  }
+
+  const startDate = timeRanges[timeRange];
+
+  try {
+    // Thực hiện aggregation
+    const result = await orderModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate }, // Lọc đơn hàng từ `startDate`
+          order_status: "completed", // Chỉ lấy đơn hàng đã hoàn thành
+        },
+      },
+      {
+        $unwind: "$order_product", // Tách từng sản phẩm trong đơn hàng
+      },
+      {
+        $group: {
+          _id: null,
+          totalProducts: { $sum: "$order_product.quantity" }, // Tổng số sản phẩm bán ra
+          totalRevenue: { $sum: "$order_product.totalPrice" }, // Tổng doanh thu
+          totalUsers: { $addToSet: "$order_userId" }, // Số lượt user mua hàng
+          totalOrders: { $sum: 1 }, // Tổng số đơn hàng
+        },
+      },
+      {
+        $project: {
+          totalProducts: 1,
+          totalRevenue: 1,
+          totalUsers: { $size: "$totalUsers" }, // Đếm số user unique
+          totalOrders: 1,
+        },
+      },
+    ]);
+
+    // Trả về kết quả
+    return result[0] || { totalProducts: 0, totalRevenue: 0, totalUsers: 0, totalOrders: 0 };
+  } catch (error) {
+    console.error("Error in getStatistics:", error.message);
+    throw error;
+  }
+};
+const getBestSellingProducts = async (timeRange) => {
+  const now = new Date(); // Ngày hiện tại
+
+
+  // Kiểm tra nếu `timeRange` không hợp lệ
+  if (!timeRanges[timeRange]) {
+    throw new Error(`Invalid time range: ${timeRange}. Please choose one of ${Object.keys(timeRanges).join(', ')}`);
+  }
+
+  const startDate = timeRanges[timeRange];
+
+  try {
+    // Thực hiện aggregation để lấy top 10 sản phẩm bán chạy nhất
+    const result = await orderModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate }, // Lọc đơn hàng từ `startDate`
+          order_status: "completed", // Chỉ lấy đơn hàng đã hoàn thành
+        },
+      },
+      {
+        $unwind: "$order_product", // Tách từng sản phẩm trong đơn hàng
+      },
+      {
+        $group: {
+          _id: "$order_product.product_id", // Nhóm theo ID sản phẩm
+          totalQuantity: { $sum: "$order_product.quantity" }, // Tổng số lượng bán ra của mỗi sản phẩm
+          totalRevenue: { $sum: "$order_product.totalPrice" }, // Tổng doanh thu của mỗi sản phẩm
+        },
+      },
+      {
+        $sort: { totalQuantity: -1 }, // Sắp xếp theo số lượng bán ra (giảm dần)
+      },
+      {
+        $limit: 10, // Lấy 10 sản phẩm bán chạy nhất
+      },
+      {
+        $lookup: {
+          from: "Products", // Kết nối với bảng sản phẩm
+          localField: "_id", // Trường chứa ID sản phẩm trong nhóm
+          foreignField: "_id", // Trường _id của sản phẩm
+          as: "productDetails", // Lưu thông tin chi tiết sản phẩm vào mảng productDetails
+        },
+      },
+      {
+        $unwind: "$productDetails", // Mở rộng mảng productDetails để lấy chi tiết sản phẩm
+      },
+      {
+        $project: {
+          product_id: "$_id",
+          product_name: "$productDetails.product_name", // Tên sản phẩm
+          product_thumb: "$productDetails.product_thumb", // Hình ảnh sản phẩm
+          totalQuantity: 1, // Tổng số lượng bán được
+          totalRevenue: 1, // Tổng doanh thu
+        },
+      },
+    ]);
+
+    // Trả về top 10 sản phẩm bán chạy nhất
+    return result || [];
+  } catch (error) {
+    console.error("Error in getBestSellingProducts:", error.message);
+    throw error;
+  }
+};
+const timeRanges = {
+  "1_day": new Date(new Date().getTime() - 1 * 24 * 60 * 60 * 1000),
+  "7_days": new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000),
+  "1_month": new Date(new Date().setMonth(new Date().getMonth() - 1)),
+  "3_months": new Date(new Date().setMonth(new Date().getMonth() - 3)),
+  "6_months": new Date(new Date().setMonth(new Date().getMonth() - 6)),
+  "9_months": new Date(new Date().setMonth(new Date().getMonth() - 9)),
+  "1_year": new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
+  "2_years": new Date(new Date().setFullYear(new Date().getFullYear() - 2)),
+};
+const getCategorySales = async (timeRangeKey) => {
+  const now = new Date();
+  const startDate = timeRanges[timeRangeKey];
+
+  if (!startDate) {
+    throw new Error("Invalid time range key.");
+  }
+
+  try {
+    const orders = await orderModel.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      { $unwind: "$order_product" },
+      {
+        $group: {
+          _id: "$order_product.product_id",
+          totalRevenue: {
+            $sum: { $multiply: ["$order_product.totalPrice", "$order_product.quantity"] },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "Products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "productInfo",
+        },
+      },
+      { $unwind: "$productInfo" },
+      {
+        $group: {
+          _id: "$productInfo.category_id",
+          categoryRevenue: { $sum: "$totalRevenue" },
+        },
+      },
+      { $sort: { categoryRevenue: -1 } },
+    ]);
+
+    if (!orders.length) {
+      return [];
+    }
+
+    const totalRevenue = await orderModel.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      { $unwind: "$order_product" },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: {
+            $sum: { $multiply: ["$order_product.totalPrice", "$order_product.quantity"] },
+          },
+        },
+      },
+    ]);
+
+    const total = totalRevenue[0] ? totalRevenue[0].totalRevenue : 0;
+    console.log("Total Revenue:", total);  // Kiểm tra tổng doanh thu
+
+    const categorySalesPercentage = orders.map((category) => ({
+      categoryId: category._id,
+      categoryRevenue: category.categoryRevenue,
+      percentage: total > 0 ? (category.categoryRevenue / total) * 100 : 0,
+    }));
+
+    console.log("Category Sales Percentage:", categorySalesPercentage);  // Kiểm tra tỷ lệ phần trăm
+
+    const categoryIds = categorySalesPercentage.map((category) => category.categoryId);
+    const categories = await categoryModel.find({ _id: { $in: categoryIds } });
+
+    for (let category of categorySalesPercentage) {
+      const categoryInfo = categories.find((c) => c._id.toString() === category.categoryId.toString());
+      category.categoryInfo = categoryInfo || null;
+    }
+
+    return categorySalesPercentage;
+  } catch (error) {
+    console.error("Error fetching category sales:", error);
+    throw error;
+  }
+};
+
+
 module.exports = {
   listOrderPendingOfUser,
   listOrderCompletedOfUser,
@@ -290,4 +498,10 @@ module.exports = {
   getOrderDetail,
   listBestSellingProductsInShop,
   getTotalRevenueInShop,
+
+  getStatistics,
+  getBestSellingProducts,
+  getCategorySales
+
+
 };
