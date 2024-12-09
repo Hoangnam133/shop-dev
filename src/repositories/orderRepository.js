@@ -305,7 +305,7 @@ const getStatistics = async (timeRange) => {
         $group: {
           _id: null,
           totalProducts: { $sum: "$order_product.quantity" }, // Tổng số sản phẩm bán ra
-          totalRevenue: { $sum: "$order_product.totalPrice" }, // Tổng doanh thu
+          totalRevenue: { $sum: { $multiply: ["$order_product.quantity", "$order_product.totalPrice"] } }, // Tổng doanh thu
           totalUsers: { $addToSet: "$order_userId" }, // Số lượt user mua hàng
           totalOrders: { $sum: 1 }, // Tổng số đơn hàng
         },
@@ -327,11 +327,11 @@ const getStatistics = async (timeRange) => {
     throw error;
   }
 };
+
 const getBestSellingProducts = async (timeRange) => {
-  const now = new Date(); // Ngày hiện tại
+  const now = new Date(); // Current date
 
-
-  // Kiểm tra nếu `timeRange` không hợp lệ
+  // Validate timeRange
   if (!timeRanges[timeRange]) {
     throw new Error(`Invalid time range: ${timeRange}. Please choose one of ${Object.keys(timeRanges).join(', ')}`);
   }
@@ -339,59 +339,58 @@ const getBestSellingProducts = async (timeRange) => {
   const startDate = timeRanges[timeRange];
 
   try {
-    // Thực hiện aggregation để lấy top 10 sản phẩm bán chạy nhất
     const result = await orderModel.aggregate([
       {
         $match: {
-          createdAt: { $gte: startDate }, // Lọc đơn hàng từ `startDate`
-          order_status: "completed", // Chỉ lấy đơn hàng đã hoàn thành
+          createdAt: { $gte: new Date(startDate) }, // Ensure 'createdAt' is compared with a Date object
+          order_status: "completed", // Only completed orders
         },
       },
       {
-        $unwind: "$order_product", // Tách từng sản phẩm trong đơn hàng
+        $unwind: "$order_product", // Flatten the 'order_product' array
       },
       {
         $group: {
-          _id: "$order_product.product_id", // Nhóm theo ID sản phẩm
-          totalQuantity: { $sum: "$order_product.quantity" }, // Tổng số lượng bán ra của mỗi sản phẩm
-          totalRevenue: { $sum: "$order_product.totalPrice" }, // Tổng doanh thu của mỗi sản phẩm
+          _id: "$order_product.product_id", // Group by product_id
+          totalQuantity: { $sum: "$order_product.quantity" }, // Sum of quantities
+          totalRevenue: { $sum: "$order_product.totalPrice" }, // Sum of total prices
         },
       },
       {
-        $sort: { totalQuantity: -1 }, // Sắp xếp theo số lượng bán ra (giảm dần)
+        $sort: { totalQuantity: -1 }, // Sort by totalQuantity in descending order
       },
       {
-        $limit: 10, // Lấy 10 sản phẩm bán chạy nhất
+        $limit: 10, // Limit to top 10 products
       },
       {
         $lookup: {
-          from: "Products", // Kết nối với bảng sản phẩm
-          localField: "_id", // Trường chứa ID sản phẩm trong nhóm
-          foreignField: "_id", // Trường _id của sản phẩm
-          as: "productDetails", // Lưu thông tin chi tiết sản phẩm vào mảng productDetails
+          from: "Products", // Join with the Products collection
+          localField: "_id", // Match by _id from the group stage
+          foreignField: "_id", // Match with the _id field in Products
+          as: "productDetails", // Store details in 'productDetails'
         },
       },
       {
-        $unwind: "$productDetails", // Mở rộng mảng productDetails để lấy chi tiết sản phẩm
+        $unwind: "$productDetails", // Flatten the 'productDetails' array
       },
       {
         $project: {
-          product_id: "$_id",
-          product_name: "$productDetails.product_name", // Tên sản phẩm
-          product_thumb: "$productDetails.product_thumb", // Hình ảnh sản phẩm
-          totalQuantity: 1, // Tổng số lượng bán được
-          totalRevenue: 1, // Tổng doanh thu
+          product_id: "$_id", // Include product_id from the group stage
+          product_name: "$productDetails.product_name", // Product name from the lookup
+          product_thumb: "$productDetails.product_thumb", // Product thumbnail from the lookup
+          totalQuantity: 1, // Include totalQuantity
+          totalRevenue: 1, // Include totalRevenue
         },
       },
     ]);
 
-    // Trả về top 10 sản phẩm bán chạy nhất
-    return result || [];
+    return result || []; // Return the result, or an empty array if no results
   } catch (error) {
     console.error("Error in getBestSellingProducts:", error.message);
     throw error;
   }
 };
+
 const timeRanges = {
   "1_day": new Date(new Date().getTime() - 1 * 24 * 60 * 60 * 1000),
   "7_days": new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000),
