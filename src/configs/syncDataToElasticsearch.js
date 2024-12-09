@@ -68,7 +68,8 @@ const syncProductsToElasticsearch = async () => {
                         product_ratingAverage: product.product_ratingAverage,
                         preparation_time: product.preparation_time,
                         required_points: product.required_points,
-                        createdAt: product.createdAt
+                        createdAt: product.createdAt,
+                        sideDish_id: product.sideDish_id
                     },
                     doc_as_upsert: true // Nếu không có tài liệu, sẽ tạo mới
                 }
