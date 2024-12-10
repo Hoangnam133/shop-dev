@@ -8,9 +8,9 @@ const sendNotification = async (deviceToken, title, body, data) => {
       sound: "default",
       title: title,
       body: body,
-      data: { ...data, navigateTo: "/app/screens/auth/welcome" },
+      data: { navigateTo: "/screens/auth/welcome" },
     };
-    console.log("fầddfasfdasf" + message);
+    console.log("Message:" + message);
 
     const response = await fetch("https://exp.host/--/api/v2/push/send", {
       method: "POST",
@@ -19,6 +19,7 @@ const sendNotification = async (deviceToken, title, body, data) => {
       },
       body: JSON.stringify(message),
     });
+    console.log("RESPONSE:" + response);
 
     const result = await response.json();
     if (result.errors) {

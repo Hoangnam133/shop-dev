@@ -60,7 +60,7 @@ router.get("/getUserInfo", asynHandler(userController.getUserInfo));
 router.post(
   "/signUpForEmployee",
   authorizeRoles(roles.ADMIN),
-
+  checkRequiredFields(userModel),
   asynHandler(userController.createEmployee)
 );
 router.post(

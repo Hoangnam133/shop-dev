@@ -77,10 +77,10 @@ const updateStatusCompleted = async (order_id) => {
   console.log("ầdfadfasfdfas" + user.deviceToken);
 
   if (user && user.deviceToken) {
-    const title = "Đơn hàng đã hoàn thành";
-    const body = `Đơn hàng ${
+    const title = "Bạn đã nhận đơn hàng";
+    const body = `Đơn hàng đã nhận gồm ${
       updateOrder.order_product?.map((product) => product.product_name) || []
-    } của bạn đã hoàn thành.`;
+    }, Nếu sản phẩm bị hư hại tự chịu trách nhiệm cdmm`;
     const data = {
       order_id: updateOrder._id,
       status: "completed",
@@ -91,7 +91,6 @@ const updateStatusCompleted = async (order_id) => {
 
   return updateOrder;
 };
-
 const updateStatusCancelled = async (order_id) => {
   const query = {
     _id: order_id,
@@ -122,6 +121,43 @@ const updateStatusCancelled = async (order_id) => {
     const data = {
       order_id: updateOrder._id,
       status: "cancelled",
+    };
+
+    await sendNotification(user.deviceToken, title, body, data); // Gửi thông báo
+  }
+
+  return updateOrder;
+};
+const updateStatusSuccess = async (order_id) => {
+  const query = {
+    _id: order_id,
+    order_status: "pending",
+    "order_payment.payment_status": "Success",
+  };
+  const updateOrder = await orderModel.findOneAndUpdate(
+    query,
+    {
+      $set: {
+        order_status: "Success",
+      },
+    },
+    {
+      new: true,
+      lean: true,
+    }
+  );
+  // Gửi thông báo đẩy
+  const user = await userModel.findById(updateOrder.order_userId); // Tìm người dùng liên quan
+  console.log("ầdfadfasfdfas: " + user.deviceToken);
+
+  if (user && user.deviceToken) {
+    const title = "Đơn hàng đã hoàn thành";
+    const body = `Đơn hàng ${
+      updateOrder.order_product?.map((product) => product.product_name) || []
+    } của bạn đã hoàn thành. Vui lòng xuống căng tin nhận hàng.`;
+    const data = {
+      order_id: updateOrder._id,
+      status: "Success",
     };
 
     await sendNotification(user.deviceToken, title, body, data); // Gửi thông báo
@@ -278,13 +314,16 @@ const getTotalRevenueInShop = async (shopId) => {
   return totalRevenue.length > 0 ? totalRevenue[0].totalRevenue : 0;
 };
 
-
 const getStatistics = async (timeRange) => {
   const now = new Date(); // Ngày hiện tại
 
   // Kiểm tra nếu `timeRange` không hợp lệ
   if (!timeRanges[timeRange]) {
-    throw new Error(`Invalid time range: ${timeRange}. Please choose one of ${Object.keys(timeRanges).join(', ')}`);
+    throw new Error(
+      `Invalid time range: ${timeRange}. Please choose one of ${Object.keys(
+        timeRanges
+      ).join(", ")}`
+    );
   }
 
   const startDate = timeRanges[timeRange];
@@ -305,7 +344,14 @@ const getStatistics = async (timeRange) => {
         $group: {
           _id: null,
           totalProducts: { $sum: "$order_product.quantity" }, // Tổng số sản phẩm bán ra
-          totalRevenue: { $sum: { $multiply: ["$order_product.quantity", "$order_product.totalPrice"] } }, // Tổng doanh thu
+          totalRevenue: {
+            $sum: {
+              $multiply: [
+                "$order_product.quantity",
+                "$order_product.totalPrice",
+              ],
+            },
+          }, // Tổng doanh thu
           totalUsers: { $addToSet: "$order_userId" }, // Số lượt user mua hàng
           totalOrders: { $sum: 1 }, // Tổng số đơn hàng
         },
@@ -321,7 +367,14 @@ const getStatistics = async (timeRange) => {
     ]);
 
     // Trả về kết quả
-    return result[0] || { totalProducts: 0, totalRevenue: 0, totalUsers: 0, totalOrders: 0 };
+    return (
+      result[0] || {
+        totalProducts: 0,
+        totalRevenue: 0,
+        totalUsers: 0,
+        totalOrders: 0,
+      }
+    );
   } catch (error) {
     console.error("Error in getStatistics:", error.message);
     throw error;
@@ -333,7 +386,11 @@ const getBestSellingProducts = async (timeRange) => {
 
   // Validate timeRange
   if (!timeRanges[timeRange]) {
-    throw new Error(`Invalid time range: ${timeRange}. Please choose one of ${Object.keys(timeRanges).join(', ')}`);
+    throw new Error(
+      `Invalid time range: ${timeRange}. Please choose one of ${Object.keys(
+        timeRanges
+      ).join(", ")}`
+    );
   }
 
   const startDate = timeRanges[timeRange];
@@ -416,24 +473,29 @@ const getCategorySales = async (timeRangeKey) => {
       { $unwind: "$order_product" },
       {
         $group: {
-          _id: "$order_product.product_id",  // Sản phẩm được chọn trong đơn hàng
+          _id: "$order_product.product_id", // Sản phẩm được chọn trong đơn hàng
           totalRevenue: {
-            $sum: { $multiply: ["$order_product.totalPrice", "$order_product.quantity"] },
+            $sum: {
+              $multiply: [
+                "$order_product.totalPrice",
+                "$order_product.quantity",
+              ],
+            },
           },
         },
       },
       {
         $lookup: {
-          from: "Products",  // Kết nối với bảng Products
+          from: "Products", // Kết nối với bảng Products
           localField: "_id",
           foreignField: "_id",
           as: "productInfo",
         },
       },
-      { $unwind: "$productInfo" },  // Chắc chắn chỉ có 1 sản phẩm ở mỗi mục
+      { $unwind: "$productInfo" }, // Chắc chắn chỉ có 1 sản phẩm ở mỗi mục
       {
         $group: {
-          _id: "$productInfo.category_id",  // Tính tổng doanh thu theo từng category
+          _id: "$productInfo.category_id", // Tính tổng doanh thu theo từng category
           categoryRevenue: { $sum: "$totalRevenue" },
         },
       },
@@ -449,7 +511,7 @@ const getCategorySales = async (timeRangeKey) => {
       { $unwind: "$order_product" },
       {
         $lookup: {
-          from: "Products",  // Kết nối với bảng Products để lấy thông tin về category_id
+          from: "Products", // Kết nối với bảng Products để lấy thông tin về category_id
           localField: "order_product.product_id",
           foreignField: "_id",
           as: "productInfo",
@@ -458,14 +520,19 @@ const getCategorySales = async (timeRangeKey) => {
       { $unwind: "$productInfo" },
       {
         $match: {
-          "productInfo.category_id": { $in: categoryIds },  // Lọc các sản phẩm thuộc các category đã tính
+          "productInfo.category_id": { $in: categoryIds }, // Lọc các sản phẩm thuộc các category đã tính
         },
       },
       {
         $group: {
           _id: null,
           totalRevenue: {
-            $sum: { $multiply: ["$order_product.totalPrice", "$order_product.quantity"] },
+            $sum: {
+              $multiply: [
+                "$order_product.totalPrice",
+                "$order_product.quantity",
+              ],
+            },
           },
         },
       },
@@ -475,7 +542,8 @@ const getCategorySales = async (timeRangeKey) => {
 
     // Lọc và tính tỷ lệ phần trăm và doanh thu cho các category
     const categorySalesPercentage = orders.map((category) => {
-      const percentage = total > 0 ? (category.categoryRevenue / total) * 100 : 0;
+      const percentage =
+        total > 0 ? (category.categoryRevenue / total) * 100 : 0;
       return {
         categoryId: category._id,
         categoryRevenue: percentage > 0 ? category.categoryRevenue : 0, // Chỉ tính categoryRevenue nếu tỷ lệ phần trăm > 0
@@ -489,7 +557,9 @@ const getCategorySales = async (timeRangeKey) => {
 
     // Gắn thông tin category vào kết quả
     for (let category of categorySalesPercentage) {
-      const categoryInfo = categories.find((c) => c._id.toString() === category.categoryId.toString());
+      const categoryInfo = categories.find(
+        (c) => c._id.toString() === category.categoryId.toString()
+      );
       category.categoryInfo = categoryInfo || null;
     }
 
@@ -499,7 +569,11 @@ const getCategorySales = async (timeRangeKey) => {
     // Gắn thông tin của tất cả các category vào kết quả trả về
     for (let cat of allCategories) {
       // Nếu category không có trong categorySalesPercentage, thêm nó vào với categoryRevenue = 0 và percentage = 0
-      if (!categorySalesPercentage.some(category => category.categoryId.toString() === cat._id.toString())) {
+      if (
+        !categorySalesPercentage.some(
+          (category) => category.categoryId.toString() === cat._id.toString()
+        )
+      ) {
         categorySalesPercentage.push({
           categoryId: cat._id,
           categoryRevenue: 0,
@@ -511,7 +585,9 @@ const getCategorySales = async (timeRangeKey) => {
     }
 
     // Sắp xếp lại danh sách theo categoryRevenue giảm dần
-    categorySalesPercentage.sort((a, b) => b.categoryRevenue - a.categoryRevenue);
+    categorySalesPercentage.sort(
+      (a, b) => b.categoryRevenue - a.categoryRevenue
+    );
 
     return categorySalesPercentage;
   } catch (error) {
@@ -520,10 +596,6 @@ const getCategorySales = async (timeRangeKey) => {
   }
 };
 
-
-
-
-
 module.exports = {
   listOrderPendingOfUser,
   listOrderCompletedOfUser,
@@ -531,6 +603,7 @@ module.exports = {
   listOrderSuccessOfUser,
   updateStatusCompleted,
   updateStatusCancelled,
+  updateStatusSuccess,
   listOrderPending,
   listOrderSuccess,
   listOrderCancelled,
@@ -541,7 +614,5 @@ module.exports = {
 
   getStatistics,
   getBestSellingProducts,
-  getCategorySales
-
-
+  getCategorySales,
 };
