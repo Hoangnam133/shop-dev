@@ -44,7 +44,7 @@ const listOrderCancelledOfUser = async (user) => {
 const listOrderSuccessOfUser = async (user) => {
   const query = {
     order_userId: user._id,
-    order_status: "success",
+    order_status: "Success",
   };
   const findOrder = await orderModel.find(query).sort({ createdAt: -1 });
   if (!findOrder) {
@@ -55,7 +55,7 @@ const listOrderSuccessOfUser = async (user) => {
 const updateStatusCompleted = async (order_id) => {
   const query = {
     _id: order_id,
-    order_status: "pending",
+    order_status: "Success",
     "order_payment.payment_status": "Success",
   };
 
@@ -68,29 +68,9 @@ const updateStatusCompleted = async (order_id) => {
 
   if (!updateOrder) {
     throw new BadRequestError(
-      "Update order failed: either payment was not successful or order is no longer pending."
+      "Update order failed: either payment was not Successful or order is no longer pending."
     );
   }
-}
-const updateStatusSuccess = async (order_id) => {
-  const query = {
-    _id: order_id,
-    order_status: "pending",
-    'order_payment.payment_status': 'Success',
-  };
-
-  const updateOrder = await orderModel.findOneAndUpdate(
-    query,
-    { $set: { order_status: "success" } },
-    { new: true, lean: true }
-  );
-
-  if (!updateOrder) {
-    throw new BadRequestError(
-      "Update order failed: either payment was not successful or order is no longer pending."
-    );
-  }
-
   // Gửi thông báo đẩy
   const user = await userModel.findById(updateOrder.order_userId); // Tìm người dùng liên quan
   console.log("ầdfadfasfdfas" + user.deviceToken);
@@ -100,6 +80,43 @@ const updateStatusSuccess = async (order_id) => {
     const body = `Đơn hàng đã nhận gồm ${
       updateOrder.order_product?.map((product) => product.product_name) || []
     }, Nếu sản phẩm bị hư hại tự chịu trách nhiệm cdmm`;
+    const data = {
+      order_id: updateOrder._id,
+      status: "completed",
+    };
+
+    await sendNotification(user.deviceToken, title, body, data); // Gửi thông báo
+  }
+  return updateOrder;
+};
+const updateStatusSuccess = async (order_id) => {
+  const query = {
+    _id: order_id,
+    order_status: "pending",
+    "order_payment.payment_status": "Success",
+  };
+
+  const updateOrder = await orderModel.findOneAndUpdate(
+    query,
+    { $set: { order_status: "Success" } },
+    { new: true, lean: true }
+  );
+
+  if (!updateOrder) {
+    throw new BadRequestError(
+      "Update order failed: either payment was not Successful or order is no longer pending."
+    );
+  }
+
+  // Gửi thông báo đẩy
+  const user = await userModel.findById(updateOrder.order_userId); // Tìm người dùng liên quan
+  console.log("ầdfadfasfdfas" + user.deviceToken);
+
+  if (user && user.deviceToken) {
+    const title = "Đơn hàng của bạn đã hoàn thành";
+    const body = `Đơn hàng của bạn: ${
+      updateOrder.order_product?.map((product) => product.product_name) || []
+    }. Vui lòng xuống căng tin nhận hàng`;
     const data = {
       order_id: updateOrder._id,
       status: "completed",
@@ -147,43 +164,6 @@ const updateStatusCancelled = async (order_id) => {
 
   return updateOrder;
 };
-const updateStatusSuccess = async (order_id) => {
-  const query = {
-    _id: order_id,
-    order_status: "pending",
-    "order_payment.payment_status": "Success",
-  };
-  const updateOrder = await orderModel.findOneAndUpdate(
-    query,
-    {
-      $set: {
-        order_status: "Success",
-      },
-    },
-    {
-      new: true,
-      lean: true,
-    }
-  );
-  // Gửi thông báo đẩy
-  const user = await userModel.findById(updateOrder.order_userId); // Tìm người dùng liên quan
-  console.log("ầdfadfasfdfas: " + user.deviceToken);
-
-  if (user && user.deviceToken) {
-    const title = "Đơn hàng đã hoàn thành";
-    const body = `Đơn hàng ${
-      updateOrder.order_product?.map((product) => product.product_name) || []
-    } của bạn đã hoàn thành. Vui lòng xuống căng tin nhận hàng.`;
-    const data = {
-      order_id: updateOrder._id,
-      status: "Success",
-    };
-
-    await sendNotification(user.deviceToken, title, body, data); // Gửi thông báo
-  }
-
-  return updateOrder;
-};
 const listOrderPending = async ({ limit, page, shop }) => {
   const skip = (page - 1) * limit;
   const query = {
@@ -204,7 +184,7 @@ const listOrderPending = async ({ limit, page, shop }) => {
 const listOrderSuccess = async ({ limit, page, shop }) => {
   const skip = (page - 1) * limit;
   const query = {
-    order_status: "success",
+    order_status: "Success",
     order_shopId: shop._id,
   };
   const findOrder = await orderModel
