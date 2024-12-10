@@ -6,6 +6,11 @@ const orderControllerV5 = require("../../controllers/orderControllerV5");
 const roles = require("../../utils/roles");
 
 const { asynHandler } = require('../../utils/handler')
+
+router.patch(
+  "/updateStatusSuccess/:order_id",
+  asynHandler(orderControllerV5.updateStatusSuccess)
+);
 // all stores
 
 router.get('/getCategorySales',asynHandler(orderControllerV5.getCategorySales))
