@@ -71,6 +71,25 @@ const updateStatusCompleted = async (order_id) => {
       "Update order failed: either payment was not successful or order is no longer pending."
     );
   }
+}
+const updateStatusSuccess = async (order_id) => {
+  const query = {
+    _id: order_id,
+    order_status: "pending",
+    'order_payment.payment_status': 'Success',
+  };
+
+  const updateOrder = await orderModel.findOneAndUpdate(
+    query,
+    { $set: { order_status: "success" } },
+    { new: true, lean: true }
+  );
+
+  if (!updateOrder) {
+    throw new BadRequestError(
+      "Update order failed: either payment was not successful or order is no longer pending."
+    );
+  }
 
   // Gửi thông báo đẩy
   const user = await userModel.findById(updateOrder.order_userId); // Tìm người dùng liên quan

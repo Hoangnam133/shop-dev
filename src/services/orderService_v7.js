@@ -30,7 +30,6 @@ const {
   listOrderSuccessOfUser,
   updateStatusCancelled,
   updateStatusCompleted,
-  updateStatusSuccess,
   listOrderPending,
   listOrderSuccess,
   listOrderCancelled,
@@ -41,6 +40,7 @@ const {
   getStatistics,
   getBestSellingProducts,
   getCategorySales,
+  updateStatusSuccess,
 } = require("../repositories/orderRepository");
 const { runProducer } = require("../message_queue/rabbitmq/producer");
 const moment = require("moment-timezone");
@@ -77,6 +77,10 @@ class OrderServiceV5 {
   }
   static async listOrderSuccessOfUser(user) {
     return await listOrderSuccessOfUser(user);
+  }
+
+  static async updateStatusSuccess(order_id) {
+    return await updateStatusSuccess(order_id);
   }
   static async updateStatusCancelled(order_id) {
     return await updateStatusCancelled(order_id);

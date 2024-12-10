@@ -109,7 +109,14 @@ class OrderControllerV5 {
       metaData: await OrderServiceV5.listOrderSuccessOfUser(req.user),
     }).send(res);
   };
-
+  
+  updateStatusSuccess = async (req, res, next) => {
+    console.log(req.params.order_id);
+    new SuccessResponse({
+      message: "update order status to Success",
+      metaData: await OrderServiceV5.updateStatusSuccess(req.params.order_id),
+    }).send(res);
+  };
   // Cập nhật trạng thái đơn hàng thành hoàn thành
   updateStatusCompleted = async (req, res, next) => {
     console.log(req.params.order_id);
