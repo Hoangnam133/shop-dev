@@ -141,7 +141,7 @@ class UserController {
 
   createBranchManager = async (req, res, next) => {
     new SuccessResponse({
-      message: "Employee account created successfully",
+      message: "Manager account created successfully",
       metaData: await userService.createBranchManager(req.body),
     }).send(res);
   };
