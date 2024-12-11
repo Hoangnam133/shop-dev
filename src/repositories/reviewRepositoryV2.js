@@ -127,7 +127,6 @@ const createReview = async({payload, order_id, user})=>{
     })
     if (createReview) {
        for(let product of productIds){
-            console.log("id sản phẩm là ", product)
             const updateProduct = await updateRatingProduct({product_id: product, rating: payload.review_rating})
             if (!updateProduct) {
                await reviewModel.findByIdAndDelete(createReview._id)
@@ -144,7 +143,7 @@ const listReviews = async(user)=>{
     const reviews = await reviewModel.find({
         review_user_id: user._id,
         review_isDeleted: false
-    }).sort({createdAt: -1})
+    }).populate({path:"review_order_id",  select:'order_trackingNumber'}).sort({createdAt: -1})
     if (!reviews) {
         throw new NotFoundError("Reviews not found")
     }

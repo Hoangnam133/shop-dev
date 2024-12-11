@@ -5,22 +5,22 @@ const DOCUMENT_NAME = "Inventory";
 
 const inventorySchema = new Schema(
   {
-    product_id: {
+    product_id:{
       type: Schema.Types.ObjectId,
       ref: "Product",
       required: true,
     },
-    inven_stock: {
+    inven_stock:{
       type: Number,
       required: true,
       min: [0, "Số lượng tồn kho không thể âm"],
     },
-    shop_id: {
+    shop_id:{
       type: Schema.Types.ObjectId,
       ref: "Shop",
       required: true,
     },
-    minStockLevel: {
+    minStockLevel:{
       type: Number,
       required: true,
       min: [0, "Mức tồn kho tối thiểu không thể âm"],

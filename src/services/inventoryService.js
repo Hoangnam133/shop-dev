@@ -11,8 +11,12 @@ const {
   restoreProductInInventory,
   getDeletedProductsInInventory,
   softDeleteProductInInventory,
+  getListProductsInStockOfShop
 } = require("../repositories/inventoryRepository");
 class InventoryService {
+  static async getListProductsInStockOfShop({ shop_id, limit = 10, page = 1 }){
+    return await getListProductsInStockOfShop({ shop_id, limit, page });
+  }
   static async getProductStockInAllShops({ product_id, limit = 10, page = 1 }) {
     return await getProductStockInAllShops({ product_id, limit, page });
   }

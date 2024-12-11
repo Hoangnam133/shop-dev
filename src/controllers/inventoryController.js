@@ -175,6 +175,18 @@ class InventoryController {
       }),
     }).send(res);
   };
+  getListProductsInStockOfShop = async (req, res, next) => {
+    const limit = parseInt(req.query.limit) || 10; // Mặc định là 10 nếu không có
+    const page = parseInt(req.query.page) || 1; // Mặc định là 1 nếu không có
+    new SuccessResponse({
+      message: "get lis product success ",
+      metaData: await inventoryService.getListProductsInStockOfShop({
+        shop_id: req.params.shop_id,
+        limit,
+        page
+      }),
+    }).send(res);
+  };
 }
 
 module.exports = new InventoryController();

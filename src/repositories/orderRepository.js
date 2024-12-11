@@ -468,7 +468,7 @@ const getCategorySales = async (timeRangeKey) => {
   try {
     // Tính tổng doanh thu theo từng category
     const orders = await orderModel.aggregate([
-      { $match: { createdAt: { $gte: startDate } } },
+      { $match: { createdAt: { $gte: startDate } },  order_status: "completed", },
       { $unwind: "$order_product" },
       {
         $group: {
@@ -506,7 +506,7 @@ const getCategorySales = async (timeRangeKey) => {
 
     // Tính tổng doanh thu của tất cả sản phẩm trong các category đã tính ở trên
     const totalRevenue = await orderModel.aggregate([
-      { $match: { createdAt: { $gte: startDate } } },
+      { $match: { createdAt: { $gte: startDate } },  order_status: "completed", },
       { $unwind: "$order_product" },
       {
         $lookup: {

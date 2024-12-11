@@ -4,7 +4,14 @@ const inventoryController = require("../../controllers/inventoryController");
 const { asynHandler } = require("../../utils/handler");
 const { authentication, authorizeRoles } = require("../../auth/authUtils");
 const roles = require("../../utils/roles");
+router.get(
+  "/getListProducts/:shop_id",
+  asynHandler(inventoryController.getListProductsInStockOfShop)
+);
 router.use(authentication);
+// lấy kho của 1 shop cụ thể
+
+
 
 //lấy số lượng sản phẩm ở tất cả các shop
 router.get(

@@ -378,6 +378,15 @@ const getDeletedProductsInInventory = async ({
 
   return deletedProducts;
 };
+const getListProductsInStockOfShop = async({shop_id, limit = 10,page = 1})=>{
+  const skip = (page - 1) * limit;
+  const products = await inventoryModel.find({shop_id})
+  .populate({path: 'product_id'}).skip(skip).limit(limit).lean()
+  if (!products || products.length === 0) {
+    throw new BadRequestError('No products found in this shop');
+  }
+  return products;
+}
 module.exports = {
   getProductStockInAllShops,
   getLowStockProductsInShop,
@@ -392,5 +401,6 @@ module.exports = {
   getDeletedProductsInInventory,
   softDeleteProductInInventory,
   checkProductStockInShop,
-  deductStockAfterPayment
+  deductStockAfterPayment,
+  getListProductsInStockOfShop
 };
