@@ -4,27 +4,23 @@ class OrderControllerV5 {
   getCategorySales = async (req, res, next) => {
     new SuccessResponse({
       message: "list best selling products success",
-      metaData: await OrderServiceV5.getCategorySales(
-       req.query.timeRange,
-      ),
+      metaData: await OrderServiceV5.getCategorySales(req.query.timeRange),
     }).send(res);
-  }
+  };
   getBestSellingProducts = async (req, res, next) => {
     new SuccessResponse({
       message: "list best selling products success",
       metaData: await OrderServiceV5.getBestSellingProducts(
-       req.query.timeRange,
+        req.query.timeRange
       ),
     }).send(res);
-  }
+  };
   getStatistics = async (req, res, next) => {
     new SuccessResponse({
       message: "list best selling products success",
-      metaData: await OrderServiceV5.getStatistics(
-       req.query.timeRange,
-      ),
+      metaData: await OrderServiceV5.getStatistics(req.query.timeRange),
     }).send(res);
-  }
+  };
   getTotalRevenueInShop = async (req, res, next) => {
     new SuccessResponse({
       message: "list best selling products success",
@@ -109,9 +105,8 @@ class OrderControllerV5 {
       metaData: await OrderServiceV5.listOrderSuccessOfUser(req.user),
     }).send(res);
   };
-  
+
   updateStatusSuccess = async (req, res, next) => {
-    console.log(req.params.order_id);
     new SuccessResponse({
       message: "update order status to Success",
       metaData: await OrderServiceV5.updateStatusSuccess(req.params.order_id),
@@ -119,8 +114,6 @@ class OrderControllerV5 {
   };
   // Cập nhật trạng thái đơn hàng thành hoàn thành
   updateStatusCompleted = async (req, res, next) => {
-    console.log(req.params.order_id);
-
     new SuccessResponse({
       message: "update order status to completed",
       metaData: await OrderServiceV5.updateStatusCompleted(req.params.order_id),
@@ -129,7 +122,6 @@ class OrderControllerV5 {
 
   // Cập nhật trạng thái đơn hàng thành đã hủy
   updateStatusCancelled = async (req, res, next) => {
-    console.log(req.params.order_id);
     new SuccessResponse({
       message: "update order status to cancelled",
       metaData: await OrderServiceV5.updateStatusCancelled(req.params.order_id),
