@@ -4,6 +4,12 @@ const streamifier = require("streamifier");
 
 const cloudinary = require("../configs/cloudinary");
 class UserController {
+  updateStatus = async (req, res, next) => {
+    new SuccessResponse({
+      message: "update status success",
+      metaData: await userService.updateStatus(req.params.user_id),
+    }).send(res);
+  }
   listEmployeesOfShop = async (req, res, next) => {
     new SuccessResponse({
       message: "List employees of success",

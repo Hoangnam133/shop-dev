@@ -115,6 +115,23 @@ const listManage = async () => {
   });
   return convertedManagers;
 };
+const updateStatus = async (user_id) => {
+  const existingUser = await userModel.findById(user_id);
+  try{
+    if (!existingUser) {
+      throw new BadRequestError("User not found");
+    }
+    if(existingUser.status === 'active') {
+      existingUser.status = 'inactive'
+    }
+    else {
+      existingUser.status = 'active'
+    }
+    await existingUser.save();
+  }catch(error){
+    throw new BadRequestError('update status fail')
+  }
+}
 module.exports = {
   findByEmail,
   findById,
@@ -124,4 +141,6 @@ module.exports = {
   listManageOfShop,
   listManage,
   findShopId,
+  updateStatus,
+
 };

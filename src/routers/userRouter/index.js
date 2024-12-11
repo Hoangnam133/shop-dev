@@ -13,6 +13,9 @@ const roles = require("../../utils/roles");
 const userModel = require("../../models/userModel");
 const checkRequiredFields = require("../../middlewares/checkRequired");
 //list emloyees and manage_branch
+
+router.patch("/updateStatus/:user_id", asynHandler(userController.updateStatus));
+
 router.get("/listEmployeesOfShop/:shop_id", asynHandler(userController.listEmployeesOfShop));
 router.get("/listEmployees", asynHandler(userController.listEmployees));
 router.get("/listManageOfShop/:shop_id", asynHandler(userController.listManageOfShop));
