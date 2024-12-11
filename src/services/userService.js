@@ -17,12 +17,15 @@ const {
 } = require("../core/errorResponse");
 const { createTokenPair } = require("../auth/authUtils");
 const { getInfoData, removeUndefinedObject } = require("../utils/index");
-const {  listEmployeesOfShop,
+const {
+  listEmployeesOfShop,
   listEmployees,
   listManageOfShop,
-  listManage} = require('../repositories/userRepository')
+  listManage,
+} = require("../repositories/userRepository");
 const sendEmail = require("../utils/email");
 const shopModel = require("../models/shopModel");
+const { default: mongoose } = require("mongoose");
 const roles = {
   ADMIN: "101",
   USER: "102",
@@ -40,8 +43,7 @@ class UserService {
     return await listManageOfShop(shop_id);
   };
   static listManage = async () => {
-    return  await listManage();
-
+    return await listManage();
   };
   //   static login = async ({ email, password, refreshToken = null }) => {
   //     const checkUser = await findByEmail(email);
@@ -464,6 +466,15 @@ class UserService {
     if (checkUser) {
       throw new BadRequestError("email already registed");
     }
+    if (!mongoose.Types.ObjectId.isValid(shop_id)) {
+      throw new BadRequestError("Shop không tồn tại trong cơ sở dữ liệu");
+    }
+
+    // Kiểm tra xem shop có tồn tại không
+    const shopExists = await shopModel.findById(shop_id);
+    if (!shopExists) {
+      throw new BadRequestError("Shop không tồn tại trong cơ sở dữ liệu");
+    }
     const hashPassword = await bcrypt.hash(password, 10);
     const createUser = await userModel.create({
       name,
@@ -504,6 +515,15 @@ class UserService {
     const checkUser = await findByEmail(email);
     if (checkUser) {
       throw new BadRequestError("email already registed");
+    }
+    if (!mongoose.Types.ObjectId.isValid(shop_id)) {
+      throw new BadRequestError("Shop not found");
+    }
+
+    // Kiểm tra xem shop có tồn tại không
+    const shopExists = await shopModel.findById(shop_id);
+    if (!shopExists) {
+      throw new BadRequestError("shop not found");
     }
     const hashPassword = await bcrypt.hash(password, 10);
     const createUser = await userModel.create({
