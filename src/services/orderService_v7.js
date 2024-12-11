@@ -1,10 +1,13 @@
-const { getCartByUserId, getCart } = require("../repositories/cartRepository_v4");
+const {
+  getCartByUserId,
+  getCart,
+} = require("../repositories/cartRepository_v4");
 const { BadRequestError, NotFoundError } = require("../core/errorResponse");
 const mongoose = require("mongoose");
 const userModel = require("../models/userModel");
 const shopModel = require("../models/shopModel");
 const rewardSettingModel = require("../models/rewardSettingModel");
-const {processMoMoPayment} = require('../momo/paymentService')
+const { processMoMoPayment } = require("../momo/paymentService");
 const {
   checkProductStockInShop,
 } = require("../repositories/inventoryRepository");
@@ -37,11 +40,11 @@ const {
   getStatistics,
   getBestSellingProducts,
   getCategorySales,
-  updateStatusSuccess
+  updateStatusSuccess,
 } = require("../repositories/orderRepository");
 const { runProducer } = require("../message_queue/rabbitmq/producer");
 const moment = require("moment-timezone");
-const {calculateDistance} = require('../utils/Distance')
+const { calculateDistance } = require("../utils/Distance");
 const locationModel = require("../models/locationModel");
 const { toObjectId } = require("../utils");
 class OrderServiceV5 {
@@ -75,7 +78,7 @@ class OrderServiceV5 {
   static async listOrderSuccessOfUser(user) {
     return await listOrderSuccessOfUser(user);
   }
-  
+
   static async updateStatusSuccess(order_id) {
     return await updateStatusSuccess(order_id);
   }
@@ -84,6 +87,9 @@ class OrderServiceV5 {
   }
   static async updateStatusCompleted(order_id) {
     return await updateStatusCompleted(order_id);
+  }
+  static async updateStatusSuccess(order_id) {
+    return await updateStatusSuccess(order_id);
   }
   static async listOrderPending({ limit = 10, page = 1, shop }) {
     return await listOrderPending({ limit, page, shop });
@@ -97,30 +103,55 @@ class OrderServiceV5 {
   static async listOrderCompleted({ limit = 10, page = 1, shop }) {
     return await listOrderCompleted({ limit, page, shop });
   }
-    static async checkoutPreview({ user, shop, discount_code }) {
-      const foundUser = await userModel.findById(user._id);
-      const foundShop = await shopModel.findById(shop._id);
-    
-      if (!foundUser || !foundShop) {
-        throw new NotFoundError("User or shop not found");
+  static async checkoutPreview({ user, shop, discount_code }) {
+    const foundUser = await userModel.findById(user._id);
+    const foundShop = await shopModel.findById(shop._id);
+
+    if (!foundUser || !foundShop) {
+      throw new NotFoundError("User or shop not found");
+    }
+    const cart = await getCart(foundUser._id);
+    if (!cart) {
+      throw new NotFoundError("Cart not found");
+    }
+
+    let productCheckout = [];
+    let totalDiscount = 0;
+    let finalPrice = 0;
+    let totalPrice = 0;
+    let totalMinutes = 0;
+    var checkDiscount;
+    if (discount_code) {
+      checkDiscount = await getDiscountByCode(discount_code);
+      if (!checkDiscount) {
+        throw new BadRequestError("Invalid discount code");
       }
-      const cart = await getCart(foundUser._id);
-      if (!cart) {
-        throw new NotFoundError("Cart not found");
+    }
+    // **Nhóm các sản phẩm trong giỏ hàng theo `product_id`**
+    // const groupedProducts = cart.cart_products.reduce((group, item) => {
+    //   if (!group[item.product_id]) {
+    //     group[item.product_id] = [];
+    //   }
+    //   group[item.product_id].push(item);
+    //   return group;
+    // }, {});
+    // Nhóm các sản phẩm trong giỏ hàng theo `product_id`
+    const groupedProducts = cart.cart_products.reduce((group, item) => {
+      let productId = item.product_id;
+
+      console.log("product_id:", productId);
+      console.log("Type of product_id:", typeof productId);
+
+      if (typeof productId === "object" && productId._id) {
+        console.log("Extracting _id from object");
+        productId = productId._id;
       }
-    
-      let productCheckout = [];
-      let totalDiscount = 0;
-      let finalPrice = 0;
-      let totalPrice = 0;
-      let totalMinutes = 0;
-      var checkDiscount
-      if(discount_code){
-        checkDiscount = await getDiscountByCode(discount_code);
-        if(!checkDiscount){
-          throw new BadRequestError("Invalid discount code");
-        }
+      if (!mongoose.Types.ObjectId.isValid(productId)) {
+        throw new BadRequestError(
+          `Invalid product_id: ${JSON.stringify(productId)}`
+        );
       }
+
       // **Nhóm các sản phẩm trong giỏ hàng theo `product_id`**
       // const groupedProducts = cart.cart_products.reduce((group, item) => {
       //   if (!group[item.product_id]) {
@@ -147,16 +178,24 @@ class OrderServiceV5 {
         }
         group[validProductId].push(item);
         return group;
+
+      const validProductId = toObjectId(productId);
+
+      if (!group[validProductId]) {
+        group[validProductId] = [];
+      }
+      group[validProductId].push(item);
+      return group;
+
     }, {});
-    
 
     // **Áp dụng giảm giá cho từng nhóm sản phẩm**
-    for (const [productId, items] of Object.entries(groupedProducts)){
+    for (const [productId, items] of Object.entries(groupedProducts)) {
       const foundProduct = await productModel.findById(productId);
       if (!foundProduct) {
         throw new NotFoundError(`${productId} not found`);
       }
-  
+
       // Kiểm tra tồn kho sản phẩm
       const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
       const checkStockProduct = await checkProductStockInShop({
@@ -165,25 +204,38 @@ class OrderServiceV5 {
         product_id: productId,
       });
       if (!checkStockProduct) {
-        throw new BadRequestError(`${foundProduct.product_name} not enough stock`);
+        throw new BadRequestError(
+          `${foundProduct.product_name} not enough stock`
+        );
       }
-  
+
       // Tính tổng giá trị nhóm sản phẩm
-      const totalPriceForProduct = items.reduce((sum, item) => sum + item.totalPrice, 0);
-   
+      const totalPriceForProduct = items.reduce(
+        (sum, item) => sum + item.totalPrice,
+        0
+      );
+
       // Kiểm tra và áp dụng giảm giá
       let discountForProduct = 0;
       if (checkDiscount && checkDiscount.applicable_to === "product") {
-        const checkTypeDiscount = await checkDiscountApplicable(checkDiscount, "product");
+        const checkTypeDiscount = await checkDiscountApplicable(
+          checkDiscount,
+          "product"
+        );
         if (checkTypeDiscount) {
           const applicableProducts = await checkproductAppliedDiscount(
             checkTypeDiscount,
             foundProduct
           );
-  
+
           if (applicableProducts) {
-            if(checkDiscount && (totalPriceForProduct < checkDiscount.min_order_value)){
-              throw new BadRequestError(`Min order value ${checkDiscount.min_order_value} is not enough for product ${foundProduct.product_name}`);
+            if (
+              checkDiscount &&
+              totalPriceForProduct < checkDiscount.min_order_value
+            ) {
+              throw new BadRequestError(
+                `Min order value ${checkDiscount.min_order_value} is not enough for product ${foundProduct.product_name}`
+              );
             }
             discountForProduct = calculateDiscountAmount({
               discountValue: checkTypeDiscount.discount_value,
@@ -194,12 +246,12 @@ class OrderServiceV5 {
           }
         }
       }
-  
+
       // Phân bổ giảm giá cho từng mục trong nhóm
       items.forEach((item) => {
         const proportion = item.totalPrice / totalPriceForProduct;
         const itemDiscount = discountForProduct * proportion;
-  
+
         totalMinutes += item.quantity * foundProduct.preparation_time;
         productCheckout.push({
           product_id: foundProduct._id,
@@ -215,18 +267,23 @@ class OrderServiceV5 {
           discountForProduct: itemDiscount,
         });
       });
-  
+
       // Cập nhật tổng giảm giá và tổng giá trị cuối cùng
       finalPrice += totalPriceForProduct - discountForProduct;
       totalDiscount += discountForProduct;
       totalPrice += totalPriceForProduct;
     }
-    if(checkDiscount && (totalPrice < checkDiscount.min_order_value)){
-      throw new BadRequestError(`Min order value ${checkDiscount.min_order_value} is not enough for total order`);
+    if (checkDiscount && totalPrice < checkDiscount.min_order_value) {
+      throw new BadRequestError(
+        `Min order value ${checkDiscount.min_order_value} is not enough for total order`
+      );
     }
     // **Giảm giá toàn đơn hàng (nếu cần)**
     if (checkDiscount && totalDiscount === 0) {
-      const checkTypeDiscount = await checkDiscountApplicable(checkDiscount, "order");
+      const checkTypeDiscount = await checkDiscountApplicable(
+        checkDiscount,
+        "order"
+      );
       if (checkTypeDiscount) {
         totalDiscount = calculateDiscountAmount({
           discountValue: checkTypeDiscount.discount_value,
@@ -237,7 +294,7 @@ class OrderServiceV5 {
         finalPrice = totalPrice - totalDiscount;
       }
     }
-  
+
     // **Tính điểm thưởng (nếu có hệ thống điểm)**
     const rewardSetting = await rewardSettingModel.findOne({ isActive: true });
     let pointsEarned = 0;
@@ -245,7 +302,7 @@ class OrderServiceV5 {
       const pointRate = rewardSetting.pointRate;
       pointsEarned = Math.floor(totalPrice * pointRate);
     }
-  
+
     return {
       productCheckout,
       totalPrice,
@@ -255,7 +312,6 @@ class OrderServiceV5 {
       pointsEarned,
     };
   }
-  
 
   static async checkout({
     user,
@@ -264,7 +320,7 @@ class OrderServiceV5 {
     selectedDeliveryTime,
     note,
     userLat,
-    userLon 
+    userLon,
   }) {
     const {
       productCheckout,
@@ -288,18 +344,25 @@ class OrderServiceV5 {
       } else {
         throw new BadRequestError("Invalid delivery time");
       }
-    }else {
-      if(!userLat || !userLon) {
+    } else {
+      if (!userLat || !userLon) {
         throw new BadRequestError("User location is required");
       }
-      const findLocation = await locationModel.findById(shop.location_id)
+      const findLocation = await locationModel.findById(shop.location_id);
       if (!findLocation) {
         throw new NotFoundError("Location not found");
       }
-      const caDistance = calculateDistance({userLat, userLon, facilityLat: findLocation.latitude, facilityLon: findLocation.longitude})
-      const minAllowedDistance  = process.env.ALLOWED_RADIUS
+      const caDistance = calculateDistance({
+        userLat,
+        userLon,
+        facilityLat: findLocation.latitude,
+        facilityLon: findLocation.longitude,
+      });
+      const minAllowedDistance = process.env.ALLOWED_RADIUS;
       if (caDistance > minAllowedDistance) {
-        throw new BadRequestError("You are outside the delivery radius for immediate pickup. Please choose another option.");
+        throw new BadRequestError(
+          "You are outside the delivery radius for immediate pickup. Please choose another option."
+        );
       }
       const checkTimeImmediate = await checkImmediateDeliveryTime({
         shop_id: shop._id,
@@ -334,18 +397,22 @@ class OrderServiceV5 {
       order_time,
       order_userId: user._id,
       order_shopId: shop._id,
-      note
+      note,
     };
-    const createOrder = await orderModel.create(payload)
-    if(!createOrder){
+    const createOrder = await orderModel.create(payload);
+    if (!createOrder) {
       throw new BadRequestError("Failed to create order");
     }
-    const deeplink = await processMoMoPayment({orderId: createOrder._id, totalPrice: createOrder.order_checkout.finalPrice, shop_id: shop._id})
-    if(!deeplink){
+    const deeplink = await processMoMoPayment({
+      orderId: createOrder._id,
+      totalPrice: createOrder.order_checkout.finalPrice,
+      shop_id: shop._id,
+    });
+    if (!deeplink) {
       throw new BadRequestError("Failed to process MoMo payment");
     }
     console.log("MoMo payment link app---------------------", deeplink);
-    return deeplink
+    return deeplink;
   }
 
   static async cancelOrder({ order_id, user }) {
@@ -383,34 +450,40 @@ class OrderServiceV5 {
       throw new BadRequestError("Failed to cancel order");
     }
   }
-    static async cancelOrder ({order_id, user}){
-        const order = await orderModel.findOne({
-            _id: order_id,
-            order_userId: user._id,
-            order_status: 'pending'
-        });
-        if (!order) {
-            throw new NotFoundError('Order not found');
-        }
-        const cancellationCutoffTime = order.order_cancellation_cutoff
-        const currentTime = moment.tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DDTHH:mm:ss')
-        if (moment(currentTime).isAfter(cancellationCutoffTime)) {
-            throw new BadRequestError('Cancellation time has passed')
-        }
-        const updateOrder = await orderModel.findOneAndUpdate({
-            _id: order_id,
-            order_userId: user._id
-        },{
-            $set: {
-                order_status: 'cancelled'
-            }
-        },{
-            new: true,
-            lean: true
-        })
-        if (!updateOrder) {
-            throw new BadRequestError('Failed to cancel order')
-        }
+  static async cancelOrder({ order_id, user }) {
+    const order = await orderModel.findOne({
+      _id: order_id,
+      order_userId: user._id,
+      order_status: "pending",
+    });
+    if (!order) {
+      throw new NotFoundError("Order not found");
     }
+    const cancellationCutoffTime = order.order_cancellation_cutoff;
+    const currentTime = moment
+      .tz("Asia/Ho_Chi_Minh")
+      .format("YYYY-MM-DDTHH:mm:ss");
+    if (moment(currentTime).isAfter(cancellationCutoffTime)) {
+      throw new BadRequestError("Cancellation time has passed");
+    }
+    const updateOrder = await orderModel.findOneAndUpdate(
+      {
+        _id: order_id,
+        order_userId: user._id,
+      },
+      {
+        $set: {
+          order_status: "cancelled",
+        },
+      },
+      {
+        new: true,
+        lean: true,
+      }
+    );
+    if (!updateOrder) {
+      throw new BadRequestError("Failed to cancel order");
+    }
+  }
 }
 module.exports = OrderServiceV5;
