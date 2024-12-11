@@ -71,9 +71,9 @@ const updateStatusCompleted = async (order_id) => {
       "Update order failed: either payment was not Successful or order is no longer pending."
     );
   }
-  // Gửi thông báo đẩy
-  const user = await userModel.findById(updateOrder.order_userId); // Tìm người dùng liên quan
-  console.log("ầdfadfasfdfas" + user.deviceToken);
+
+  const user = await userModel.findById(updateOrder.order_userId); 
+
 
   if (user && user.deviceToken) {
     const title = "Bạn đã nhận đơn hàng";
@@ -84,8 +84,13 @@ const updateStatusCompleted = async (order_id) => {
       order_id: updateOrder._id,
       status: "completed",
     };
-
-    await sendNotification(user.deviceToken, title, body, data); // Gửi thông báo
+    const payload= {
+      title: title,
+      body: body,
+      data: data,
+      deviceToken: user.deviceToken
+    }
+    await runProducerNoti(payload)
   }
   return updateOrder;
 };
@@ -127,7 +132,7 @@ const updateStatusSuccess = async (order_id) => {
       deviceToken: user.deviceToken
     }
     await runProducerNoti(payload)
-    //await sendNotification(user.deviceToken, title, body, data); // Gửi thông báo
+   
   }
 
   return updateOrder;
@@ -152,7 +157,7 @@ const updateStatusCancelled = async (order_id) => {
   );
   // Gửi thông báo đẩy
   const user = await userModel.findById(updateOrder.order_userId); // Tìm người dùng liên quan
-  console.log("ầdfadfasfdfas: " + user.deviceToken);
+
 
   if (user && user.deviceToken) {
     const title = "Đơn hàng đã bị huỷ";
@@ -164,7 +169,13 @@ const updateStatusCancelled = async (order_id) => {
       status: "cancelled",
     };
 
-    await sendNotification(user.deviceToken, title, body, data); // Gửi thông báo
+    const payload= {
+      title: title,
+      body: body,
+      data: data,
+      deviceToken: user.deviceToken
+    }
+    await runProducerNoti(payload)
   }
 
   return updateOrder;

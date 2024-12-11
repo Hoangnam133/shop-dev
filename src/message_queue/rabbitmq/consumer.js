@@ -5,6 +5,7 @@ const rewardSettingModel = require('../../models/rewardSettingModel')
 const {deductStockAfterPayment} = require('../../repositories/inventoryRepository')
 const {BadRequestError} = require('../../core/errorResponse')
 const {deleteCartToRedis} = require('../../redisDB/redisCart')
+const {updateUserToDiscount} = require('../../repositories/discountRepository')
 const cartModel = require('../../models/cartModel')
 const runConsumer = async () => {
     try {
@@ -66,6 +67,11 @@ const runConsumer = async () => {
                     })
                     if (!updatePoint) {
                         throw new BadRequestError('Update user points failed')
+                    }
+                    console.log('discountCode----------------------------------------------',newOrder.order_discount_code)
+                    const addUserToDiscount = await updateUserToDiscount({discountCode: newOrder.order_discount_code, user_id: newOrder.order_userId,})
+                    if (!addUserToDiscount) {
+                        throw new BadRequestError('Add user to discount failed')
                     }
                     channel.ack(msg);
                     console.log('Message acknowledged and order processed successfully');
