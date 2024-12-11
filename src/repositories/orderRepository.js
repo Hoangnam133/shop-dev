@@ -1,6 +1,6 @@
 const orderModel = require("../models/orderModel");
 const categoryModel = require("../models/categoryModel");
-
+const {runProducerNoti} = require('../message_queue/sendNotification/producerSendNoti')
 const { NotFoundError, BadRequestError } = require("../core/errorResponse");
 const userModel = require("../models/userModel");
 const { sendNotification } = require("../utils/notification");
@@ -109,8 +109,7 @@ const updateStatusSuccess = async (order_id) => {
   }
 
   // Gửi thông báo đẩy
-  const user = await userModel.findById(updateOrder.order_userId); // Tìm người dùng liên quan
-  console.log("ầdfadfasfdfas" + user.deviceToken);
+  const user = await userModel.findById(updateOrder.order_userId);
 
   if (user && user.deviceToken) {
     const title = "Đơn hàng của bạn đã hoàn thành";
@@ -121,8 +120,14 @@ const updateStatusSuccess = async (order_id) => {
       order_id: updateOrder._id,
       status: "completed",
     };
-
-    await sendNotification(user.deviceToken, title, body, data); // Gửi thông báo
+    const payload= {
+      title: title,
+      body: body,
+      data: data,
+      deviceToken: user.deviceToken
+    }
+    await runProducerNoti(payload)
+    //await sendNotification(user.deviceToken, title, body, data); // Gửi thông báo
   }
 
   return updateOrder;
@@ -171,7 +176,7 @@ const listOrderPending = async ({ limit, page, shop }) => {
     order_shopId: shop._id,
   };
   const findOrder = await orderModel
-    .find(query)
+    .find(query).populate({path:"order_userId",select: "name"})
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
@@ -188,7 +193,7 @@ const listOrderSuccess = async ({ limit, page, shop }) => {
     order_shopId: shop._id,
   };
   const findOrder = await orderModel
-    .find(query)
+    .find(query).populate({path:"order_userId",select: "name"})
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
@@ -205,7 +210,7 @@ const listOrderCancelled = async ({ limit, page, shop }) => {
     order_shopId: shop._id,
   };
   const findOrder = await orderModel
-    .find(query)
+    .find(query).populate({path:"order_userId",select: "name"})
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
@@ -222,7 +227,7 @@ const listOrderCompleted = async ({ limit, page, shop }) => {
     order_shopId: shop._id,
   };
   const findOrder = await orderModel
-    .find(query)
+    .find(query).populate({path:"order_userId",select: "name"})
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
