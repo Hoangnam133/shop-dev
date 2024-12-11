@@ -365,7 +365,7 @@ const calculateDiscount = async ({
 // thêm người dùng vào danh sách những người đã sử dụng mã giảm giá
 const updateUserToDiscount = async ({ discountCode, user_id }) => {
   const discount = await discountModel
-    .findOne({ discount_code: discountCode, is_delete: false })
+    .findOne({ discount_code: discountCode, is_deleted: false })
     .lean();
   if (!discount) {
     throw new NotFoundError("Discount not found");
