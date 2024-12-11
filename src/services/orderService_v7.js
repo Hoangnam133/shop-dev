@@ -133,12 +133,8 @@ class OrderServiceV5 {
       const groupedProducts = cart.cart_products.reduce((group, item) => {
         let productId = item.product_id; 
     
-
-        console.log("product_id:", productId);
-        console.log("Type of product_id:", typeof productId);
     
         if (typeof productId === 'object' && productId._id) {
-            console.log("Extracting _id from object");
             productId = productId._id;
         }
         if (!mongoose.Types.ObjectId.isValid(productId)) {
