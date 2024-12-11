@@ -38,6 +38,7 @@ const listEmployeesOfShop = async(shop_id)=>{
   })
   return convertedEmployees;
 }
+// ở đây
 // list employees 
 const listEmployees = async()=>{
   const employees = await userModel.find({
