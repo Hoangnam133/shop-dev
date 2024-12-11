@@ -3,6 +3,11 @@ const {convertToVietnamTime} = require('../utils/convertTime')
 const COLLECTION_NAME = 'Reviews'
 const DOCUMENT_NAME = 'Review'
 const reviewSchema = new Schema({
+    review_user_id:{
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
     review_order_id: {
         type: Schema.Types.ObjectId,
         ref: 'Order'

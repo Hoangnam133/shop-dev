@@ -26,8 +26,14 @@ class ReviewControllerV2 {
     }
     orderNotBeenReviewed = async (req, res, next) => {
         new SuccessResponse({
-            message: 'order has been reviewed',
+            message: 'order not been reviewed',
             metaData: await reviewServiceV2.orderNotBeenReviewed(req.user)
+        }).send(res)
+    }
+    listReviews = async (req, res, next) => {
+        new SuccessResponse({
+            message: 'order has been reviewed',
+            metaData: await reviewServiceV2.listReviews(req.user)
         }).send(res)
     }
 }

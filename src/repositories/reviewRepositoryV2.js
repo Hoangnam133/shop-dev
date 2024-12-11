@@ -39,12 +39,13 @@ const orderHasBeenReviewed = async(user)=>{
     const orderIds = orders.map(order=>order._id)
     const reviews = await reviewModel.find({
         review_order_id: { $in: orderIds },
-        review_isDeleted: false
+        review_isDeleted: false,
+        review_user_id: user._id
     })
     if (reviews.length === orders.length) {
         throw new NotFoundError("You have already reviewed all your orders")
     }
-    const notBeenReviewedOrderIds = orders.filter(order=>!reviews.some(review=>review.review_order_id.toString() === order._id.toString()))
+    const notBeenReviewedOrderIds = orders.filter(order=> order._id.toString()!== reviews.map(review=>review.review_order_id.toString()))
     const notBeenReviewedOrders = await orderModel.find({
         _id: { $in: notBeenReviewedOrderIds },
         order_status: 'completed'
@@ -94,6 +95,7 @@ const updateRatingProduct = async ({ product_id, rating }) => {
 
 const getReviewById = async(review_id) => {
     const findReview = await reviewModel.findById(review_id)
+    .populate('review_order_id')
     if (!findReview) {
         throw new NotFoundError("Review not found")
     }
@@ -109,8 +111,15 @@ const createReview = async({payload, order_id, user})=>{
     if (!orders) {
         throw new NotFoundError("Order not found")
     }
+    const existingReview = await reviewModel.findOne({
+        review_order_id: orders._id
+    })
+    if (existingReview) {
+        throw new BadRequestError("You have already reviewed this order")
+    }
     const productIds = orders.order_product.map(item => item.product_id)
     const createReview = await reviewModel.create({
+        review_user_id: user._id,
         review_content: payload.review_content,
         review_rating: payload.review_rating,
         review_order_id: order_id,
@@ -131,10 +140,21 @@ const createReview = async({payload, order_id, user})=>{
     }
     return createReview
 }
+const listReviews = async(user)=>{
+    const reviews = await reviewModel.find({
+        review_user_id: user._id,
+        review_isDeleted: false
+    }).sort({createdAt: -1})
+    if (!reviews) {
+        throw new NotFoundError("Reviews not found")
+    }
+    return reviews
+}
 module.exports = {
     orderHasBeenReviewed,
     orderNotBeenReviewed,
     createReview,
-    getReviewById
+    getReviewById,
+    listReviews
 }
 

@@ -1,7 +1,7 @@
 const {orderHasBeenReviewed,
     orderNotBeenReviewed,
     createReview,
-    getReviewById} = require('../repositories/reviewRepositoryV2')
+    getReviewById, listReviews} = require('../repositories/reviewRepositoryV2')
 
 class ReviewServiceV2 {
     static async orderHasBeenReviewed(user) {
@@ -15,6 +15,9 @@ class ReviewServiceV2 {
     }
     static async getReviewById(review_id) {
         return await getReviewById(review_id)
+    }
+    static async listReviews(user) {
+        return await listReviews(user)
     }
 }
 
