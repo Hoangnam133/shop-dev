@@ -127,23 +127,12 @@ class OrderServiceV5 {
         throw new BadRequestError("Invalid discount code");
       }
     }
-    // **Nhóm các sản phẩm trong giỏ hàng theo `product_id`**
-    // const groupedProducts = cart.cart_products.reduce((group, item) => {
-    //   if (!group[item.product_id]) {
-    //     group[item.product_id] = [];
-    //   }
-    //   group[item.product_id].push(item);
-    //   return group;
-    // }, {});
-    // Nhóm các sản phẩm trong giỏ hàng theo `product_id`
     const groupedProducts = cart.cart_products.reduce((group, item) => {
       let productId = item.product_id;
 
-      console.log("product_id:", productId);
-      console.log("Type of product_id:", typeof productId);
 
       if (typeof productId === "object" && productId._id) {
-        console.log("Extracting _id from object");
+    
         productId = productId._id;
       }
       if (!mongoose.Types.ObjectId.isValid(productId)) {
@@ -151,34 +140,6 @@ class OrderServiceV5 {
           `Invalid product_id: ${JSON.stringify(productId)}`
         );
       }
-
-      // **Nhóm các sản phẩm trong giỏ hàng theo `product_id`**
-      // const groupedProducts = cart.cart_products.reduce((group, item) => {
-      //   if (!group[item.product_id]) {
-      //     group[item.product_id] = [];
-      //   }
-      //   group[item.product_id].push(item);
-      //   return group;
-      // }, {});
-      // Nhóm các sản phẩm trong giỏ hàng theo `product_id`
-      const groupedProducts = cart.cart_products.reduce((group, item) => {
-        let productId = item.product_id; 
-    
-    
-        if (typeof productId === 'object' && productId._id) {
-            productId = productId._id;
-        }
-        if (!mongoose.Types.ObjectId.isValid(productId)) {
-            throw new BadRequestError(`Invalid product_id: ${JSON.stringify(productId)}`);
-        }
-        const validProductId = toObjectId(productId);
-    
-        if (!group[validProductId]) {
-            group[validProductId] = [];
-        }
-        group[validProductId].push(item);
-        return group;
-
       const validProductId = toObjectId(productId);
 
       if (!group[validProductId]) {
@@ -186,7 +147,6 @@ class OrderServiceV5 {
       }
       group[validProductId].push(item);
       return group;
-
     }, {});
 
     // **Áp dụng giảm giá cho từng nhóm sản phẩm**
@@ -247,7 +207,6 @@ class OrderServiceV5 {
         }
       }
 
-      // Phân bổ giảm giá cho từng mục trong nhóm
       items.forEach((item) => {
         const proportion = item.totalPrice / totalPriceForProduct;
         const itemDiscount = discountForProduct * proportion;
@@ -295,7 +254,6 @@ class OrderServiceV5 {
       }
     }
 
-    // **Tính điểm thưởng (nếu có hệ thống điểm)**
     const rewardSetting = await rewardSettingModel.findOne({ isActive: true });
     let pointsEarned = 0;
     if (rewardSetting) {
@@ -312,7 +270,6 @@ class OrderServiceV5 {
       pointsEarned,
     };
   }
-
   static async checkout({
     user,
     shop,
@@ -330,7 +287,7 @@ class OrderServiceV5 {
       totalMinutes,
       pointsEarned,
     } = await OrderServiceV5.checkoutPreview({ user, shop, discount_code });
-    let estimated_delivery, options_delivery;
+    let estimated_delivery, options_delivery
     if (selectedDeliveryTime) {
       console.log("Selected Delivery Time:", selectedDeliveryTime);
       const checkTime = await checkDeliveryTimeForShop({
@@ -450,7 +407,7 @@ class OrderServiceV5 {
       throw new BadRequestError("Failed to cancel order");
     }
   }
-  static async cancelOrder({ order_id, user }) {
+  static async cancelOrder({ order_id, user }){
     const order = await orderModel.findOne({
       _id: order_id,
       order_userId: user._id,
