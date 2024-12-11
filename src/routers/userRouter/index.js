@@ -12,6 +12,13 @@ const upload = require("../../configs/multer");
 const roles = require("../../utils/roles");
 const userModel = require("../../models/userModel");
 const checkRequiredFields = require("../../middlewares/checkRequired");
+//list emloyees and manage_branch
+router.get("/listEmployeesOfShop/:shop_id", asynHandler(userController.listEmployeesOfShop));
+router.get("/listEmployees", asynHandler(userController.listEmployees));
+router.get("/listManageOfShop/:shop_id", asynHandler(userController.listManageOfShop));
+router.get("/listManage", asynHandler(userController.listManage));
+
+
 // no authentication
 router.post(
   "/handlerRefreshToken",

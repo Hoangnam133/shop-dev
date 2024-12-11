@@ -17,6 +17,10 @@ const {
 } = require("../core/errorResponse");
 const { createTokenPair } = require("../auth/authUtils");
 const { getInfoData, removeUndefinedObject } = require("../utils/index");
+const {  listEmployeesOfShop,
+  listEmployees,
+  listManageOfShop,
+  listManage} = require('../repositories/userRepository')
 const sendEmail = require("../utils/email");
 const shopModel = require("../models/shopModel");
 const roles = {
@@ -26,6 +30,19 @@ const roles = {
   BRANCH_MANAGER: "104",
 };
 class UserService {
+  static listEmployeesOfShop = async (shop_id) => {
+    return await listEmployeesOfShop(shop_id);
+  };
+  static listEmployees = async () => {
+    return await listEmployees();
+  };
+  static listManageOfShop = async (shop_id) => {
+    return await listManageOfShop(shop_id);
+  };
+  static listManage = async () => {
+    return  await listManage();
+
+  };
   //   static login = async ({ email, password, refreshToken = null }) => {
   //     const checkUser = await findByEmail(email);
   //     if (!checkUser) {

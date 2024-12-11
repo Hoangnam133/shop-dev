@@ -4,6 +4,30 @@ const streamifier = require("streamifier");
 
 const cloudinary = require("../configs/cloudinary");
 class UserController {
+  listEmployeesOfShop = async (req, res, next) => {
+    new SuccessResponse({
+      message: "List employees of success",
+      metaData: await userService.listEmployeesOfShop(req.params.shop_id),
+    }).send(res);
+  }
+  listEmployees = async (req, res, next) => {
+    new SuccessResponse({
+      message: "List employees success",
+      metaData: await userService.listEmployees(),
+    }).send(res);
+  }
+  listManageOfShop = async (req, res, next) => {
+    new SuccessResponse({
+      message: "List Manage branch of success",
+      metaData: await userService.listManageOfShop(req.params.shop_id),
+    }).send(res);
+  }
+  listManage = async (req, res, next) => {
+    new SuccessResponse({
+      message: "List Manage success",
+      metaData: await userService.listManage(),
+    }).send(res);
+  }
   signUp = async (req, res, next) => {
     new SuccessResponse({
       message: "signUp success",

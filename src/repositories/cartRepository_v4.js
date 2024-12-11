@@ -133,7 +133,6 @@ const createUserCart = async ({ user, product, shop }) => {
       },
     ],
   };
-
   await saveCartToRedis(user._id, payload);
 };
 // thêm sản phẩm vào giỏ hàng trống

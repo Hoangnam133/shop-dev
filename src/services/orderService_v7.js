@@ -151,6 +151,34 @@ class OrderServiceV5 {
           `Invalid product_id: ${JSON.stringify(productId)}`
         );
       }
+
+      // **Nhóm các sản phẩm trong giỏ hàng theo `product_id`**
+      // const groupedProducts = cart.cart_products.reduce((group, item) => {
+      //   if (!group[item.product_id]) {
+      //     group[item.product_id] = [];
+      //   }
+      //   group[item.product_id].push(item);
+      //   return group;
+      // }, {});
+      // Nhóm các sản phẩm trong giỏ hàng theo `product_id`
+      const groupedProducts = cart.cart_products.reduce((group, item) => {
+        let productId = item.product_id; 
+    
+    
+        if (typeof productId === 'object' && productId._id) {
+            productId = productId._id;
+        }
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            throw new BadRequestError(`Invalid product_id: ${JSON.stringify(productId)}`);
+        }
+        const validProductId = toObjectId(productId);
+    
+        if (!group[validProductId]) {
+            group[validProductId] = [];
+        }
+        group[validProductId].push(item);
+        return group;
+
       const validProductId = toObjectId(productId);
 
       if (!group[validProductId]) {
@@ -158,6 +186,7 @@ class OrderServiceV5 {
       }
       group[validProductId].push(item);
       return group;
+
     }, {});
 
     // **Áp dụng giảm giá cho từng nhóm sản phẩm**
