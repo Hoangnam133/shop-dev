@@ -10,10 +10,17 @@ class MoMoRefundService {
             transId: transId,
             isRefunded: false
         })
+        const convertProduct = existingOrder.order_product.map(product =>{
+            return {
+                itemId: product.product_id,
+                amount: product.totalPrice,
+                transId
+            }  
+        })
         if(!existingOrder){
             throw new BadRequestError('Invalid order or refund request')
         }
-        const processR = await processMoMoRefund(orderId, transId,existingOrder.order_checkout.totalAmount)
+        const processR = await processMoMoRefund(orderId, transId,existingOrder.order_checkout.totalAmount, convertProduct )
         if(!processR){
             throw new BadRequestError('Failed to refund MoMo payment')
         }
