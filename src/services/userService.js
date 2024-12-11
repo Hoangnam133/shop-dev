@@ -22,6 +22,8 @@ const {
   listEmployees,
   listManageOfShop,
   listManage,
+  updateStatus
+
 } = require("../repositories/userRepository");
 const sendEmail = require("../utils/email");
 const shopModel = require("../models/shopModel");
@@ -33,6 +35,9 @@ const roles = {
   BRANCH_MANAGER: "104",
 };
 class UserService {
+  static updateStatus = async (user_id) => {
+    return await updateStatus(user_id);
+  };
   static listEmployeesOfShop = async (shop_id) => {
     return await listEmployeesOfShop(shop_id);
   };
