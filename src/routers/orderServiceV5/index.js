@@ -7,6 +7,16 @@ const roles = require("../../utils/roles");
 
 const { asynHandler } = require("../../utils/handler");
 // all stores
+router.get(
+  "/getStatisticsOfShop",authentication,authorizeRoles(roles.BRANCH_MANAGER,roles.EMPLOYEE),
+  asynHandler(orderControllerV5.getStatisticsOfShop)
+);
+router.get(
+  "/getBestSellingProductsOfShop",authentication,authorizeRoles(roles.BRANCH_MANAGER,roles.EMPLOYEE),
+  asynHandler(orderControllerV5.getBestSellingProductsOfShop)
+);
+router.get("/getCategorySalesOfShop",authentication,authorizeRoles(roles.BRANCH_MANAGER,roles.EMPLOYEE),
+   asynHandler(orderControllerV5.getCategorySalesOfShop));
 
 router.get(
   "/getCategorySales",
