@@ -8,15 +8,23 @@ const roles = require("../../utils/roles");
 const { asynHandler } = require("../../utils/handler");
 // all stores
 router.get(
-  "/getStatisticsOfShop",authentication,authorizeRoles(roles.BRANCH_MANAGER,roles.EMPLOYEE),
+  "/getStatisticsOfShop",
+  authentication,
+  authorizeRoles(roles.BRANCH_MANAGER, roles.EMPLOYEE),
   asynHandler(orderControllerV5.getStatisticsOfShop)
 );
 router.get(
-  "/getBestSellingProductsOfShop",authentication,authorizeRoles(roles.BRANCH_MANAGER,roles.EMPLOYEE),
+  "/getBestSellingProductsOfShop",
+  authentication,
+  authorizeRoles(roles.BRANCH_MANAGER, roles.EMPLOYEE),
   asynHandler(orderControllerV5.getBestSellingProductsOfShop)
 );
-router.get("/getCategorySalesOfShop",authentication,authorizeRoles(roles.BRANCH_MANAGER,roles.EMPLOYEE),
-   asynHandler(orderControllerV5.getCategorySalesOfShop));
+router.get(
+  "/getCategorySalesOfShop",
+  authentication,
+  authorizeRoles(roles.BRANCH_MANAGER, roles.EMPLOYEE),
+  asynHandler(orderControllerV5.getCategorySalesOfShop)
+);
 
 router.get(
   "/getCategorySales",
@@ -82,7 +90,7 @@ router.get(
   asynHandler(orderControllerV5.listOrderSuccessOfUser)
 );
 
-router.use(authorizeRoles(roles.EMPLOYEE));
+router.use(authorizeRoles(roles.EMPLOYEE, roles.BRANCH_MANAGER));
 router.patch(
   "/updateStatusCompleted/:order_id",
   asynHandler(orderControllerV5.updateStatusCompleted)
