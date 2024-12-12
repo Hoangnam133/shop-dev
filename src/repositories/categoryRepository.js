@@ -17,20 +17,20 @@ const createCategory = async (payload, file) => {
       name: category_name,
     });
     if (checkName) {
-      throw new BadRequestError("Category name already exists");
+      throw new BadRequestError(`danh mục ${category_name} đã tồn tại. Không thể tạo mới`);
     }
   }
   if (!file) {
-    throw new BadRequestError('Image file is required');
+    throw new BadRequestError('danh mục cần hình ảnh');
   }
   const uploadImg = await uploadService.uploadImageFromLocalS3(file)
   if (!uploadImg) {
-    throw new BadRequestError("Failed to upload image");
+    throw new BadRequestError("cập nhật hình ảnh cho danh mục thất bại, vui lòng thử lại sau");
   }
   payload.category_images = uploadImg
   const newCategory = await categoryModel.create(payload);
   if (!newCategory) {
-    throw new BadRequestError("Failed to create category");
+    throw new BadRequestError("không thể tạo danh mục, vui lòng thử lại sau");
   }
   return newCategory;
 };
@@ -40,7 +40,7 @@ const getAllCategories = async () => {
     .find({ isPublished: true, isDeleted: false })
     .lean();
   if (!categories) {
-    throw new NotFoundError("No categories found");
+    throw new NotFoundError("bạn không có danh mục nào");
   }
   return categories;
 };
@@ -48,7 +48,7 @@ const getAllCategories = async () => {
 const getCategoryById = async (category_id) => {
   const category = await categoryModel.findById(category_id).lean();
   if (!category) {
-    throw new NotFoundError("Category not found");
+    throw new NotFoundError("không tìm thấy danh mục");
   }
   return category;
 };
@@ -56,7 +56,7 @@ const getCategoryById = async (category_id) => {
 const updateCategoryById = async ({ category_id, payload, file }) => {
   const checkCategory = await categoryModel.findById(category_id).lean();
   if (!checkCategory) {
-    throw new NotFoundError("Category not found");
+    throw new NotFoundError("không tìm thấy danh mục");
   }
   const cleanData = removeUndefinedObject(payload);
   if (cleanData.category_name) {
@@ -67,13 +67,13 @@ const updateCategoryById = async ({ category_id, payload, file }) => {
       value: cleanData.category_name,
     });
     if (existingCategory) {
-      throw new BadRequestError("Category name already exists");
+      throw new BadRequestError(`danh mục ${category_name} đã tồn tại. Không thể tạo mới`);
     }
   }
   if(file){
     const uploadImg = await uploadService.uploadImageFromLocalS3(file)
     if (!uploadImg) {
-      throw new BadRequestError("Failed to upload image");
+      throw new BadRequestError("cập nhật hình ảnh cho danh mục thất bại");
     }
     cleanData.category_images = uploadImg
   }
@@ -81,7 +81,7 @@ const updateCategoryById = async ({ category_id, payload, file }) => {
     .findByIdAndUpdate(category_id, cleanData, { new: true })
     .lean();
   if (!updateCategory) {
-    throw new NotFoundError("Failed to update category");
+    throw new NotFoundError("không thể cập nhật danh mục, vui lòng thử lại sau");
   }
   return updateCategory;
 };
@@ -92,7 +92,7 @@ const deleteCategoryById = async (category_id) => {
   });
   if (checkProductOfCategory && checkProductOfCategory.length > 0) {
     throw new BadRequestError(
-      "Category is associated with products. Cannot delete"
+      "trong danh mục này còn sản phẩm, không thể xóa"
     );
   }
   const deletedCategory = await categoryModel
@@ -103,7 +103,7 @@ const deleteCategoryById = async (category_id) => {
     )
     .lean();
   if (!deletedCategory) {
-    throw new NotFoundError("Failed to delete category");
+    throw new NotFoundError("xóa danh mục thất bại. Vui lòng thử lại sau");
   }
   return deletedCategory;
 };
@@ -117,7 +117,7 @@ const publishCategoryById = async (category_id) => {
     )
     .lean();
   if (!publishedCategory) {
-    throw new NotFoundError("Failed to publish category");
+    throw new NotFoundError("không thể công khai danh mục. Vui lòng thử lại sau");
   }
   return publishedCategory;
 };
@@ -126,7 +126,7 @@ const getAllCategoriesIsPublished = async () => {
     .find({ isPublished: true, isDeleted: false })
     .lean();
   if (!categories) {
-    throw new NotFoundError("No categories found");
+    throw new NotFoundError("danh sách danh mục không tồn tại");
   }
   return categories;
 };
@@ -136,7 +136,7 @@ const getAllCategoriesIsDeleted = async () => {
     .find({ isDeleted: true, isPublished: false })
     .lean();
   if (!categories) {
-    throw new NotFoundError("No categories found");
+    throw new NotFoundError("danh sách danh mục không tồn tại");
   }
   return categories;
 };
@@ -147,7 +147,7 @@ const getLatestCategories = async (limit) => {
     .limit(limit)
     .lean();
   if (!latestCategories || latestCategories.length === 0) {
-    throw new NotFoundError("No latest categories found");
+    throw new NotFoundError("danh sách danh mục không tồn tại");
   }
   return latestCategories;
 };

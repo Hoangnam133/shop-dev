@@ -10,7 +10,7 @@ const orderHasBeenReviewed = async(user)=>{
         order_status: 'completed'
     })
     if (!orders) {
-        throw new NotFoundError("You don't have any orders yet")
+        throw new NotFoundError("Bạn chưa có đơn hàng nào")
     }
     const orderIds = orders.map(order=>order._id)
     const reviews = await reviewModel.find({
@@ -18,7 +18,7 @@ const orderHasBeenReviewed = async(user)=>{
         review_isDeleted: false
     }).sort({createdAt: -1})
     if (!reviews) {
-        throw new NotFoundError("You don't have any reviews yet")
+        throw new NotFoundError("Bạn chưa có đánh giá nào")
     }
     const hasBeenReviewed = await orderModel.find({
         order_userId: user._id,
@@ -34,7 +34,7 @@ const orderHasBeenReviewed = async(user)=>{
         order_status: 'completed'
     })
     if (!orders) {
-        throw new NotFoundError("You don't have any orders yet")
+        throw new NotFoundError("Bạn chưa có đơn hàng nào")
     }
     const orderIds = orders.map(order=>order._id)
     const reviews = await reviewModel.find({
@@ -43,7 +43,7 @@ const orderHasBeenReviewed = async(user)=>{
         review_user_id: user._id
     })
     if (reviews.length === orders.length) {
-        throw new NotFoundError("You have already reviewed all your orders")
+        throw new NotFoundError("bạn đã đánh giá tất cả đơn hàng")
     }
     const notBeenReviewedOrderIds = orders.filter(order=> order._id.toString()!== reviews.map(review=>review.review_order_id.toString()))
     const notBeenReviewedOrders = await orderModel.find({
@@ -51,7 +51,7 @@ const orderHasBeenReviewed = async(user)=>{
         order_status: 'completed'
     }).sort({createdAt: -1})
     if (!notBeenReviewedOrders) {
-        throw new NotFoundError("You don't have any orders that haven't been reviewed yet")
+        throw new NotFoundError("bạn chưa có đơn hàng nào được đánh giá")
     }
     return notBeenReviewedOrders
 }
@@ -62,18 +62,18 @@ const updateRatingProduct = async ({ product_id, rating }) => {
     
 
     if (!foundProduct) {
-        throw new NotFoundError("Product not found");
+        throw new NotFoundError("có một chút sự cố. Vui lòng thử lại sau");
     }
 
     const oldRating = foundProduct.product_ratingAverage;
     const oldCountRating = foundProduct.review_count;
 
     if (isNaN(rating) || rating < 1 || rating > 5) {
-        throw new BadRequestError("Rating must be a number between 1 and 5");
+        throw new BadRequestError("đánh giá phải nằm trong từ 1-5 sao");
     }
 
     if (isNaN(oldCountRating)) {
-        throw new Error("Invalid review count value");
+        throw new Error("đánh giá không hợp lệ");
     }
 
     const newCountRating = oldCountRating + 1;
@@ -87,7 +87,7 @@ const updateRatingProduct = async ({ product_id, rating }) => {
     }, { new: true }); 
 
     if (!updateProduct) {
-        throw new BadRequestError("Failed to update product");
+        throw new BadRequestError("có một chút sự cố, vui lòng thử lại sau");
     }
 
     return updateProduct;
@@ -97,7 +97,7 @@ const getReviewById = async(review_id) => {
     const findReview = await reviewModel.findById(review_id)
     .populate('review_order_id')
     if (!findReview) {
-        throw new NotFoundError("Review not found")
+        throw new NotFoundError("có một chút sự cố. Vui lòng thử lại sau")
     }
     return findReview
 }
@@ -109,13 +109,13 @@ const createReview = async({payload, order_id, user})=>{
         _id: order_id
     })
     if (!orders) {
-        throw new NotFoundError("Order not found")
+        throw new NotFoundError("có một chút sự cố. Vui lòng thử lại sau")
     }
     const existingReview = await reviewModel.findOne({
         review_order_id: orders._id
     })
     if (existingReview) {
-        throw new BadRequestError("You have already reviewed this order")
+        throw new BadRequestError("Bạn đã đánh giá đơn hàng này rồi")
     }
     const productIds = orders.order_product.map(item => item.product_id)
     const createReview = await reviewModel.create({
@@ -135,7 +135,7 @@ const createReview = async({payload, order_id, user})=>{
        }
     }
     else{
-        throw new BadRequestError("Failed to create review")
+        throw new BadRequestError("có một chút sự cố. Vui lòng thử lại sau")
     }
     return createReview
 }
@@ -145,7 +145,7 @@ const listReviews = async(user)=>{
         review_isDeleted: false
     }).populate({path:"review_order_id",  select:'order_trackingNumber'}).sort({createdAt: -1})
     if (!reviews) {
-        throw new NotFoundError("Reviews not found")
+        throw new NotFoundError("bạn chưa đánh giá đơn hàng nào")
     }
     return reviews
 }

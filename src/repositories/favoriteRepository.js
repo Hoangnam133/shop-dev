@@ -6,14 +6,14 @@ const shopProductModel = require('../models/shopProductModel')
 const {BadRequestError, NotFoundError} = require('../core/errorResponse')
 const toggleFavorite = async({user, product_id})=>{
     if(!user){
-        throw new BadRequestError('User not found')
+        throw new BadRequestError('có một chút lỗi xảy ra, vui lòng thử lại')
     }
     if(!product_id){
-        throw new BadRequestError('Product_id not found')
+        throw new BadRequestError('có một chút lỗi xảy ra. Vui lòng thử lại')
     }
     const findProduct = await productModel.findById(product_id)
     if(!findProduct){
-        throw new NotFoundError('Product not found')
+        throw new NotFoundError('có một chút lỗi xảy ra. Vui lòng thử lại')
     }
     const userFavorites = await favoritesModel.findOne({
         user_id: user._id,
@@ -35,7 +35,7 @@ const addFavorite = async({user, product_id})=>{
         product_id: product_id
     })
     if(!newFavorite){
-        throw new InternalServerError('Failed to add product to favorites')
+        throw new BadRequestError('Không thể thêm sản phẩm vào danh sách yêu thích')
     }
     return newFavorite
 }
@@ -46,13 +46,13 @@ const deleteProductInFavorites = async({user, product_id})=>{
         user_id: user._id
     })
     if(!deleteFavorite){
-        throw new NotFoundError('Product not found in favorites')
+        throw new NotFoundError('có một chút lỗi xảy ra, vui lòng thử lại')
     }
     return deleteFavorite
 }
 const getFavorite = async(user)=>{
     if(!user){
-        throw new BadRequestError('User not found')
+        throw new BadRequestError('có một chút lỗi xảy ra, vui lòng thử lại')
     }
     const favorites = await favoritesModel.find({ user_id: user._id }).populate({
         path: 'product_id',

@@ -7,7 +7,7 @@ const {NotFoundError, BadRequestError} = require('../core/errorResponse')
 // các mã đổi điểm đã đổi
 const getRedeemPointsUsed = async ({user, limit = 10, page = 1})=>{
     if(!user){
-        throw new NotFoundError('User not found')
+        throw new NotFoundError('có một chút lỗi xảy ra, vui lòng thử lại')
     }
     const skip = (page - 1) * limit
     const usedRedeemPoints = await redeemPointModel.find({user_id: user._id, status: true})
@@ -19,7 +19,7 @@ const getRedeemPointsUsed = async ({user, limit = 10, page = 1})=>{
 // các mã đổi điểm chưa đổi và còn hạn
 const getRedeemPointsNotUsed = async ({user, limit = 10, page = 1})=>{
     if(!user){
-        throw new NotFoundError('User not found')
+        throw new NotFoundError('có một chút lỗi xảy ra, vui lòng thử lại')
     }
     const skip = (page - 1) * limit
     const usedRedeemPoints = await redeemPointModel.find({user_id: user._id, status: false})
@@ -36,7 +36,7 @@ const getRedeemPointsNotUsed = async ({user, limit = 10, page = 1})=>{
 const updateisExpired = async(redeemPoint_id)=>{
     const redeemPoint = await redeemPointModel.findById(redeemPoint_id)
     if(!redeemPoint){
-        throw new NotFoundError('Redeem point not found')
+        throw new NotFoundError('có một chút lỗi xảy ra, vui lòng thử lại')
     }
     const now = moment.tz('Asia/Ho_Chi_Minh')
     const expiryDate = moment(redeemPoint.expiry_date)
@@ -45,7 +45,7 @@ const updateisExpired = async(redeemPoint_id)=>{
             isExpired: true
         })
         if(!updateRe){
-            throw new Error('Update expired failed')
+            throw new Error('có một chút lỗi xảy ra, vui lòng thử lại')
         }
     }
 }
@@ -72,11 +72,11 @@ const generateCode = (product_name) => {
 const createRedeemPoints = async({user, product_id})=>{
     const product = await productModel.findById(product_id);
     if(!product){
-        throw new NotFoundError('Product not found')
+        throw new NotFoundError('có một chút lỗi xảy ra, vui lòng thử lại')
     }
     const checkPointUser = await userModel.findById(user._id)
     if(checkPointUser.points < 0 || checkPointUser.points < product.required_points){
-        throw new BadRequestError('User does not have enough points')
+        throw new BadRequestError('Bạn không đủ điểm để đổi')
     }
     const redeemCode = generateCode(product.product_name);
     const newRedeemPoints = await redeemPointModel.create({
@@ -90,11 +90,11 @@ const createRedeemPoints = async({user, product_id})=>{
             $inc: { points: -product.required_points }
         })
         if(!updatePointUser){
-            throw new BadRequestError('Update user points failed')
+            throw new BadRequestError('có một chút lỗi xảy ra, vui lòng thử lại')
         }
     }
     else{
-        throw new BadRequestError('Create redeem point failed')
+        throw new BadRequestError('có một chút lỗi xảy ra, vui lòng thử lại')
     }
     return newRedeemPoints
 }

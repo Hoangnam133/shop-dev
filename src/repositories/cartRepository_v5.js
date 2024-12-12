@@ -27,7 +27,7 @@ const isCartFromRedis = async (foundCart) => {
 };
 // Kiểm tra giỏ hàng xem tồn tại hay không
 const getCartByUserId = async (user) => {
-  if (!user) throw new NotFoundError("User not found");
+  if (!user) throw new NotFoundError("Có 1 chút sự cố, bạn vui lòng thử lại sau");
   const attached = {
     path: "cart_products.product_id",
     select: "product_name product_thumb",
@@ -57,7 +57,7 @@ const getCartByUserId = async (user) => {
   }
 };
 const getCart = async (user) => {
-  if (!user) throw new NotFoundError("User not found");
+  if (!user) throw new NotFoundError("Có 1 chút sự cố, bạn vui lòng thử lại sau");
   let foundCart;
   foundCart = await getCartRedis(user._id);
   if (foundCart) {
@@ -75,7 +75,7 @@ const checkStockAndProductInShop = async ({
   const checkProduct = await checkProductInShop(shop_id, product_id);
 
   if (!checkProduct) {
-    throw new NotFoundError("Product not found in shop");
+    throw new NotFoundError("sản phẩm hiện không có tại chi nhánh này");
   }
   // kiểm tra sản phẩm xem có đủ số lượng để thêm vào giỏ hàng hay không
   const checkQuantityProduct = await checkProductStockInShop({
@@ -84,7 +84,7 @@ const checkStockAndProductInShop = async ({
     quantity,
   });
   if (!checkQuantityProduct) {
-    throw new BadRequestError("Not enough product in stock");
+    throw new BadRequestError("Xin lỗi, sản phẩm bạn chọn đã hết hàng. Vui lòng chọn sản phẩm khác hoặc quay lại sau");
   }
 };
 // tạo giỏ hàng
@@ -103,7 +103,7 @@ const createUserCart = async ({ user, product, shop }) => {
     _id: { $in: sideDish_ids },
   });
   if (sideDishes.length !== sideDish_ids.length) {
-    throw new BadRequestError("One or more side dish are not valid");
+    throw new BadRequestError(`topping theo kèm của sản phẩm ${getProduct.product_name} có lỗi. Vui lòng thử lại sau`);
   }
   let totalPriceSideDish = sideDishes.reduce(
     (total, dish) => total + dish.price,
@@ -139,7 +139,7 @@ const createUserCart = async ({ user, product, shop }) => {
   if (createCart) {
     await saveCartToRedis(user._id, payload);
   } else {
-    throw BadRequestError(" add product to cart failed");
+    throw BadRequestError("Rất tiếc, không thể thêm sản phẩm vào giỏ hàng của bạn. Vui lòng thử lại hoặc liên hệ hỗ trợ để được giúp đỡ");
   }
 };
 // thêm sản phẩm vào giỏ hàng trống
@@ -155,7 +155,7 @@ const addProductToEmptyCartIfAbsent = async ({ user, product, shop }) => {
     _id: { $in: sideDish_ids },
   });
   if (sideDishes.length !== sideDish_ids.length) {
-    throw new BadRequestError("One or more side dish are not valid");
+    throw new BadRequestError(`topping theo kèm của sản phẩm ${getProduct.product_name} có lỗi. Vui lòng thử lại sau`);
   }
   const sortedSideDishIds = sideDishes
     .map((dish) => dish._id.toString())
@@ -192,7 +192,7 @@ const addProductToEmptyCartIfAbsent = async ({ user, product, shop }) => {
   );
 
   if (!updateCart) {
-    throw new BadRequestError("Add product to cart failed");
+    throw new BadRequestError("Rất tiếc, không thể thêm sản phẩm vào giỏ hàng của bạn. Vui lòng thử lại hoặc liên hệ hỗ trợ để được giúp đỡ");
   } else {
     await saveCartToRedis(user._id, updateCart);
   }
@@ -211,7 +211,7 @@ const updateCartProductQuantity = async ({ user, product, shop }) => {
     // Lấy thông tin món phụ và kiểm tra tính hợp lệ
     const sideDishes = await sideDishModel.find({ _id: { $in: sideDish_ids } });
     if (sideDish_ids.length > 0 && sideDishes.length !== sideDish_ids.length) {
-      throw new BadRequestError("Một hoặc nhiều món phụ không hợp lệ");
+      throw new BadRequestError(`topping theo kèm của sản phẩm ${getProduct.product_name} có lỗi. Vui lòng thử lại sau`);
     }
     // tạo key
     const sortedSideDishIds = sideDishes
@@ -256,7 +256,7 @@ const updateCartProductQuantity = async ({ user, product, shop }) => {
     if (updateCart) {
       await saveCartToRedis(user._id, foundCart);
     } else {
-      throw new BadRequestError("add product to cart failed");
+      throw new BadRequestError("Rất tiếc, không thể thêm sản phẩm vào giỏ hàng của bạn. Vui lòng thử lại hoặc liên hệ hỗ trợ để được giúp đỡ");
     }
   } catch (error) {
     console.log(error);
@@ -285,7 +285,7 @@ const removeProductFromCart = async ({ user, product }) => {
 
   // Tìm giỏ hàng của người dùng
   const foundCart = await getCartByUserId(user);
-  if (!foundCart) throw new NotFoundError("Cart not found");
+  if (!foundCart) throw new NotFoundError("Có 1 chút sự cố, bạn vui lòng thử lại sau");
 
   // Lấy thông tin món phụ từ DB (nếu có)
   const sideDishes = await sideDishModel.find({ _id: { $in: sideDish_ids } });
@@ -314,15 +314,15 @@ const removeProductFromCart = async ({ user, product }) => {
   if (updateCart) {
     await saveCartToRedis(user._id, foundCart);
   } else {
-    throw new BadRequestError("delete product to cart failed");
+    throw new BadRequestError("Rất tiếc, không thể xóa sản phẩm khỏi giỏ hàng. Vui lòng thử lại hoặc liên hệ hỗ trợ");
   }
 };
 const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
   const { product_id, sideDish_ids = [] } = product;
-
+  const getProduct = await getProductById(product_id);
   // Kiểm tra dữ liệu shop có tồn tại không
   if (!shop) {
-    throw new BadRequestError("Shop data is missing");
+    throw new BadRequestError("Có một chút sự cố. Vui lòng thử lại sau");
   }
 
   const shop_id = shop._id;
@@ -330,7 +330,7 @@ const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
   // Lấy danh sách các món phụ từ DB
   const sideDishes = await sideDishModel.find({ _id: { $in: sideDish_ids } });
   if (sideDish_ids.length > 0 && sideDishes.length !== sideDish_ids.length) {
-    throw new BadRequestError("Một hoặc nhiều món phụ không hợp lệ");
+    throw new BadRequestError(`topping theo kèm của sản phẩm ${getProduct.product_name} có lỗi. Vui lòng thử lại sau`);
   }
 
   // Tính tổng giá trị món phụ
@@ -344,7 +344,7 @@ const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
 
   // Lấy giỏ hàng của người dùng và thông tin sản phẩm
   const foundCart = await getCartByUserId(user);
-  const getProduct = await getProductById(product_id);
+
 
   // Tạo uniqueKey dựa trên sản phẩm và món phụ
   const sortedSideDishIds = sideDishes
@@ -362,7 +362,7 @@ const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
 
   // Nếu không tìm thấy sản phẩm trong giỏ hàng, trả lỗi
   if (!findProductInCart) {
-    throw new NotFoundError("Product not found in cart");
+    throw new NotFoundError("Rất tiếc, đang xảy ra sự cố. Vui lòng thử lại hoặc liên hệ hỗ trợ");
   }
 
   // Lấy số lượng cũ và tính số lượng mới
@@ -387,7 +387,7 @@ const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
   if (updateCart) {
     await saveCartToRedis(user._id, foundCart);
   } else {
-    throw new BadRequestError("add product to cart failed");
+    throw new BadRequestError("Rất tiếc, hệ thống đang gặp chút sự cố. Vui lòng thử lại hoặc liên hệ hỗ trợ để được giúp đỡ");
   }
 };
 module.exports = {

@@ -19,7 +19,7 @@ const createLocation = async ({ payload, user }) => {
   });
   if (!checkRoles) {
     throw new BadRequestError(
-      "User does not have sufficient permissions to perform this action"
+      "Người dùng không có đủ quyền hạn để thực hiện hành động này"
     );
   }
   // Kiểm tra trùng lặp địa điểm
@@ -30,12 +30,12 @@ const createLocation = async ({ payload, user }) => {
       name: location_name,
     });
     if (checkName) {
-      throw new BadRequestError("Category name already exists");
+      throw new BadRequestError("Tên địa điểm đã tồn tại");
     }
   }
   const newLocation = await locationModel.create(payload);
   if (!newLocation) {
-    throw new BadRequestError("Failed to create location");
+    throw new BadRequestError("Tạo vị trí không thành công");
   }
   return newLocation;
 };
@@ -47,20 +47,20 @@ const getAllLocations = async () => {
     })
     .lean();
   if (!locations) {
-    throw new NotFoundError("No locations found");
+    throw new NotFoundError("không tìm thấy vị trí nào");
   }
   return locations;
 };
 
 const getLocationById = async ({ location_id }) => {
   const location = await locationModel.findById(location_id).lean();
-  if (!location) throw new NotFoundError("Location not found");
+  if (!location) throw new NotFoundError("không tìm thấy vị trí");
   return location;
 };
 
 const updateLocationById = async ({ location_id, payload, user }) => {
   if (!user) {
-    throw new BadRequestError("User not found");
+    throw new BadRequestError("có một chút lỗi xảy ra. Vui lòng thử lại sau");
   }
   const checkRoles = await userModel.findOne({
     _id: user._id,
@@ -71,14 +71,14 @@ const updateLocationById = async ({ location_id, payload, user }) => {
     .findByIdAndUpdate(location_id, cleanData, { new: true })
     .lean();
   if (!updatedLocation) {
-    throw new NotFoundError("Location not found");
+    throw new NotFoundError("không tìm thấy vị trí");
   }
   return updatedLocation;
 };
 
 const deleteLocationById = async ({ location_id, user }) => {
   if (!user) {
-    throw new BadRequestError("User not found");
+    throw new BadRequestError("có một chút lỗi xảy ra. Vui lòng thử lại sau");
   }
   const checkRoles = await userModel.findOne({
     _id: user._id,
@@ -88,7 +88,7 @@ const deleteLocationById = async ({ location_id, user }) => {
     .findByIdAndUpdate(location_id, { isDeleted: true })
     .lean();
   if (!updateLocation) {
-    throw new NotFoundError("Location not found");
+    throw new NotFoundError("không tìm thấy vị trí");
   }
   return updateLocation;
 };

@@ -42,12 +42,12 @@ const checkProductStockInShop = async ({ shop_id, product_id, quantity }) => {
   const shop = await shopModel.findById(toObjectId(shop_id));
 
   if (!shop) {
-    throw new BadRequestError("Shop not found");
+    throw new BadRequestError("có một chút lỗi xảy ra, vui lòng thử lại");
   }
   const product = await productModel.findById(product_id);
 
   if (!product) {
-    throw new BadRequestError("Product not found");
+    throw new BadRequestError("có một chút lỗi xảy ra, vui lòng thử lại");
   }
 
   const stockData = await inventoryModel.findOne({
@@ -58,7 +58,7 @@ const checkProductStockInShop = async ({ shop_id, product_id, quantity }) => {
 
 
   if (!stockData) {
-    throw new BadRequestError("No inventory found for this product");
+    throw new BadRequestError("có một chút lỗi xảy ra. Vui lòng thử lại");
   }
   if (stockData.inven_stock <= 0 || stockData.inven_stock < quantity) {
     return false;
