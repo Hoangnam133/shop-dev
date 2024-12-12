@@ -3,6 +3,7 @@ const { BadRequestError } = require("../core/errorResponse");
 const productModel = require("../models/productModel");
 const { toObjectId } = require("../utils/index");
 const shopModel = require("../models/shopModel");
+const mongoose = require("mongoose");
 const deductStockAfterPayment = async ({ shop_id, product_id, quantity }) => {
   const shop = await shopModel.findById(toObjectId(shop_id));
   if (!shop) {
@@ -41,7 +42,7 @@ const checkProductStockInShop = async ({ shop_id, product_id, quantity }) => {
   if (!shop) {
     throw new BadRequestError("Shop not found");
   }
-  const product = await productModel.findById(product_id)
+  const product = await productModel.findById(product_id);
 
   if (!product) {
     throw new BadRequestError("Product not found");
@@ -210,6 +211,64 @@ const addProductToInventory = async ({
 
   return newInventory;
 };
+const updateInventory = async ({
+  shop_id,
+  product_id,
+  inven_stock,
+  minStockLevel,
+}) => {
+  console.log("Shop ID Received:", shop_id);
+  console.log("Is Valid ObjectId:", mongoose.Types.ObjectId.isValid(shop_id));
+
+  const shop = await shopModel.findById(shop_id);
+  console.log("Shop" + shop);
+
+  if (!shop) {
+    throw new BadRequestError("Shop not found");
+  }
+  const product = await productModel.findById(toObjectId(product_id.trim()));
+  if (!product) {
+    throw new BadRequestError("Product not found");
+  }
+  console.log(inven_stock);
+  console.log(minStockLevel);
+
+  if (!inven_stock) {
+    throw new BadRequestError("inven_stock must be provided");
+  }
+  if (!minStockLevel) {
+    throw new BadRequestError("minStockLevel must be provided");
+  }
+
+  if (inven_stock < 0) {
+    throw new BadRequestError("Inventory quantity cannot be negative");
+  }
+  if (minStockLevel < 0) {
+    throw new BadRequestError("The minimum inventory level cannot be negative");
+  }
+  if (inven_stock < minStockLevel) {
+    throw new BadRequestError(
+      "The inventory quantity must be greater than or equal to the minimum inventory level"
+    );
+  }
+
+  const updatedInventory = await inventoryModel.findOneAndUpdate(
+    { shop_id, product_id },
+    { inven_stock: inven_stock, minStockLevel },
+    {
+      new: true,
+      lean: true,
+    }
+  );
+
+  if (!updatedInventory) {
+    throw new BadRequestError(
+      "No products found in this branch warehouse for update"
+    );
+  }
+
+  return updatedInventory;
+};
 //Giảm số lượng tồn kho khi có đơn hàng từ chi nhánh cụ thể
 const reduceInventoryStock = async ({ shop_id, product_id, quantity }) => {
   const shop = await shopModel.findById(toObjectId(shop_id.trim()));
@@ -250,49 +309,6 @@ const checkInventoryStock = async ({ shop_id, product_id, quantity }) => {
   }
 
   return stockData.inven_stock;
-};
-const updateInventory = async ({
-  shop_id,
-  product_id,
-  inven_stock,
-  minStockLevel,
-}) => {
-  const shop = await shopModel.findById(toObjectId(shop_id.trim()));
-  if (!shop) {
-    throw new BadRequestError("Shop not found");
-  }
-  const product = await productModel.findById(toObjectId(product_id.trim()));
-  if (!product) {
-    throw new BadRequestError("Product not found");
-  }
-  if (inven_stock < 0) {
-    throw new BadRequestError("Inventory quantity cannot be negative");
-  }
-  if (minStockLevel < 0) {
-    throw new BadRequestError("The minimum inventory level cannot be negative");
-  }
-  if (inven_stock < minStockLevel) {
-    throw new BadRequestError(
-      "The inventory quantity must be greater than or equal to the minimum inventory level"
-    );
-  }
-
-  const updatedInventory = await inventoryModel.findOneAndUpdate(
-    { shop_id, product_id },
-    { inven_stock: inven_stock, minStockLevel },
-    {
-      new: true,
-      lean: true,
-    }
-  );
-
-  if (!updatedInventory) {
-    throw new BadRequestError(
-      "No products found in this branch warehouse for update"
-    );
-  }
-
-  return updatedInventory;
 };
 //Kiểm tra sản phẩm hết hàng trên toàn hệ thống
 const checkProductOutOfStockAllShops = async ({ product_id, limit, page }) => {

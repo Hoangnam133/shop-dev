@@ -185,18 +185,18 @@ const addProductToEmptyCartIfAbsent = async ({ user, product, shop }) => {
     options = {
       new: true,
     };
-  const updateCart = await cartModel.findByIdAndUpdate(
-    foundCart._id,
+  const updateCart = await cartModel.findOneAndUpdate(
+    { cart_userId: user._id },
     payload,
     options
   );
+
   if (!updateCart) {
     throw new BadRequestError("Add product to cart failed");
   } else {
-    await saveCartToRedis(updateCart.cart_userId, updateCart);
+    await saveCartToRedis(user._id, updateCart);
   }
 };
-
 const updateCartProductQuantity = async ({ user, product, shop }) => {
   try {
     const { product_id, quantity, sideDish_ids = [] } = product;
@@ -238,7 +238,6 @@ const updateCartProductQuantity = async ({ user, product, shop }) => {
           (getProduct.product_price +
             sideDishes.reduce((sum, dish) => sum + dish.price, 0)) *
           quantity,
-
         sideDishes: sideDishes.map((dish) => ({
           sideDish_id: dish._id,
           quantity: 1,
@@ -246,32 +245,16 @@ const updateCartProductQuantity = async ({ user, product, shop }) => {
         })),
         uniqueKey,
       });
-
-          totalPrice:
-              (getProduct.product_price + sideDishes.reduce((sum, dish) => sum + dish.price, 0)) *
-              quantity,
-          sideDishes: sideDishes.map(dish => ({
-              sideDish_id: dish._id,
-              quantity: 1,
-              sideDish_name: dish.sideDish_name,
-          })),
-          uniqueKey,
-      })
     }
 
-  const updateCart = await cartModel.findOneAndUpdate({cart_userId: user._id}, foundCart, { new: true, lean: true})
-  
-    
-    if(updateCart){
-        await saveCartToRedis(user._id, foundCart);
-    }
-    const updateCart = await cartModel.findByIdAndUpdate(
-      foundCart._id,
+    const updateCart = await cartModel.findOneAndUpdate(
+      { cart_userId: user._id },
       foundCart,
       { new: true, lean: true }
     );
+
     if (updateCart) {
-      await saveCartToRedis(foundCart.cart_userId, foundCart);
+      await saveCartToRedis(user._id, foundCart);
     } else {
       throw new BadRequestError("add product to cart failed");
     }
@@ -322,28 +305,19 @@ const removeProductFromCart = async ({ user, product }) => {
   );
 
   // Cập nhật giỏ hàng sau khi xóa sản phẩm
-  const updateCart = await cartModel.findByIdAndUpdate(
-    foundCart._id,
+  const updateCart = await cartModel.findOneAndUpdate(
+    { cart_userId: user._id },
     foundCart,
     { new: true, lean: true }
   );
+
   if (updateCart) {
-    await saveCartToRedis(foundCart.cart_userId, foundCart);
+    await saveCartToRedis(user._id, foundCart);
   } else {
     throw new BadRequestError("delete product to cart failed");
   }
 };
 const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
-  const updateCart = await cartModel.findOneAndUpdate({cart_userId: user._id}, foundCart, { new: true, lean: true})
-  
-    if(updateCart){
-        await saveCartToRedis(user._id, foundCart);
-    }
-    else{
-        throw new BadRequestError('delete product to cart failed')
-    }
-}
-const incOfDecProductQuantity = async ({ user, product, shop, action }) => { 
   const { product_id, sideDish_ids = [] } = product;
 
   // Kiểm tra dữ liệu shop có tồn tại không
@@ -405,22 +379,15 @@ const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
   findProductInCart.totalPrice =
     newQuantity * (getProduct.product_price + totalPriceSideDish);
   // Lưu giỏ hàng đã cập nhật vào DB
-  const updateCart = await cartModel.findByIdAndUpdate(
-    foundCart._id,
+  const updateCart = await cartModel.findOneAndUpdate(
+    { cart_userId: user._id },
     foundCart,
     { new: true, lean: true }
   );
   if (updateCart) {
-    await saveCartToRedis(foundCart.cart_userId, foundCart);
+    await saveCartToRedis(user._id, foundCart);
   } else {
     throw new BadRequestError("add product to cart failed");
-
-  const updateCart = await cartModel.findOneAndUpdate({cart_userId: user._id}, foundCart, { new: true, lean: true})
-  if(updateCart){
-      await saveCartToRedis(user._id, foundCart);
-  }
-  else{
-      throw new BadRequestError('add product to cart failed')
   }
 };
 module.exports = {

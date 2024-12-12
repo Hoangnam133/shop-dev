@@ -95,14 +95,14 @@ class InventoryController {
 
   // Cập nhật kho hàng
   updateInventory = async (req, res, next) => {
-    const { product_id, quantity, minStockLevel } = req.body;
-    const { shop_id } = req.params;
+    const { product_id, shop_id, inven_stock, minStockLevel } = req.body;
+
     new SuccessResponse({
       message: "Inventory updated successfully",
       metaData: await inventoryService.updateInventory({
         shop_id,
         product_id,
-        quantity,
+        inven_stock,
         minStockLevel,
       }),
     }).send(res);
@@ -183,7 +183,7 @@ class InventoryController {
       metaData: await inventoryService.getListProductsInStockOfShop({
         shop_id: req.params.shop_id,
         limit,
-        page
+        page,
       }),
     }).send(res);
   };
