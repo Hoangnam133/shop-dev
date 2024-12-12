@@ -4,54 +4,62 @@ const productModel = require("../models/productModel");
 const { toObjectId } = require("../utils/index");
 const shopModel = require("../models/shopModel");
 const deductStockAfterPayment = async ({ shop_id, product_id, quantity }) => {
-  const shop = await shopModel.findById(toObjectId(shop_id))
+  const shop = await shopModel.findById(toObjectId(shop_id));
   if (!shop) {
-      throw new BadRequestError('Shop not found')
+    throw new BadRequestError("Shop not found");
   }
-  const product = await productModel.findById(product_id)
+  const product = await productModel.findById(product_id);
   if (!product) {
-      throw new BadRequestError('Product not found')
+    throw new BadRequestError("Product not found");
   }
   const query = {
-    shop_id,
-    product_id,
-    isDeleted: false,
-  },
-  payload = {
-    $inc:{
-      inven_stock: -quantity,
-    }
-  },
-  options = {
-    new: true,
-    upsert: true,
-  };
-  const updateInventory = await inventoryModel.findOneAndUpdate(query,payload,options)
+      shop_id,
+      product_id,
+      isDeleted: false,
+    },
+    payload = {
+      $inc: {
+        inven_stock: -quantity,
+      },
+    },
+    options = {
+      new: true,
+      upsert: true,
+    };
+  const updateInventory = await inventoryModel.findOneAndUpdate(
+    query,
+    payload,
+    options
+  );
   if (!updateInventory) {
     throw new BadRequestError("Failed to update inventory");
   }
-  return true
-}
+  return true;
+};
 const checkProductStockInShop = async ({ shop_id, product_id, quantity }) => {
-  const shop = await shopModel.findById(toObjectId(shop_id))
+  const shop = await shopModel.findById(toObjectId(shop_id));
   if (!shop) {
-      throw new BadRequestError('Shop not found')
+    throw new BadRequestError("Shop not found");
   }
-  console.log('product idddddd',product_id)
-  const product = await productModel.findById(product_id)
+  console.log("product idddddd", product_id);
+  const product = await productModel.findById(product_id);
   if (!product) {
-      throw new BadRequestError('Product not found')
+    throw new BadRequestError("Product not found");
   }
-  const stockData = await inventoryModel.findOne({ shop_id, product_id, isDeleted: false })
+  const stockData = await inventoryModel.findOne({
+    shop_id,
+    product_id,
+    isDeleted: false,
+  });
 
   if (!stockData) {
-      throw new BadRequestError('No inventory found for this product');
+    throw new BadRequestError("No inventory found for this product");
   }
-  if(stockData.inven_stock <= 0 || stockData.inven_stock < quantity){
-      return false
+  if (stockData.inven_stock <= 0 || stockData.inven_stock < quantity) {
+    return false;
   }
-  return true
-}
+  return true;
+};
 // Hàm kiểm tra số lượng sản phẩm còn lại ở các chi nhánh
 const getProductStockInAllShops = async ({
   product_id,
@@ -246,7 +254,7 @@ const checkInventoryStock = async ({ shop_id, product_id, quantity }) => {
 const updateInventory = async ({
   shop_id,
   product_id,
-  quantity,
+  inven_stock,
   minStockLevel,
 }) => {
   const shop = await shopModel.findById(toObjectId(shop_id.trim()));
@@ -257,13 +265,13 @@ const updateInventory = async ({
   if (!product) {
     throw new BadRequestError("Product not found");
   }
-  if (quantity < 0) {
+  if (inven_stock < 0) {
     throw new BadRequestError("Inventory quantity cannot be negative");
   }
   if (minStockLevel < 0) {
     throw new BadRequestError("The minimum inventory level cannot be negative");
   }
-  if (quantity < minStockLevel) {
+  if (inven_stock < minStockLevel) {
     throw new BadRequestError(
       "The inventory quantity must be greater than or equal to the minimum inventory level"
     );
@@ -271,7 +279,7 @@ const updateInventory = async ({
 
   const updatedInventory = await inventoryModel.findOneAndUpdate(
     { shop_id, product_id },
-    { inven_stock: quantity, minStockLevel },
+    { inven_stock: inven_stock, minStockLevel },
     {
       new: true,
       lean: true,
@@ -378,15 +386,23 @@ const getDeletedProductsInInventory = async ({
 
   return deletedProducts;
 };
-const getListProductsInStockOfShop = async({shop_id, limit = 10,page = 1})=>{
+const getListProductsInStockOfShop = async ({
+  shop_id,
+  limit = 10,
+  page = 1,
+}) => {
   const skip = (page - 1) * limit;
-  const products = await inventoryModel.find({shop_id})
-  .populate({path: 'product_id'}).skip(skip).limit(limit).lean()
+  const products = await inventoryModel
+    .find({ shop_id })
+    .populate({ path: "product_id" })
+    .skip(skip)
+    .limit(limit)
+    .lean();
   if (!products || products.length === 0) {
-    throw new BadRequestError('No products found in this shop');
+    throw new BadRequestError("No products found in this shop");
   }
   return products;
-}
+};
 module.exports = {
   getProductStockInAllShops,
   getLowStockProductsInShop,
@@ -402,5 +418,5 @@ module.exports = {
   softDeleteProductInInventory,
   checkProductStockInShop,
   deductStockAfterPayment,
-  getListProductsInStockOfShop
+  getListProductsInStockOfShop,
 };
