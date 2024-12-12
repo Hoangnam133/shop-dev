@@ -409,7 +409,7 @@ const getListProductsInStockOfShop = async ({
 }) => {
   const skip = (page - 1) * limit;
   const products = await inventoryModel
-    .find({ shop_id })
+    .find({ shop_id, isDeleted: false })
     .populate({ path: "product_id" })
     .skip(skip)
     .limit(limit)

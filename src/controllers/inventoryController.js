@@ -167,6 +167,9 @@ class InventoryController {
   // Xóa sản phẩm trong kho
   softDeleteProductInInventory = async (req, res, next) => {
     const { shop_id, product_id } = req.body;
+    console.log("A" + shop_id);
+    console.log("B:" + product_id);
+
     new SuccessResponse({
       message: "Product soft deleted successfully",
       metaData: await inventoryService.softDeleteProductInInventory({
