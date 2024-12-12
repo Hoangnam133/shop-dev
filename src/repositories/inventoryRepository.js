@@ -33,6 +33,7 @@ const deductStockAfterPayment = async ({ shop_id, product_id, quantity }) => {
   return true
 }
 const checkProductStockInShop = async ({ shop_id, product_id, quantity }) => {
+  console.log("-------------------------",shop_id, product_id, quantity)
   const shop = await shopModel.findById(toObjectId(shop_id))
   if (!shop) {
       throw new BadRequestError('Shop not found')
@@ -42,7 +43,7 @@ const checkProductStockInShop = async ({ shop_id, product_id, quantity }) => {
       throw new BadRequestError('Product not found')
   }
   const stockData = await inventoryModel.findOne({ shop_id, product_id, isDeleted: false })
-
+  console.log(stockData)
   if (!stockData) {
       throw new BadRequestError('No inventory found for this product');
   }
@@ -382,7 +383,7 @@ const getListProductsInStockOfShop = async({shop_id, limit = 10,page = 1})=>{
   const products = await inventoryModel.find({shop_id})
   .populate({path: 'product_id'}).skip(skip).limit(limit).lean()
   if (!products || products.length === 0) {
-    throw new BadRequestError('No products found in this shop');
+    return []
   }
   return products;
 }

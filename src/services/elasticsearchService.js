@@ -53,14 +53,14 @@ class ElasticsearchService {
                     product_description: hit._source.product_description,
                     product_thumb: hit._source.product_thumb, 
                     product_price: hit._source.product_price,
-                    isDelete: hit.isDeleted,
-                    isPublish: hit.isPublished,
-                    product_description: hit.product_description,
-                    product_ratingAverage: hit.product_ratingAverage,
-                    preparation_time: hit.preparation_time,
-                    required_points: hit.required_points,
-                    createdAt: hit.createdAt,
-                    sideDish_id: hit.sideDish_id
+                    isDelete: hit._source.isDeleted,
+                    isPublish: hit._source.isPublished,
+                    product_description: hit._source.product_description,
+                    product_ratingAverage: hit._source.product_ratingAverage,
+                    preparation_time: hit._source.preparation_time,
+                    required_points: hit._source.required_points,
+                    createdAt: hit._source.createdAt,
+                    sideDish_id: hit._source.sideDish_id
                 }
             }));
             return { products : formattedProducts}
