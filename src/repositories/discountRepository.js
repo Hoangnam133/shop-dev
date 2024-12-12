@@ -10,26 +10,26 @@ const createDiscount = async (payload, file) => {
     discount_code: payload.discount_code,
   });
   if (existingDiscount) {
-    throw new BadRequestError("Discount code already exists");
+    throw new BadRequestError("mã giảm giá đã tồn tại, vui lòng không được trùng mã");
   }
   if (
     new Date(payload.discount_start_date) >= new Date(payload.discount_end_date)
   ) {
     throw new BadRequestError(
-      "The start date must be earlier than the end date"
+      "ngày bắt đầu phải nhỏ hơn ngày kết thúc"
     );
   }
   if (!file) {
-    throw new BadRequestError("Image file is required");
+    throw new BadRequestError("không thể tạo vì thiếu hình ảnh");
   }
   const uploadImg = await uploadService.uploadImageFromLocalS3(file);
   if (!uploadImg) {
-    throw new BadRequestError("Failed to upload image");
+    throw new BadRequestError("không thể cập nhật hình ảnh");
   }
   payload.discount_image = uploadImg;
   const discount = await discountModel.create(payload);
   if (!discount) {
-    throw new BadRequestError("Failed to create discount");
+    throw new BadRequestError("không thể tạo mã giảm giá");
   }
   return discount;
 };
@@ -37,7 +37,7 @@ const createDiscount = async (payload, file) => {
 const getDiscountById = async (discount_id) => {
   const discount = await discountModel.findById(toObjectId(discount_id)).lean();
   if (!discount) {
-    throw new NotFoundError("Discount not found");
+    throw new NotFoundError('không tìm thấy mã giảm giá');
   }
 
   // Tính toán số ngày còn lại
@@ -50,11 +50,11 @@ const getDiscountById = async (discount_id) => {
 };
 const getDiscountByIdForUser = async ({ discount_id, user }) => {
   if (!user) {
-    throw new BadRequestError("User is required");
+    throw new BadRequestError("có một chút lỗi xảy ra, vui lòng thử lại sau");
   }
   const discount = await discountModel.findById(toObjectId(discount_id)).lean();
   if (!discount) {
-    throw new NotFoundError("Discount not found");
+    throw new NotFoundError("có một chút lỗi xảy ra, vui lòng thử lại sau");
   }
 
   // Tính toán số ngày còn lại
@@ -97,7 +97,7 @@ const updateDiscountById = async ({ discount_id, dataUpdate }) => {
   const cleanedData = removeUndefinedObject(dataUpdate);
   const discount = await discountModel.findById(discount_id).lean();
   if (!discount) {
-    throw new NotFoundError("Discount not found");
+    throw new NotFoundError("không tìm thấy mã giảm giá");
   }
   if (cleanedData.discount_code) {
     const existingDiscount = await discountModel.findOne({
@@ -105,7 +105,7 @@ const updateDiscountById = async ({ discount_id, dataUpdate }) => {
       _id: { $ne: toObjectId(discount_id.toString()) },
     });
     if (existingDiscount) {
-      throw new BadRequestError("Discount code already exists");
+      throw new BadRequestError(`${existingDiscount.discount_code} đã tồn tại`);
     }
   }
 
@@ -114,7 +114,7 @@ const updateDiscountById = async ({ discount_id, dataUpdate }) => {
       new Date(cleanedData.discount_start_date) >=
       new Date(cleanedData.discount_end_date)
     ) {
-      throw new BadRequestError("Start date must be before end date");
+      throw new BadRequestError("ngày bắt đầu phải nhỏ hơn ngày kết thúc");
     }
   }
   const max_total_uses_old = discount.max_total_uses;
@@ -195,7 +195,7 @@ const updateDiscountUsageByUser = async (discountId, userId) => {
 const checkUserDiscountUsage = async (discount_id, user) => {
   const discount = await discountModel.findById(toObjectId(discount_id)).lean();
   if (!discount) {
-    throw new NotFoundError("Discount not found");
+    throw new NotFoundError("có 1 chút sự cố khi áp dụng mã giảm giá. Vui lòng liên hệ hỗ trợ");
   }
   const userUsage = discount.discount_user_used.find(
     (user) => user.dbu_userId.toString() === user._id.toString()

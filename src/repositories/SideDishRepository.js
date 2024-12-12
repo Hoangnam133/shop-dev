@@ -10,7 +10,7 @@ const createSideDishModel = async(payload)=>{
         name: payload.sideDish_name
     })
     if(checkName){
-        throw new BadRequestError('Side dish name already exists')
+        throw new BadRequestError(`${payload.sideDish_name} đã tồn tại`)
     }
     const sideDish = await sideDishModel.create(payload)
     if(!sideDish){
@@ -22,7 +22,7 @@ const createSideDishModel = async(payload)=>{
 const findSideDishById = async (sideDish_id) => {
     const sideDish = await sideDishModel.findById(sideDish_id);
     if (!sideDish || sideDish.isDeleted) {
-        throw new NotFoundError('Side dish not found');
+        throw new NotFoundError('không tìm thấy món phụ này');
     }
     return sideDish;
 }
@@ -30,7 +30,7 @@ const findSideDishById = async (sideDish_id) => {
 const updateSideDishById = async ({sideDish_id, payload}) => {
     const sideDish = await findSideDishById(sideDish_id);
     if (!sideDish) {
-        throw new NotFoundError('Side dish not found');
+        throw new NotFoundError('không tìm thấy món phụ cần cập nhật');
     }
     const cleanData = removeUndefinedObject(payload)
     if(cleanData.sideDish_name){
