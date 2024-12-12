@@ -175,12 +175,11 @@ class OrderServiceV5 {
         quantity: totalQuantity,
         product_id: productId,
       });
-      if (!checkStockProduct) {
+      if (checkStockProduct === false){
         throw new BadRequestError(
           `${foundProduct.product_name} not enough stock`
         );
       }
-
       // Tính tổng giá trị nhóm sản phẩm
       const totalPriceForProduct = items.reduce(
         (sum, item) => sum + item.totalPrice,
