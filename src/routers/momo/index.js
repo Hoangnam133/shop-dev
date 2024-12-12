@@ -21,7 +21,6 @@ router.get('/getSuccess', async (req, res) => {
             let payload = {
                 orderInfo,
                 shop_id: extraData || 'Unknown Shop ID', 
-                amount,
                 transId
             };
             console.log('Payload gửi tới RabbitMQ:', payload);

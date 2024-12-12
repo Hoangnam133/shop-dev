@@ -181,12 +181,13 @@ const uniqueKey = sortedSideDishIds ? `${product_id}-${sortedSideDishIds}` : `${
     options =  {
         new: true
     }
-    const updateCart = await cartModel.findByIdAndUpdate(foundCart._id, payload, options)
+  const updateCart = await cartModel.findOneAndUpdate({cart_userId: user._id}, payload, options)
+    
     if(!updateCart){
         throw new BadRequestError('Add product to cart failed')
     }
     else{
-        await saveCartToRedis(updateCart.cart_userId, updateCart);
+        await saveCartToRedis(user._id, updateCart);
     }
    
 }
@@ -234,9 +235,12 @@ const updateCartProductQuantity = async ({ user, product, shop }) => {
           uniqueKey,
       })
     }
-    const updateCart = await cartModel.findByIdAndUpdate(foundCart._id, foundCart, { new: true, lean: true})
+
+  const updateCart = await cartModel.findOneAndUpdate({cart_userId: user._id}, foundCart, { new: true, lean: true})
+    
+    
     if(updateCart){
-        await saveCartToRedis(foundCart.cart_userId, foundCart);
+        await saveCartToRedis(user._id, foundCart);
     }
     else{
         throw new BadRequestError('add product to cart failed')
@@ -290,9 +294,10 @@ const removeProductFromCart = async ({ user, product }) => {
   foundCart.cart_products = foundCart.cart_products.filter(cartProduct => cartProduct.uniqueKey !== uniqueKey);
 
   // Cập nhật giỏ hàng sau khi xóa sản phẩm
-  const updateCart = await cartModel.findByIdAndUpdate(foundCart._id, foundCart, { new: true, lean: true})
+  const updateCart = await cartModel.findOneAndUpdate({cart_userId: user._id}, foundCart, { new: true, lean: true})
+  
     if(updateCart){
-        await saveCartToRedis(foundCart.cart_userId, foundCart);
+        await saveCartToRedis(user._id, foundCart);
     }
     else{
         throw new BadRequestError('delete product to cart failed')
@@ -349,9 +354,9 @@ const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
   findProductInCart.quantity = newQuantity;
   findProductInCart.totalPrice = newQuantity * (getProduct.product_price + totalPriceSideDish);
   // Lưu giỏ hàng đã cập nhật vào DB
-  const updateCart = await cartModel.findByIdAndUpdate(foundCart._id, foundCart, { new: true, lean: true})
+  const updateCart = await cartModel.findOneAndUpdate({cart_userId: user._id}, foundCart, { new: true, lean: true})
   if(updateCart){
-      await saveCartToRedis(foundCart.cart_userId, foundCart);
+      await saveCartToRedis(user._id, foundCart);
   }
   else{
       throw new BadRequestError('add product to cart failed')
