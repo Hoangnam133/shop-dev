@@ -41,6 +41,9 @@ const {
   getBestSellingProducts,
   getCategorySales,
   updateStatusSuccess,
+  getStatisticsOfShop,
+  getBestSellingProductsOfShop,
+  getCategorySalesOfShop
 } = require("../repositories/orderRepository");
 const { runProducer } = require("../message_queue/rabbitmq/producer");
 const moment = require("moment-timezone");
@@ -48,6 +51,15 @@ const { calculateDistance } = require("../utils/Distance");
 const locationModel = require("../models/locationModel");
 const { toObjectId } = require("../utils");
 class OrderServiceV5 {
+  static async getStatisticsOfShop(timeRange, shop) {
+    return await getStatisticsOfShop(timeRange, shop);
+  }
+  static async getBestSellingProductsOfShop(timeRange, shop) {
+    return await getBestSellingProductsOfShop(timeRange, shop);
+  }
+  static async getCategorySalesOfShop(timeRange, shop) {
+    return await getCategorySalesOfShop(timeRange, shop);
+  }
   static async getCategorySales(timeRange) {
     return await getCategorySales(timeRange);
   }
@@ -163,12 +175,11 @@ class OrderServiceV5 {
         quantity: totalQuantity,
         product_id: productId,
       });
-      if (!checkStockProduct) {
+      if (checkStockProduct === false){
         throw new BadRequestError(
           `${foundProduct.product_name} not enough stock`
         );
       }
-
       // Tính tổng giá trị nhóm sản phẩm
       const totalPriceForProduct = items.reduce(
         (sum, item) => sum + item.totalPrice,

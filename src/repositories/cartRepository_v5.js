@@ -196,6 +196,7 @@ const addProductToEmptyCartIfAbsent = async ({ user, product, shop }) => {
     await saveCartToRedis(updateCart.cart_userId, updateCart);
   }
 };
+
 const updateCartProductQuantity = async ({ user, product, shop }) => {
   try {
     const { product_id, quantity, sideDish_ids = [] } = product;
@@ -237,6 +238,7 @@ const updateCartProductQuantity = async ({ user, product, shop }) => {
           (getProduct.product_price +
             sideDishes.reduce((sum, dish) => sum + dish.price, 0)) *
           quantity,
+
         sideDishes: sideDishes.map((dish) => ({
           sideDish_id: dish._id,
           quantity: 1,
@@ -244,6 +246,24 @@ const updateCartProductQuantity = async ({ user, product, shop }) => {
         })),
         uniqueKey,
       });
+
+          totalPrice:
+              (getProduct.product_price + sideDishes.reduce((sum, dish) => sum + dish.price, 0)) *
+              quantity,
+          sideDishes: sideDishes.map(dish => ({
+              sideDish_id: dish._id,
+              quantity: 1,
+              sideDish_name: dish.sideDish_name,
+          })),
+          uniqueKey,
+      })
+    }
+
+  const updateCart = await cartModel.findOneAndUpdate({cart_userId: user._id}, foundCart, { new: true, lean: true})
+  
+    
+    if(updateCart){
+        await saveCartToRedis(user._id, foundCart);
     }
     const updateCart = await cartModel.findByIdAndUpdate(
       foundCart._id,
@@ -314,6 +334,16 @@ const removeProductFromCart = async ({ user, product }) => {
   }
 };
 const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
+  const updateCart = await cartModel.findOneAndUpdate({cart_userId: user._id}, foundCart, { new: true, lean: true})
+  
+    if(updateCart){
+        await saveCartToRedis(user._id, foundCart);
+    }
+    else{
+        throw new BadRequestError('delete product to cart failed')
+    }
+}
+const incOfDecProductQuantity = async ({ user, product, shop, action }) => { 
   const { product_id, sideDish_ids = [] } = product;
 
   // Kiểm tra dữ liệu shop có tồn tại không
@@ -384,6 +414,13 @@ const incOfDecProductQuantity = async ({ user, product, shop, action }) => {
     await saveCartToRedis(foundCart.cart_userId, foundCart);
   } else {
     throw new BadRequestError("add product to cart failed");
+
+  const updateCart = await cartModel.findOneAndUpdate({cart_userId: user._id}, foundCart, { new: true, lean: true})
+  if(updateCart){
+      await saveCartToRedis(user._id, foundCart);
+  }
+  else{
+      throw new BadRequestError('add product to cart failed')
   }
 };
 module.exports = {

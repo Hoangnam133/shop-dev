@@ -23,7 +23,7 @@ const runConsumer = async () => {
                  
                     const orderData = JSON.parse(msg.content.toString());
                     console.log(`Received order: ${JSON.stringify(orderData)}`);
-                    const {orderInfo, shop_id, amount} = orderData;
+                    const {orderInfo, shop_id} = orderData;
                     const newOrder = await orderModel.findByIdAndUpdate(
                         orderInfo, 
                         { 
@@ -60,7 +60,7 @@ const runConsumer = async () => {
                     let pointsEarned = 0;
                     if (rewardSetting) {
                       const pointRate = rewardSetting.pointRate;
-                      pointsEarned = Math.floor(amount * pointRate);
+                      pointsEarned = Math.floor(newOrder.order_checkout.totalAmount * pointRate);
                     }
                     const updatePoint = await userModel.findByIdAndUpdate(newOrder.order_userId,{
                         $inc: { points: pointsEarned } 
@@ -68,7 +68,7 @@ const runConsumer = async () => {
                     if (!updatePoint) {
                         throw new BadRequestError('Update user points failed')
                     }
-                    console.log('discountCode----------------------------------------------',newOrder.order_discount_code)
+                   
                     const addUserToDiscount = await updateUserToDiscount({discountCode: newOrder.order_discount_code, user_id: newOrder.order_userId,})
                     if (!addUserToDiscount) {
                         throw new BadRequestError('Add user to discount failed')

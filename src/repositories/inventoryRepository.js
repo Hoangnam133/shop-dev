@@ -41,8 +41,8 @@ const checkProductStockInShop = async ({ shop_id, product_id, quantity }) => {
   if (!shop) {
     throw new BadRequestError("Shop not found");
   }
-  console.log("product idddddd", product_id);
-  const product = await productModel.findById(product_id);
+  const product = await productModel.findById(product_id)
+
   if (!product) {
     throw new BadRequestError("Product not found");
   }

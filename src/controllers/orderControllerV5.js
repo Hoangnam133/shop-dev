@@ -1,6 +1,27 @@
 const OrderServiceV5 = require("../services/orderService_v7");
 const { SuccessResponse } = require("../core/successResponse");
 class OrderControllerV5 {
+
+  getStatisticsOfShop = async (req, res, next) => {
+    new SuccessResponse({
+      message: "list best selling products success",
+      metaData: await OrderServiceV5.getStatisticsOfShop(req.query.timeRange, req.shop),
+    }).send(res);
+  };
+  getBestSellingProductsOfShop = async (req, res, next) => {
+    new SuccessResponse({
+      message: "list best selling products success",
+      metaData: await OrderServiceV5.getBestSellingProductsOfShop(
+        req.query.timeRange, req.shop
+      ),
+    }).send(res);
+  };
+  getCategorySalesOfShop = async (req, res, next) => {
+    new SuccessResponse({
+      message: "list best selling products success",
+      metaData: await OrderServiceV5.getCategorySalesOfShop(req.query.timeRange, req.shop),
+    }).send(res);
+  };
   getCategorySales = async (req, res, next) => {
     new SuccessResponse({
       message: "list best selling products success",
