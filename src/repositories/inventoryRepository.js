@@ -3,55 +3,68 @@ const { BadRequestError } = require("../core/errorResponse");
 const productModel = require("../models/productModel");
 const { toObjectId } = require("../utils/index");
 const shopModel = require("../models/shopModel");
+const mongoose = require("mongoose");
 const deductStockAfterPayment = async ({ shop_id, product_id, quantity }) => {
-  const shop = await shopModel.findById(toObjectId(shop_id))
+  const shop = await shopModel.findById(toObjectId(shop_id));
   if (!shop) {
-      throw new BadRequestError('Shop not found')
+    throw new BadRequestError("Shop not found");
   }
-  const product = await productModel.findById(product_id)
+  const product = await productModel.findById(product_id);
   if (!product) {
-      throw new BadRequestError('Product not found')
+    throw new BadRequestError("Product not found");
   }
   const query = {
-    shop_id,
-    product_id,
-    isDeleted: false,
-  },
-  payload = {
-    $inc:{
-      inven_stock: -quantity,
-    }
-  },
-  options = {
-    new: true,
-    upsert: true,
-  };
-  const updateInventory = await inventoryModel.findOneAndUpdate(query,payload,options)
+      shop_id,
+      product_id,
+      isDeleted: false,
+    },
+    payload = {
+      $inc: {
+        inven_stock: -quantity,
+      },
+    },
+    options = {
+      new: true,
+      upsert: true,
+    };
+  const updateInventory = await inventoryModel.findOneAndUpdate(
+    query,
+    payload,
+    options
+  );
   if (!updateInventory) {
     throw new BadRequestError("Failed to update inventory");
   }
-  return true
-}
+  return true;
+};
 const checkProductStockInShop = async ({ shop_id, product_id, quantity }) => {
-  console.log("-------------------------",shop_id, product_id, quantity)
-  const shop = await shopModel.findById(toObjectId(shop_id))
+
+  const shop = await shopModel.findById(toObjectId(shop_id));
+
   if (!shop) {
-      throw new BadRequestError('Shop not found')
+    throw new BadRequestError("Shop not found");
   }
-  const product = await productModel.findById(product_id)
+  const product = await productModel.findById(product_id);
+
   if (!product) {
-      throw new BadRequestError('Product not found')
+    throw new BadRequestError("Product not found");
   }
-  const stockData = await inventoryModel.findOne({ shop_id, product_id, isDeleted: false })
-  console.log(stockData)
+
+  const stockData = await inventoryModel.findOne({
+    shop_id,
+    product_id,
+    isDeleted: false,
+  });
+
+
   if (!stockData) {
-      throw new BadRequestError('No inventory found for this product');
+    throw new BadRequestError("No inventory found for this product");
   }
-  if(stockData.inven_stock <= 0 || stockData.inven_stock < quantity){
-      return false
+  if (stockData.inven_stock <= 0 || stockData.inven_stock < quantity) {
+    return false;
   }
-  return true
-}
+  return true;
+};
 // Hàm kiểm tra số lượng sản phẩm còn lại ở các chi nhánh
 const getProductStockInAllShops = async ({
   product_id,
@@ -202,6 +215,64 @@ const addProductToInventory = async ({
 
   return newInventory;
 };
+const updateInventory = async ({
+  shop_id,
+  product_id,
+  inven_stock,
+  minStockLevel,
+}) => {
+  console.log("Shop ID Received:", shop_id);
+  console.log("Is Valid ObjectId:", mongoose.Types.ObjectId.isValid(shop_id));
+
+  const shop = await shopModel.findById(shop_id);
+  console.log("Shop" + shop);
+
+  if (!shop) {
+    throw new BadRequestError("Shop not found");
+  }
+  const product = await productModel.findById(toObjectId(product_id.trim()));
+  if (!product) {
+    throw new BadRequestError("Product not found");
+  }
+  console.log(inven_stock);
+  console.log(minStockLevel);
+
+  if (!inven_stock) {
+    throw new BadRequestError("inven_stock must be provided");
+  }
+  if (!minStockLevel) {
+    throw new BadRequestError("minStockLevel must be provided");
+  }
+
+  if (inven_stock < 0) {
+    throw new BadRequestError("Inventory quantity cannot be negative");
+  }
+  if (minStockLevel < 0) {
+    throw new BadRequestError("The minimum inventory level cannot be negative");
+  }
+  if (inven_stock < minStockLevel) {
+    throw new BadRequestError(
+      "The inventory quantity must be greater than or equal to the minimum inventory level"
+    );
+  }
+
+  const updatedInventory = await inventoryModel.findOneAndUpdate(
+    { shop_id, product_id },
+    { inven_stock: inven_stock, minStockLevel },
+    {
+      new: true,
+      lean: true,
+    }
+  );
+
+  if (!updatedInventory) {
+    throw new BadRequestError(
+      "No products found in this branch warehouse for update"
+    );
+  }
+
+  return updatedInventory;
+};
 //Giảm số lượng tồn kho khi có đơn hàng từ chi nhánh cụ thể
 const reduceInventoryStock = async ({ shop_id, product_id, quantity }) => {
   const shop = await shopModel.findById(toObjectId(shop_id.trim()));
@@ -242,49 +313,6 @@ const checkInventoryStock = async ({ shop_id, product_id, quantity }) => {
   }
 
   return stockData.inven_stock;
-};
-const updateInventory = async ({
-  shop_id,
-  product_id,
-  quantity,
-  minStockLevel,
-}) => {
-  const shop = await shopModel.findById(toObjectId(shop_id.trim()));
-  if (!shop) {
-    throw new BadRequestError("Shop not found");
-  }
-  const product = await productModel.findById(toObjectId(product_id.trim()));
-  if (!product) {
-    throw new BadRequestError("Product not found");
-  }
-  if (quantity < 0) {
-    throw new BadRequestError("Inventory quantity cannot be negative");
-  }
-  if (minStockLevel < 0) {
-    throw new BadRequestError("The minimum inventory level cannot be negative");
-  }
-  if (quantity < minStockLevel) {
-    throw new BadRequestError(
-      "The inventory quantity must be greater than or equal to the minimum inventory level"
-    );
-  }
-
-  const updatedInventory = await inventoryModel.findOneAndUpdate(
-    { shop_id, product_id },
-    { inven_stock: quantity, minStockLevel },
-    {
-      new: true,
-      lean: true,
-    }
-  );
-
-  if (!updatedInventory) {
-    throw new BadRequestError(
-      "No products found in this branch warehouse for update"
-    );
-  }
-
-  return updatedInventory;
 };
 //Kiểm tra sản phẩm hết hàng trên toàn hệ thống
 const checkProductOutOfStockAllShops = async ({ product_id, limit, page }) => {
@@ -378,15 +406,23 @@ const getDeletedProductsInInventory = async ({
 
   return deletedProducts;
 };
-const getListProductsInStockOfShop = async({shop_id, limit = 10,page = 1})=>{
+const getListProductsInStockOfShop = async ({
+  shop_id,
+  limit = 10,
+  page = 1,
+}) => {
   const skip = (page - 1) * limit;
-  const products = await inventoryModel.find({shop_id})
-  .populate({path: 'product_id'}).skip(skip).limit(limit).lean()
+  const products = await inventoryModel
+    .find({ shop_id, isDeleted: false })
+    .populate({ path: "product_id" })
+    .skip(skip)
+    .limit(limit)
+    .lean();
   if (!products || products.length === 0) {
     return []
   }
   return products;
-}
+};
 module.exports = {
   getProductStockInAllShops,
   getLowStockProductsInShop,
@@ -402,5 +438,5 @@ module.exports = {
   softDeleteProductInInventory,
   checkProductStockInShop,
   deductStockAfterPayment,
-  getListProductsInStockOfShop
+  getListProductsInStockOfShop,
 };
