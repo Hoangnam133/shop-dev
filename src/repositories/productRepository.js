@@ -116,7 +116,7 @@ const getLatestProducts = async ({ limit = 10, shop_id }) => {
       isDeleted: false,
       shop_id: toObjectId(shop_id.trim()),
     })
-    .sort({ createdAt: -1 })
+    .sort({ createdAt: 1 })
     .populate("product_id")
     .limit(limit);
   if (!products) {

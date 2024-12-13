@@ -197,8 +197,9 @@ const checkUserDiscountUsage = async (discount_id, user) => {
   if (!discount) {
     throw new NotFoundError("có 1 chút sự cố khi áp dụng mã giảm giá. Vui lòng liên hệ hỗ trợ");
   }
+  const user_id = user._id
   const userUsage = discount.discount_user_used.find(
-    (user) => user.dbu_userId.toString() === user._id.toString()
+    (user) => user.dbu_userId.toString() === user_id.toString()
   );
   if (!userUsage) {
     return discount.max_uses_per_user;
