@@ -11,11 +11,11 @@ const listOrderPendingOfUser = async (user) => {
     order_status: "pending",
     "order_payment.payment_status": "Success",
   };
-  const findOrder = await orderModel.find(query).sort({ createdAt: -1 });
+  const findOrder = await orderModel.find(query).sort({ createdAt: 1 });
   console.log(findOrder);
-
+  
   if (!findOrder) {
-    throw new NotFoundError("Order not found");
+    throw new NotFoundError("có một chút lỗi xảy ra, vui lòng thử lại");
   }
   return findOrder;
 };
@@ -23,10 +23,11 @@ const listOrderCompletedOfUser = async (user) => {
   const query = {
     order_userId: user._id,
     order_status: "completed",
+    "order_payment.payment_status": "Success",
   };
-  const findOrder = await orderModel.find(query).sort({ createdAt: -1 });
+  const findOrder = await orderModel.find(query).sort({ createdAt: 1 });
   if (!findOrder) {
-    throw new NotFoundError("Order not found");
+    throw new NotFoundError("có một chút lỗi xảy ra, vui lòng thử lại");
   }
   return findOrder;
 };
@@ -34,10 +35,11 @@ const listOrderCancelledOfUser = async (user) => {
   const query = {
     order_userId: user._id,
     order_status: "cancelled",
+    "order_payment.payment_status": "Success",
   };
-  const findOrder = await orderModel.find(query).sort({ createdAt: -1 });
+  const findOrder = await orderModel.find(query).sort({ createdAt: 1 });
   if (!findOrder) {
-    throw new NotFoundError("Order not found");
+    throw new NotFoundError("có một chút lỗi xảy ra, vui lòng thử lại");
   }
   return findOrder;
 };
@@ -45,10 +47,11 @@ const listOrderSuccessOfUser = async (user) => {
   const query = {
     order_userId: user._id,
     order_status: "Success",
+    "order_payment.payment_status": "Success",
   };
-  const findOrder = await orderModel.find(query).sort({ createdAt: -1 });
+  const findOrder = await orderModel.find(query).sort({ createdAt: 1 });
   if (!findOrder) {
-    throw new NotFoundError("Order not found");
+    throw new NotFoundError("có một chút lỗi xảy ra, vui lòng thử lại");
   }
   return findOrder;
 };
@@ -185,15 +188,16 @@ const listOrderPending = async ({ limit, page, shop }) => {
   const query = {
     order_status: "pending",
     order_shopId: shop._id,
+    "order_payment.payment_status": "Success",
   };
   const findOrder = await orderModel
     .find(query).populate({path:"order_userId",select: "name"})
-    .sort({ createdAt: -1 })
+    .sort({ createdAt: 1 })
     .skip(skip)
     .limit(limit)
     .lean();
   if (!findOrder) {
-    throw new NotFoundError("Order not found");
+    throw new NotFoundError("có một chút lỗi xảy ra, vui lòng thử lại");
   }
   return findOrder;
 };
@@ -202,15 +206,16 @@ const listOrderSuccess = async ({ limit, page, shop }) => {
   const query = {
     order_status: "Success",
     order_shopId: shop._id,
+    "order_payment.payment_status": "Success",
   };
   const findOrder = await orderModel
     .find(query).populate({path:"order_userId",select: "name"})
-    .sort({ createdAt: -1 })
+    .sort({ createdAt: 1 })
     .skip(skip)
     .limit(limit)
     .lean();
   if (!findOrder) {
-    throw new NotFoundError("Order not found");
+    throw new NotFoundError("có một chút lỗi xảy ra, vui lòng thử lại");
   }
   return findOrder;
 };
@@ -219,15 +224,16 @@ const listOrderCancelled = async ({ limit, page, shop }) => {
   const query = {
     order_status: "cancelled",
     order_shopId: shop._id,
+    "order_payment.payment_status": "Success",
   };
   const findOrder = await orderModel
     .find(query).populate({path:"order_userId",select: "name"})
-    .sort({ createdAt: -1 })
+    .sort({ createdAt: 1 })
     .skip(skip)
     .limit(limit)
     .lean();
   if (!findOrder) {
-    throw new NotFoundError("Order not found");
+    throw new NotFoundError("có một chút lỗi xảy ra, vui lòng thử lại");
   }
   return findOrder;
 };
@@ -236,15 +242,16 @@ const listOrderCompleted = async ({ limit, page, shop }) => {
   const query = {
     order_status: "completed",
     order_shopId: shop._id,
+    "order_payment.payment_status": "Success",
   };
   const findOrder = await orderModel
     .find(query).populate({path:"order_userId",select: "name"})
-    .sort({ createdAt: -1 })
+    .sort({ createdAt: 1 })
     .skip(skip)
     .limit(limit)
     .lean();
   if (!findOrder) {
-    throw new NotFoundError("Order not found");
+    throw new NotFoundError("có một chút lỗi xảy ra, vui lòng thử lại");
   }
   return findOrder;
 };
@@ -252,9 +259,10 @@ const getOrderDetail = async (user, orderId) => {
   const findOrder = await orderModel.findOne({
     _id: orderId,
     order_userId: user._id,
+    "order_payment.payment_status": "Success",
   });
   if (!findOrder) {
-    throw new NotFoundError("Order not found");
+    throw new NotFoundError("có một chút lỗi xảy ra, vui lòng thử lại");
   }
   return findOrder;
 };

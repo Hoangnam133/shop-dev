@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const router = express.Router();
+const orderModel = require('../../models/orderModel')
 const { runProducer } = require('../../message_queue/rabbitmq/producer');
 const { asynHandler } = require("../../utils/handler");
 const { authentication, authorizeRoles } = require("../../auth/authUtils")
@@ -34,6 +35,13 @@ router.get('/getSuccess', async (req, res) => {
                 message: 'Thanh toán thành công. Cảm ơn bạn đã mua hàng!'
             });
         } else {
+            const cancelledOrder = await orderModel.deleteOne({
+                _id: orderInfo
+            })
+            if(cancelledOrder){
+                console.log('Đơn hàng đã hủy:', cancelledOrder);
+                
+            }
             // Lưu kết quả thanh toán thất bại
             paymentResults = { status: 'failed', message: 'Thanh toán thất bại. Vui lòng thử lại.' };
 
