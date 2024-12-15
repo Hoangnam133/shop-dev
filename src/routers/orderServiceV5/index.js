@@ -6,6 +6,23 @@ const orderControllerV5 = require("../../controllers/orderControllerV5");
 const roles = require("../../utils/roles");
 
 const { asynHandler } = require("../../utils/handler");
+
+router.get(
+  "/getOrderDetailsByTrackingNumber",
+  asynHandler(orderControllerV5.getOrderDetailsByTrackingNumber)
+);
+router.get(
+  "/getSummaryForToday",
+  authentication,
+  authorizeRoles(roles.BRANCH_MANAGER, roles.EMPLOYEE),
+  asynHandler(orderControllerV5.getSummaryForToday)
+);
+router.get(
+  "/getSideDishSummaryForToday",
+  authentication,
+  authorizeRoles(roles.BRANCH_MANAGER, roles.EMPLOYEE),
+  asynHandler(orderControllerV5.getSideDishSummaryForToday)
+);
 // all stores
 router.get(
   "/getStatisticsOfShop",
