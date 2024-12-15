@@ -3,37 +3,32 @@ const { SuccessResponse } = require("../core/successResponse");
 const streamifier = require("streamifier");
 
 const cloudinary = require("../configs/cloudinary");
+const UserService = require("../services/userService");
 class UserController {
-  updateStatus = async (req, res, next) => {
-    new SuccessResponse({
-      message: "update status success",
-      metaData: await userService.updateStatus(req.params.user_id),
-    }).send(res);
-  }
   listEmployeesOfShop = async (req, res, next) => {
     new SuccessResponse({
       message: "List employees of success",
       metaData: await userService.listEmployeesOfShop(req.params.shop_id),
     }).send(res);
-  }
+  };
   listEmployees = async (req, res, next) => {
     new SuccessResponse({
       message: "List employees success",
       metaData: await userService.listEmployees(),
     }).send(res);
-  }
+  };
   listManageOfShop = async (req, res, next) => {
     new SuccessResponse({
       message: "List Manage branch of success",
       metaData: await userService.listManageOfShop(req.params.shop_id),
     }).send(res);
-  }
+  };
   listManage = async (req, res, next) => {
     new SuccessResponse({
       message: "List Manage success",
       metaData: await userService.listManage(),
     }).send(res);
-  }
+  };
   signUp = async (req, res, next) => {
     new SuccessResponse({
       message: "signUp success",
@@ -59,20 +54,13 @@ class UserController {
       metaData: await userService.loginUser(req.body),
     }).send(res);
   };
-
-  loginEmployee = async (req, res, next) => {
+  loginEmployeeAndManager = async (req, res, next) => {
     new SuccessResponse({
-      message: "Employee login success",
-      metaData: await userService.loginEmployee(req.body),
+      message: "User login success",
+      metaData: await userService.loginEmployeeAndManager(req.body),
     }).send(res);
   };
 
-  loginBranchManager = async (req, res, next) => {
-    new SuccessResponse({
-      message: "Branch Manager login success",
-      metaData: await userService.loginBranchManager(req.body),
-    }).send(res);
-  };
   logout = async (req, res, next) => {
     await userService.logout(req.keyStore);
     res.status(200).json({
@@ -113,8 +101,6 @@ class UserController {
   // Trong hàm controller của bạn
   updatePr = async (req, res, next) => {
     try {
-      console.log("req.file:", req.file); // Kiểm tra file
-
       const user = req.user; // Lấy thông tin người dùng từ middleware
       const updateData = req.body; // Dữ liệu cập nhật từ body request
 
@@ -159,7 +145,10 @@ class UserController {
   getUserInfo = async (req, res, next) => {
     new SuccessResponse({
       message: "Get user info success",
-      metaData: await userService.getUserInfo({ userId: req.user._id, shopId: req.shop._id }),
+      metaData: await userService.getUserInfo({
+        userId: req.user._id,
+        shopId: req.shop._id,
+      }),
     }).send(res);
   };
   createEmployee = async (req, res, next) => {
@@ -176,4 +165,5 @@ class UserController {
     }).send(res);
   };
 }
+
 module.exports = new UserController();
