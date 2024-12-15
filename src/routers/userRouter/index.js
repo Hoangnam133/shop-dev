@@ -61,18 +61,12 @@ router.patch(
   asynHandler(userController.updatePr)
 );
 router.patch(
-  "/updatePrEmployee",
-  authorizeRoles(roles.EMPLOYEE),
+  "/updatePrEmployeeAndManager",
+  authorizeRoles(roles.EMPLOYEE, roles.BRANCH_MANAGER),
   upload.single("avatar"),
   asynHandler(userController.updatePr)
 );
 
-router.patch(
-  "/updatePrManager",
-  authorizeRoles(roles.BRANCH_MANAGER),
-  upload.single("avatar"),
-  asynHandler(userController.updatePr)
-);
 router.get("/getUserInfo", asynHandler(userController.getUserInfo));
 
 router.post(
