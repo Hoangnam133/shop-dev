@@ -3,15 +3,11 @@ const userModel = require("../models/userModel");
 const dotenv = require("dotenv");
 dotenv.config();
 const { removeUndefinedObject } = require("../utils/index");
-const shopModel = require("../models/shopModel");
 const findByEmail = async (email) => {
   return await userModel.findOne({ email });
 };
 const findById = async (id) => {
   return await userModel.findById(id);
-};
-const findShopId = async (id) => {
-  return await shopModel.findById({ id });
 };
 const updateUser = async ({ user, updateData }) => {
   const cleanData = removeUndefinedObject(updateData);
@@ -117,21 +113,20 @@ const listManage = async () => {
 };
 const updateStatus = async (user_id) => {
   const existingUser = await userModel.findById(user_id);
-  try{
+  try {
     if (!existingUser) {
       throw new BadRequestError("User not found");
     }
-    if(existingUser.status === 'active') {
-      existingUser.status = 'inactive'
-    }
-    else {
-      existingUser.status = 'active'
+    if (existingUser.status === "active") {
+      existingUser.status = "inactive";
+    } else {
+      existingUser.status = "active";
     }
     await existingUser.save();
-  }catch(error){
-    throw new BadRequestError('update status fail')
+  } catch (error) {
+    throw new BadRequestError("update status fail");
   }
-}
+};
 module.exports = {
   findByEmail,
   findById,
@@ -140,7 +135,5 @@ module.exports = {
   listEmployees,
   listManageOfShop,
   listManage,
-  findShopId,
   updateStatus,
-
 };
