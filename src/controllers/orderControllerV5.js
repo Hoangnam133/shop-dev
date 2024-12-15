@@ -2,6 +2,26 @@ const OrderServiceV5 = require("../services/orderService_v7");
 const { SuccessResponse } = require("../core/successResponse");
 class OrderControllerV5 {
 
+  getOrderDetailsByTrackingNumber = async(req, res, next)=>{
+    new SuccessResponse({
+      message: "getSummaryForToday success",
+      metaData: await OrderServiceV5.getOrderDetailsByTrackingNumber(req.query.trackingNumber),
+    }).send(res);
+  }
+  getSideDishSummaryForToday = async(req, res, next)=>{
+    const days = parseInt(req.query.days) || 0;
+    new SuccessResponse({
+      message: "getSummaryForToday success",
+      metaData: await OrderServiceV5.getSideDishSummaryForToday(days, req.shop),
+    }).send(res);
+  }
+  getSummaryForToday = async(req, res, next)=>{
+    const days = parseInt(req.query.days) || 0;
+    new SuccessResponse({
+      message: "getSummaryForToday success",
+      metaData: await OrderServiceV5.getSummaryForToday(days, req.shop),
+    }).send(res);
+  }
   getStatisticsOfShop = async (req, res, next) => {
     new SuccessResponse({
       message: "list best selling products success",

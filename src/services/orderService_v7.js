@@ -44,7 +44,10 @@ const {
   updateStatusSuccess,
   getStatisticsOfShop,
   getBestSellingProductsOfShop,
-  getCategorySalesOfShop
+  getCategorySalesOfShop,
+  getSummaryForToday,
+  getSideDishSummaryForToday,
+  getOrderDetailsByTrackingNumber
 } = require("../repositories/orderRepository");
 const { runProducer } = require("../message_queue/rabbitmq/producer");
 const moment = require("moment-timezone");
@@ -52,6 +55,16 @@ const { calculateDistance } = require("../utils/Distance");
 const locationModel = require("../models/locationModel");
 const { toObjectId } = require("../utils");
 class OrderServiceV5 {
+  
+  static async getOrderDetailsByTrackingNumber(trackingNumber){
+    return await getOrderDetailsByTrackingNumber(trackingNumber)
+  }
+  static async getSummaryForToday(days,shop){
+    return await getSummaryForToday(days,shop)
+  }
+  static async getSideDishSummaryForToday(days,shop){
+    return await getSideDishSummaryForToday(days,shop)
+  }
   static async getStatisticsOfShop(timeRange, shop) {
     return await getStatisticsOfShop(timeRange, shop);
   }
@@ -421,6 +434,8 @@ class OrderServiceV5 {
       throw new BadRequestError("hủy đơn hàng không thành công. Vui lòng liên hệ hỗ trợ để được giúp đỡ");
     }
   }
+
+  
  
 }
 module.exports = OrderServiceV5;

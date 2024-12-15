@@ -98,7 +98,7 @@ const orderSchema = new Schema(
     }],
     order_trackingNumber: {
       type: String,
-      default: () => `#${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+      default: () => `${Math.floor(1000000000000000 + Math.random() * 9000000000000000)}`,
     },
     order_status: {
       type: String,
