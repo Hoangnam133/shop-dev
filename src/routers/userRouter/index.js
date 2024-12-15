@@ -14,13 +14,21 @@ const userModel = require("../../models/userModel");
 const checkRequiredFields = require("../../middlewares/checkRequired");
 //list emloyees and manage_branch
 
-router.patch("/updateStatus/:user_id", asynHandler(userController.updateStatus));
+router.patch(
+  "/updateStatus/:user_id",
+  asynHandler(userController.updateStatus)
+);
 
-router.get("/listEmployeesOfShop/:shop_id", asynHandler(userController.listEmployeesOfShop));
+router.get(
+  "/listEmployeesOfShop/:shop_id",
+  asynHandler(userController.listEmployeesOfShop)
+);
 router.get("/listEmployees", asynHandler(userController.listEmployees));
-router.get("/listManageOfShop/:shop_id", asynHandler(userController.listManageOfShop));
+router.get(
+  "/listManageOfShop/:shop_id",
+  asynHandler(userController.listManageOfShop)
+);
 router.get("/listManage", asynHandler(userController.listManage));
-
 
 // no authentication
 router.post(
@@ -35,11 +43,11 @@ router.post(
 );
 router.post("/loginAdmin", asynHandler(userController.loginAdmin));
 router.post("/loginUser", asynHandler(userController.loginUser));
-router.post("/loginEmployee", asynHandler(userController.loginEmployee));
 router.post(
-  "/loginBranchManager",
-  asynHandler(userController.loginBranchManager)
+  "/loginEmployeeAndManager",
+  asynHandler(userController.loginEmployeeAndManager)
 );
+
 router.post("/forgotPassword", asynHandler(userController.forgotPassword));
 router.post("/resetPassword", asynHandler(userController.resetPassword));
 

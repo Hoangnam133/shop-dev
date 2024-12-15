@@ -22,8 +22,7 @@ const {
   listEmployees,
   listManageOfShop,
   listManage,
-  updateStatus
-
+  updateStatus,
 } = require("../repositories/userRepository");
 const sendEmail = require("../utils/email");
 const shopModel = require("../models/shopModel");
@@ -176,91 +175,62 @@ class UserService {
       token: token,
     };
   };
-  static loginEmployee = async ({
+  static loginEmployeeAndManager = async ({
     email,
     password,
     shop_id,
     refreshToken = null,
   }) => {
+    console.log("ádfadsfafd");
+
     const checkUser = await findByEmail(email);
+
+    if (!checkUser) {
+      throw new NotFoundError("User not found");
+    }
+
+    const validRoles = [roles.EMPLOYEE, roles.BRANCH_MANAGER];
     if (
-      !checkUser ||
-      checkUser.roles !== roles.EMPLOYEE ||
+      !validRoles.includes(checkUser.roles) ||
       checkUser.shop_id.toString() !== shop_id
     ) {
-      throw new NotFoundError("User not found or shop_id does not match");
+      throw new NotFoundError(
+        "User role not allowed or shop_id does not match"
+      );
     }
+
     const foundShops = await shopModel.findById(shop_id);
     if (!foundShops) {
-      throw new NotFoundError("shop not found");
-    }
-    const matchPassword = await bcrypt.compare(password, checkUser.password);
-    if (!matchPassword) {
-      throw new NotFoundError("user not found");
-    }
-    const publicKey = process.env.PUBLIC_KEY;
-    const privateKey = process.env.PRIVATE_KEY;
-    console.log(`private::: ${privateKey}, puplickey:::${publicKey}`);
-    const token = await createTokenPair(
-      { userId: checkUser._id, roles: checkUser.roles, shop_id },
-      publicKey,
-      privateKey
-    );
-    if (!token) {
-      throw new BadRequestError("create token fail");
-    }
-    const keyToken = await keyTokenService.createKeyToken({
-      userId: checkUser._id,
-      publicKey,
-      privateKey,
-      refreshToken: token.refreshToken,
-    });
-    if (!keyToken) throw new BadRequestError("create key token error");
-    return {
-      user: getInfoData({
-        fileds: ["_id", "email", "name", "avatar", "roles"],
-        object: checkUser,
-      }),
-      token: token,
-    };
-  };
-  static loginBranchManager = async ({
-    email,
-    password,
-    shop_id,
-    refreshToken = null,
-  }) => {
-    const checkUser = await findByEmail(email);
-    if (
-      !checkUser ||
-      checkUser.roles !== roles.BRANCH_MANAGER ||
-      checkUser.shop_id.toString() !== shop_id
-    ) {
-      throw new NotFoundError("User not found or shop_id does not match");
+      throw new NotFoundError("Shop not found");
     }
 
     const matchPassword = await bcrypt.compare(password, checkUser.password);
     if (!matchPassword) {
-      throw new NotFoundError("user not found");
+      throw new NotFoundError("Invalid credentials");
     }
+
     const publicKey = process.env.PUBLIC_KEY;
     const privateKey = process.env.PRIVATE_KEY;
-    console.log(`private::: ${privateKey}, puplickey:::${publicKey}`);
+
     const token = await createTokenPair(
       { userId: checkUser._id, roles: checkUser.roles, shop_id },
       publicKey,
       privateKey
     );
+
     if (!token) {
-      throw new BadRequestError("create token fail");
+      throw new BadRequestError("Token creation failed");
     }
+
     const keyToken = await keyTokenService.createKeyToken({
       userId: checkUser._id,
       publicKey,
       privateKey,
       refreshToken: token.refreshToken,
     });
-    if (!keyToken) throw new BadRequestError("create key token error");
+
+    if (!keyToken) throw new BadRequestError("Key token creation failed");
+
     return {
       user: getInfoData({
         fileds: ["_id", "email", "name", "avatar", "shop_id", "roles"],
