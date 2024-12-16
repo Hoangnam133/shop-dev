@@ -17,7 +17,7 @@ const {
   checkproductAppliedDiscount,
   checkDiscountApplicable,
   calculateDiscountAmount,
-  checkUserDiscountUsage
+  checkUserDiscountUsage,
 } = require("../repositories/discountRepository");
 const {
   checkDeliveryTimeForShop,
@@ -44,13 +44,15 @@ const {
   updateStatusSuccess,
   getStatisticsOfShop,
   getBestSellingProductsOfShop,
-  getCategorySalesOfShop
+  getCategorySalesOfShop,
 } = require("../repositories/orderRepository");
 const { runProducer } = require("../message_queue/rabbitmq/producer");
 const moment = require("moment-timezone");
 const { calculateDistance } = require("../utils/Distance");
 const locationModel = require("../models/locationModel");
 const { toObjectId } = require("../utils");
+const { serve } = require("swagger-ui-express");
+const server = require("../../websocketServer");
 class OrderServiceV5 {
   static async getStatisticsOfShop(timeRange, shop) {
     return await getStatisticsOfShop(timeRange, shop);
@@ -121,11 +123,15 @@ class OrderServiceV5 {
     const foundShop = await shopModel.findById(shop._id);
 
     if (!foundUser || !foundShop) {
-      throw new NotFoundError("có 1 chút sự cố xảy ra. Vui lòng liên hệ hỗ trợ để được giúp đỡ");
+      throw new NotFoundError(
+        "có 1 chút sự cố xảy ra. Vui lòng liên hệ hỗ trợ để được giúp đỡ"
+      );
     }
     const cart = await getCart(foundUser._id);
     if (!cart) {
-      throw new NotFoundError("có 1 chút sự cố xảy ra. Vui lòng liên hệ hỗ trợ để được giúp đỡ");
+      throw new NotFoundError(
+        "có 1 chút sự cố xảy ra. Vui lòng liên hệ hỗ trợ để được giúp đỡ"
+      );
     }
 
     let productCheckout = [];
@@ -139,17 +145,17 @@ class OrderServiceV5 {
       if (!checkDiscount) {
         throw new BadRequestError("áp dụng giảm giá không phù hợp");
       }
-      const countUsed = await checkUserDiscountUsage(checkDiscount._id, user)
-      if(countUsed === 0){
-        throw new BadRequestError("Bạn đã sử dụng giảm giá này quá lần hạn sử dụng");
+      const countUsed = await checkUserDiscountUsage(checkDiscount._id, user);
+      if (countUsed === 0) {
+        throw new BadRequestError(
+          "Bạn đã sử dụng giảm giá này quá lần hạn sử dụng"
+        );
       }
     }
     const groupedProducts = cart.cart_products.reduce((group, item) => {
       let productId = item.product_id;
 
-
       if (typeof productId === "object" && productId._id) {
-    
         productId = productId._id;
       }
       if (!mongoose.Types.ObjectId.isValid(productId)) {
@@ -170,7 +176,9 @@ class OrderServiceV5 {
     for (const [productId, items] of Object.entries(groupedProducts)) {
       const foundProduct = await productModel.findById(productId);
       if (!foundProduct) {
-        throw new NotFoundError(`có một chút sự cố, vui lòng liên hệ hỗ trợ để được giúp đỡ`);
+        throw new NotFoundError(
+          `có một chút sự cố, vui lòng liên hệ hỗ trợ để được giúp đỡ`
+        );
       }
 
       // Kiểm tra tồn kho sản phẩm
@@ -180,7 +188,7 @@ class OrderServiceV5 {
         quantity: totalQuantity,
         product_id: productId,
       });
-      if (checkStockProduct === false){
+      if (checkStockProduct === false) {
         throw new BadRequestError(
           `${foundProduct.product_name} hiện tại đang hết hàng. Vui lòng chọn sản phẩm khác`
         );
@@ -303,7 +311,7 @@ class OrderServiceV5 {
       totalMinutes,
       pointsEarned,
     } = await OrderServiceV5.checkoutPreview({ user, shop, discount_code });
-    let estimated_delivery, options_delivery
+    let estimated_delivery, options_delivery;
     if (selectedDeliveryTime) {
       const checkTime = await checkDeliveryTimeForShop({
         shop_id: shop._id,
@@ -322,7 +330,9 @@ class OrderServiceV5 {
       }
       const findLocation = await locationModel.findById(shop.location_id);
       if (!findLocation) {
-        throw new NotFoundError("có một chút lỗi xảy ra. Vui lòng liên hệ hỗ trợ để được xử lí");
+        throw new NotFoundError(
+          "có một chút lỗi xảy ra. Vui lòng liên hệ hỗ trợ để được xử lí"
+        );
       }
       const caDistance = calculateDistance({
         userLat,
@@ -341,7 +351,9 @@ class OrderServiceV5 {
         totalMinutes,
       });
       if (checkTimeImmediate === false) {
-        throw new BadRequestError("Cửa hàng đang không mở cửa trong thời gian này");
+        throw new BadRequestError(
+          "Cửa hàng đang không mở cửa trong thời gian này"
+        );
       } else {
         estimated_delivery = checkTimeImmediate;
         options_delivery = "asap";
@@ -373,7 +385,9 @@ class OrderServiceV5 {
     };
     const createOrder = await orderModel.create(payload);
     if (!createOrder) {
-      throw new BadRequestError("Không thể đặt hàng, vui lòng liên hệ hỗ trợ để được xử lý");
+      throw new BadRequestError(
+        "Không thể đặt hàng, vui lòng liên hệ hỗ trợ để được xử lý"
+      );
     }
     const deeplink = await processMoMoPayment({
       orderId: createOrder._id,
@@ -383,6 +397,24 @@ class OrderServiceV5 {
     if (!deeplink) {
       throw new BadRequestError("không thể thanh toán vui lòng thử lại sau");
     }
+    const paymentInfo = {
+      orderId: createOrder._id,
+      customerName: user.name,
+      amount: totalPrice,
+      status: "Success",
+    };
+    console.log("PAyment IFO:" + paymentInfo);
+    console.log("Coc cac câccacasdfasfadfafdsfd");
+
+    server.clients.forEach((client) => {
+      console.log("VÃi cặc điidsajfdifiasfds");
+
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(
+          JSON.stringify({ event: "payment_success", data: paymentInfo })
+        );
+      }
+    });
     return deeplink;
   }
 
@@ -400,7 +432,9 @@ class OrderServiceV5 {
       .tz("Asia/Ho_Chi_Minh")
       .format("YYYY-MM-DDTHH:mm:ss");
     if (moment(currentTime).isAfter(cancellationCutoffTime)) {
-      throw new BadRequestError("không thể hủy vì đã vượt quá thời gian cho phép");
+      throw new BadRequestError(
+        "không thể hủy vì đã vượt quá thời gian cho phép"
+      );
     }
     const updateOrder = await orderModel.findOneAndUpdate(
       {
@@ -418,9 +452,10 @@ class OrderServiceV5 {
       }
     );
     if (!updateOrder) {
-      throw new BadRequestError("hủy đơn hàng không thành công. Vui lòng liên hệ hỗ trợ để được giúp đỡ");
+      throw new BadRequestError(
+        "hủy đơn hàng không thành công. Vui lòng liên hệ hỗ trợ để được giúp đỡ"
+      );
     }
   }
- 
 }
 module.exports = OrderServiceV5;

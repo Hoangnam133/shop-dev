@@ -7,7 +7,9 @@ const {
   syncProductsToElasticsearch,
 } = require("../src/configs/syncDataToElasticsearch");
 const { runConsumer } = require("../src/message_queue/rabbitmq/consumer");
-const { runConsumerNoti } = require("../src/message_queue/sendNotification/consumerSendNoti");
+const {
+  runConsumerNoti,
+} = require("../src/message_queue/sendNotification/consumerSendNoti");
 
 const { initRedis } = require("../src/redisDB/initRedis_docker");
 //const admin = require('../src/configs/firebaseConfig')
@@ -21,7 +23,7 @@ app.use("/", require("./routers/index"));
 
 // handler error
 runConsumer();
-runConsumerNoti()
+runConsumerNoti();
 initRedis();
 app.use((req, res, next) => {
   const error = new Error("Not Found");
