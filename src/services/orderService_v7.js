@@ -54,6 +54,15 @@ const { toObjectId } = require("../utils");
 const { serve } = require("swagger-ui-express");
 const server = require("../../websocketServer");
 class OrderServiceV5 {
+  static async getOrderDetailsByTrackingNumber(trackingNumber) {
+    return await getOrderDetailsByTrackingNumber(trackingNumber);
+  }
+  static async getSummaryForToday(days, shop) {
+    return await getSummaryForToday(days, shop);
+  }
+  static async getSideDishSummaryForToday(days, shop) {
+    return await getSideDishSummaryForToday(days, shop);
+  }
   static async getStatisticsOfShop(timeRange, shop) {
     return await getStatisticsOfShop(timeRange, shop);
   }
