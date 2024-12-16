@@ -47,7 +47,7 @@ const {
   getCategorySalesOfShop,
   getSummaryForToday,
   getSideDishSummaryForToday,
-  getOrderDetailsByTrackingNumber
+  getOrderDetailsStatusSuccess
 } = require("../repositories/orderRepository");
 const { runProducer } = require("../message_queue/rabbitmq/producer");
 const moment = require("moment-timezone");
@@ -56,8 +56,8 @@ const locationModel = require("../models/locationModel");
 const { toObjectId } = require("../utils");
 class OrderServiceV5 {
   
-  static async getOrderDetailsByTrackingNumber(trackingNumber){
-    return await getOrderDetailsByTrackingNumber(trackingNumber)
+  static async getOrderDetailsStatusSuccess(order_id){
+    return await getOrderDetailsStatusSuccess(order_id)
   }
   static async getSummaryForToday(days,shop){
     return await getSummaryForToday(days,shop)
@@ -307,6 +307,7 @@ class OrderServiceV5 {
     note,
     userLat,
     userLon,
+    dineOption
   }) {
     const {
       productCheckout,
@@ -317,6 +318,9 @@ class OrderServiceV5 {
       pointsEarned,
     } = await OrderServiceV5.checkoutPreview({ user, shop, discount_code });
     let estimated_delivery, options_delivery
+    if(!dineOption){
+      dineOption = dine_in
+    }
     if (selectedDeliveryTime) {
       const checkTime = await checkDeliveryTimeForShop({
         shop_id: shop._id,
@@ -383,6 +387,7 @@ class OrderServiceV5 {
       order_userId: user._id,
       order_shopId: shop._id,
       note,
+      dineOption
     };
     const createOrder = await orderModel.create(payload);
     if (!createOrder) {
