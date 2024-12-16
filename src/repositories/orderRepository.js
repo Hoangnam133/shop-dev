@@ -916,7 +916,7 @@ const getSummaryForToday = async (days,shop)=> {
           $match: {
             'order_payment.payment_status': 'Success',
             order_shopId: shop._id,
-            order_status: 'pending',
+            order_status: 'success',
             estimated_delivery_time: {
               $gte: formatTimeToISO(startOfDay),  // So sánh thời gian ước tính giao hàng lớn hơn hoặc bằng đầu ngày
               $lte: formatTimeToISO(endOfDay),    // So sánh thời gian ước tính giao hàng nhỏ hơn hoặc bằng cuối ngày
@@ -1010,14 +1010,20 @@ const getSideDishSummaryForToday = async (days,shop) => {
     throw error;
   }
 };
-const getOrderDetailsByTrackingNumber = async (trackingNumber)=>{
+const getOrderDetailsStatusSuccess = async (order_id)=>{
+  if(!order_id){
+    throw new NotFoundError ('Mã đơn hàng không tồn tại');
+  }
   const orderDetails = await orderModel.findOne({
-    order_trackingNumber: trackingNumber,
+    _id: order_id,
     order_status: 'success',
+  }).populate({
+    path: 'order_userId',
+    select: 'name email',
   })
   if (!orderDetails) {
     throw new NotFoundError ('Mã đơn hàng không tồn tại');
-  }
+  }  
   return orderDetails;
 }
 module.exports = {
@@ -1049,5 +1055,5 @@ module.exports = {
   getSummaryForToday,
   getSideDishSummaryForToday,
 
-  getOrderDetailsByTrackingNumber
+  getOrderDetailsStatusSuccess
 };
