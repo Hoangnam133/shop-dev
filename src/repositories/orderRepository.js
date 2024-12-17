@@ -933,6 +933,7 @@ const getSummaryForToday = async (days,shop)=> {
             _id: '$order_product.product_id', // Gom nhóm theo product_id
             totalQuantity: { $sum: '$order_product.quantity' }, // Tổng số lượng
             productName: { $first: '$order_product.product_name' }, // Lấy tên món (nếu cần)
+            product_thumb: { $first: '$order_product.product_thumb' },
           },
         },
         // Bước 4: Sắp xếp theo số lượng giảm dần (tùy chọn)
