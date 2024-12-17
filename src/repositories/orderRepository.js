@@ -47,7 +47,7 @@ const listOrderCancelledOfUser = async (user) => {
 const listOrderSuccessOfUser = async (user) => {
   const query = {
     order_userId: user._id,
-    order_status: "Success",
+    order_status: "success",
     "order_payment.payment_status": "Success",
   };
   const findOrder = await orderModel.find(query).sort({ createdAt: 1 });
@@ -59,7 +59,7 @@ const listOrderSuccessOfUser = async (user) => {
 const updateStatusCompleted = async (order_id) => {
   const query = {
     _id: order_id,
-    order_status: "Success",
+    order_status: "success",
     "order_payment.payment_status": "Success",
   };
 
@@ -107,7 +107,7 @@ const updateStatusSuccess = async (order_id) => {
 
   const updateOrder = await orderModel.findOneAndUpdate(
     query,
-    { $set: { order_status: "Success" } },
+    { $set: { order_status: "success" } },
     { new: true, lean: true }
   );
 
@@ -205,7 +205,7 @@ const listOrderPending = async ({ limit, page, shop }) => {
 const listOrderSuccess = async ({ limit, page, shop }) => {
   const skip = (page - 1) * limit;
   const query = {
-    order_status: "Success",
+    order_status: "success",
     order_shopId: shop._id,
     "order_payment.payment_status": "Success",
   };
