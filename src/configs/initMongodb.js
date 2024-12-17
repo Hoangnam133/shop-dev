@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const {db:{host, port, name}}= require('../configs/configMongodb')
 const connectString = `mongodb://${host}:${port}/${name}`
+//const connectString = `mongodb://127.0.0.1:27017/${name}`
 class Dadabase{
     constructor(){
         this.connect()
