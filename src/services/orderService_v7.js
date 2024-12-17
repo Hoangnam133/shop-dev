@@ -399,6 +399,9 @@ class OrderServiceV5 {
       shop_id: shop._id,
     });
     if (!deeplink) {
+       await orderModel.deleteOne({
+        _id: createOrder._id
+      })
       throw new BadRequestError("không thể thanh toán vui lòng thử lại sau");
     }
     return deeplink;
