@@ -2,10 +2,10 @@ const OrderServiceV5 = require("../services/orderService_v7");
 const { SuccessResponse } = require("../core/successResponse");
 class OrderControllerV5 {
 
-  getOrderDetailsByTrackingNumber = async(req, res, next)=>{
+  getOrderDetailsStatusSuccess = async(req, res, next)=>{
     new SuccessResponse({
       message: "getSummaryForToday success",
-      metaData: await OrderServiceV5.getOrderDetailsByTrackingNumber(req.query.trackingNumber),
+      metaData: await OrderServiceV5.getOrderDetailsStatusSuccess(req.params.order_id),
     }).send(res);
   }
   getSideDishSummaryForToday = async(req, res, next)=>{

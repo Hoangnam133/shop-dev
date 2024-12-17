@@ -8,8 +8,8 @@ const roles = require("../../utils/roles");
 const { asynHandler } = require("../../utils/handler");
 
 router.get(
-  "/getOrderDetailsByTrackingNumber",
-  asynHandler(orderControllerV5.getOrderDetailsByTrackingNumber)
+  "/getOrderDetailsStatusSuccess/:order_id",
+  asynHandler(orderControllerV5.getOrderDetailsStatusSuccess)
 );
 router.get(
   "/getSummaryForToday",

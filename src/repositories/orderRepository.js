@@ -47,7 +47,7 @@ const listOrderCancelledOfUser = async (user) => {
 const listOrderSuccessOfUser = async (user) => {
   const query = {
     order_userId: user._id,
-    order_status: "Success",
+    order_status: "success",
     "order_payment.payment_status": "Success",
   };
   const findOrder = await orderModel.find(query).sort({ createdAt: 1 });
@@ -59,7 +59,7 @@ const listOrderSuccessOfUser = async (user) => {
 const updateStatusCompleted = async (order_id) => {
   const query = {
     _id: order_id,
-    order_status: "Success",
+    order_status: "success",
     "order_payment.payment_status": "Success",
   };
 
@@ -107,7 +107,7 @@ const updateStatusSuccess = async (order_id) => {
 
   const updateOrder = await orderModel.findOneAndUpdate(
     query,
-    { $set: { order_status: "Success" } },
+    { $set: { order_status: "success" } },
     { new: true, lean: true }
   );
 
@@ -205,7 +205,7 @@ const listOrderPending = async ({ limit, page, shop }) => {
 const listOrderSuccess = async ({ limit, page, shop }) => {
   const skip = (page - 1) * limit;
   const query = {
-    order_status: "Success",
+    order_status: "success",
     order_shopId: shop._id,
     "order_payment.payment_status": "Success",
   };
@@ -916,7 +916,7 @@ const getSummaryForToday = async (days,shop)=> {
           $match: {
             'order_payment.payment_status': 'Success',
             order_shopId: shop._id,
-            order_status: 'pending',
+            order_status: 'success',
             estimated_delivery_time: {
               $gte: formatTimeToISO(startOfDay),  // So sánh thời gian ước tính giao hàng lớn hơn hoặc bằng đầu ngày
               $lte: formatTimeToISO(endOfDay),    // So sánh thời gian ước tính giao hàng nhỏ hơn hoặc bằng cuối ngày
@@ -933,6 +933,7 @@ const getSummaryForToday = async (days,shop)=> {
             _id: '$order_product.product_id', // Gom nhóm theo product_id
             totalQuantity: { $sum: '$order_product.quantity' }, // Tổng số lượng
             productName: { $first: '$order_product.product_name' }, // Lấy tên món (nếu cần)
+            product_thumb: { $first: '$order_product.product_thumb' },
           },
         },
         // Bước 4: Sắp xếp theo số lượng giảm dần (tùy chọn)
@@ -1010,14 +1011,20 @@ const getSideDishSummaryForToday = async (days,shop) => {
     throw error;
   }
 };
-const getOrderDetailsByTrackingNumber = async (trackingNumber)=>{
+const getOrderDetailsStatusSuccess = async (order_id)=>{
+  if(!order_id){
+    throw new NotFoundError ('Mã đơn hàng không tồn tại');
+  }
   const orderDetails = await orderModel.findOne({
-    order_trackingNumber: trackingNumber,
+    _id: order_id,
     order_status: 'success',
+  }).populate({
+    path: 'order_userId',
+    select: 'name email',
   })
   if (!orderDetails) {
     throw new NotFoundError ('Mã đơn hàng không tồn tại');
-  }
+  }  
   return orderDetails;
 }
 module.exports = {
@@ -1049,5 +1056,5 @@ module.exports = {
   getSummaryForToday,
   getSideDishSummaryForToday,
 
-  getOrderDetailsByTrackingNumber
+  getOrderDetailsStatusSuccess
 };

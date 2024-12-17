@@ -96,9 +96,15 @@ const orderSchema = new Schema(
         },
         extra: [ExtraSchema]
     }],
-    order_trackingNumber: {
+    // order_trackingNumber: {
+    //   type: String,
+    //   default: () => `${Math.floor(1000000000000000 + Math.random() * 9000000000000000)}`,
+    // },
+    dineOption: {
       type: String,
-      default: () => `${Math.floor(1000000000000000 + Math.random() * 9000000000000000)}`,
+      enum: ['takeaway', 'dine_in'],
+      default: 'dine_in', 
+      required: true,
     },
     order_status: {
       type: String,
