@@ -12,7 +12,7 @@ class MoMoRefundService {
         })
         const convertProduct = existingOrder.order_product.map(product =>{
             return {
-                itemId: product.product_id,
+                itemId: String(product.product_id),
                 amount: product.totalPrice,
                 transId
             }  
