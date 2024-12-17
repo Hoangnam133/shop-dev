@@ -52,7 +52,6 @@ const { calculateDistance } = require("../utils/Distance");
 const locationModel = require("../models/locationModel");
 const { toObjectId } = require("../utils");
 const { serve } = require("swagger-ui-express");
-const server = require("../../websocketServer");
 class OrderServiceV5 {
   static async getOrderDetailsByTrackingNumber(trackingNumber) {
     return await getOrderDetailsByTrackingNumber(trackingNumber);
@@ -412,18 +411,6 @@ class OrderServiceV5 {
       amount: totalPrice,
       status: "Success",
     };
-    console.log("PAyment IFO:" + paymentInfo);
-    console.log("Coc cac câccacasdfasfadfafdsfd");
-
-    server.clients.forEach((client) => {
-      console.log("VÃi cặc điidsajfdifiasfds");
-
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(
-          JSON.stringify({ event: "payment_success", data: paymentInfo })
-        );
-      }
-    });
     return deeplink;
   }
 
