@@ -1,11 +1,13 @@
 const orderModel = require("../models/orderModel");
 const categoryModel = require("../models/categoryModel");
-const {runProducerNoti} = require('../message_queue/sendNotification/producerSendNoti')
+const {
+  runProducerNoti,
+} = require("../message_queue/sendNotification/producerSendNoti");
 const { NotFoundError, BadRequestError } = require("../core/errorResponse");
 const userModel = require("../models/userModel");
 const { sendNotification } = require("../utils/notification");
 const { toObjectId } = require("../utils/index");
-const moment = require('moment-timezone');
+const moment = require("moment-timezone");
 const listOrderPendingOfUser = async (user) => {
   const query = {
     order_userId: user._id,
@@ -14,7 +16,7 @@ const listOrderPendingOfUser = async (user) => {
   };
   const findOrder = await orderModel.find(query).sort({ createdAt: 1 });
   console.log(findOrder);
-  
+
   if (!findOrder) {
     throw new NotFoundError("có một chút lỗi xảy ra, vui lòng thử lại");
   }
@@ -76,25 +78,24 @@ const updateStatusCompleted = async (order_id) => {
     );
   }
 
-  const user = await userModel.findById(updateOrder.order_userId); 
-
+  const user = await userModel.findById(updateOrder.order_userId);
 
   if (user && user.deviceToken) {
     const title = "Bạn đã nhận đơn hàng";
     const body = `Đơn hàng đã nhận gồm ${
       updateOrder.order_product?.map((product) => product.product_name) || []
-    }, Nếu sản phẩm bị hư hại tự chịu trách nhiệm cdmm`;
+    }`;
     const data = {
       order_id: updateOrder._id,
       status: "completed",
     };
-    const payload= {
+    const payload = {
       title: title,
       body: body,
       data: data,
-      deviceToken: user.deviceToken
-    }
-    await runProducerNoti(payload)
+      deviceToken: user.deviceToken,
+    };
+    await runProducerNoti(payload);
   }
   return updateOrder;
 };
@@ -124,19 +125,18 @@ const updateStatusSuccess = async (order_id) => {
     const title = "Đơn hàng của bạn đã hoàn thành";
     const body = `Đơn hàng của bạn: ${
       updateOrder.order_product?.map((product) => product.product_name) || []
-    }. Vui lòng xuống căng tin nhận hàng`;
+    }. Bạn có thể nhận hàng bất cứ lúc nào`;
     const data = {
       order_id: updateOrder._id,
       status: "completed",
     };
-    const payload= {
+    const payload = {
       title: title,
       body: body,
       data: data,
-      deviceToken: user.deviceToken
-    }
-    await runProducerNoti(payload)
-   
+      deviceToken: user.deviceToken,
+    };
+    await runProducerNoti(payload);
   }
 
   return updateOrder;
@@ -162,7 +162,6 @@ const updateStatusCancelled = async (order_id) => {
   // Gửi thông báo đẩy
   const user = await userModel.findById(updateOrder.order_userId); // Tìm người dùng liên quan
 
-
   if (user && user.deviceToken) {
     const title = "Đơn hàng đã bị huỷ";
     const body = `Đơn hàng ${
@@ -173,13 +172,13 @@ const updateStatusCancelled = async (order_id) => {
       status: "cancelled",
     };
 
-    const payload= {
+    const payload = {
       title: title,
       body: body,
       data: data,
-      deviceToken: user.deviceToken
-    }
-    await runProducerNoti(payload)
+      deviceToken: user.deviceToken,
+    };
+    await runProducerNoti(payload);
   }
 
   return updateOrder;
@@ -192,7 +191,8 @@ const listOrderPending = async ({ limit, page, shop }) => {
     "order_payment.payment_status": "Success",
   };
   const findOrder = await orderModel
-    .find(query).populate({path:"order_userId",select: "name"})
+    .find(query)
+    .populate({ path: "order_userId", select: "name" })
     .sort({ createdAt: 1 })
     .skip(skip)
     .limit(limit)
@@ -210,7 +210,8 @@ const listOrderSuccess = async ({ limit, page, shop }) => {
     "order_payment.payment_status": "Success",
   };
   const findOrder = await orderModel
-    .find(query).populate({path:"order_userId",select: "name"})
+    .find(query)
+    .populate({ path: "order_userId", select: "name" })
     .sort({ createdAt: 1 })
     .skip(skip)
     .limit(limit)
@@ -228,7 +229,8 @@ const listOrderCancelled = async ({ limit, page, shop }) => {
     "order_payment.payment_status": "Success",
   };
   const findOrder = await orderModel
-    .find(query).populate({path:"order_userId",select: "name"})
+    .find(query)
+    .populate({ path: "order_userId", select: "name" })
     .sort({ createdAt: 1 })
     .skip(skip)
     .limit(limit)
@@ -246,7 +248,8 @@ const listOrderCompleted = async ({ limit, page, shop }) => {
     "order_payment.payment_status": "Success",
   };
   const findOrder = await orderModel
-    .find(query).populate({path:"order_userId",select: "name"})
+    .find(query)
+    .populate({ path: "order_userId", select: "name" })
     .sort({ createdAt: 1 })
     .skip(skip)
     .limit(limit)
@@ -566,7 +569,7 @@ const getBestSellingProductsOfShop = async (timeRange, shop) => {
         $match: {
           createdAt: { $gte: new Date(startDate) }, // Ensure 'createdAt' is compared with a Date object
           order_status: "completed", // Only completed orders,
-          order_shopId: shop._id
+          order_shopId: shop._id,
         },
       },
       {
@@ -624,7 +627,7 @@ const getCategorySales = async (timeRangeKey) => {
   try {
     // Tính tổng doanh thu theo từng category
     const orders = await orderModel.aggregate([
-      { $match: { createdAt: { $gte: startDate } },  order_status: "completed", },
+      { $match: { createdAt: { $gte: startDate } }, order_status: "completed" },
       { $unwind: "$order_product" },
       {
         $group: {
@@ -662,7 +665,7 @@ const getCategorySales = async (timeRangeKey) => {
 
     // Tính tổng doanh thu của tất cả sản phẩm trong các category đã tính ở trên
     const totalRevenue = await orderModel.aggregate([
-      { $match: { createdAt: { $gte: startDate } },  order_status: "completed", },
+      { $match: { createdAt: { $gte: startDate } }, order_status: "completed" },
       { $unwind: "$order_product" },
       {
         $lookup: {
@@ -765,8 +768,8 @@ const getCategorySalesOfShop = async (timeRangeKey, shop) => {
         $match: {
           createdAt: { $gte: startDate },
           order_status: "completed",
-          order_shopId: shop._id
-        }
+          order_shopId: shop._id,
+        },
       },
       { $unwind: "$order_product" },
       {
@@ -799,7 +802,6 @@ const getCategorySalesOfShop = async (timeRangeKey, shop) => {
       },
       { $sort: { categoryRevenue: -1 } },
     ]);
-    
 
     // Lấy tất cả categoryIds từ kết quả trên
     const categoryIds = orders.map((category) => category._id);
@@ -809,8 +811,8 @@ const getCategorySalesOfShop = async (timeRangeKey, shop) => {
       {
         $match: {
           createdAt: { $gte: startDate },
-          order_status: "completed"
-        }
+          order_status: "completed",
+        },
       },
       { $unwind: "$order_product" },
       {
@@ -841,7 +843,6 @@ const getCategorySalesOfShop = async (timeRangeKey, shop) => {
         },
       },
     ]);
-    
 
     const total = totalRevenue[0] ? totalRevenue[0].totalRevenue : 0;
 
@@ -901,63 +902,79 @@ const getCategorySalesOfShop = async (timeRangeKey, shop) => {
   }
 };
 const formatTimeToISO = (date) => {
-  return moment.tz(date, 'Asia/Ho_Chi_Minh').format('YYYY-MM-DDTHH:mm:ss');
-}
-const getSummaryForToday = async (days,shop)=> {
-    // Lấy thời gian đầu ngày và cuối ngày theo múi giờ Việt Nam
-    const startOfDay = moment.tz('Asia/Ho_Chi_Minh').add(days, 'days').startOf('day').toDate();
-  const endOfDay = moment.tz('Asia/Ho_Chi_Minh').add(days, 'days').endOf('day').toDate();
-  
-    try {
-      // Sử dụng aggregation để gom nhóm món ăn
-      const summary = await orderModel.aggregate([
-        // Bước 1: Lọc các đơn hàng trong ngày dựa trên estimated_delivery_time
-        {
-          $match: {
-            'order_payment.payment_status': 'Success',
-            order_shopId: shop._id,
-            order_status: 'success',
-            estimated_delivery_time: {
-              $gte: formatTimeToISO(startOfDay),  // So sánh thời gian ước tính giao hàng lớn hơn hoặc bằng đầu ngày
-              $lte: formatTimeToISO(endOfDay),    // So sánh thời gian ước tính giao hàng nhỏ hơn hoặc bằng cuối ngày
-            },
-          },
-        },
-        // Bước 2: Giải phẳng mảng order_product để xử lý từng món
-        {
-          $unwind: '$order_product',
-        },
-        // Bước 3: Gom nhóm theo product_id và tính tổng số lượng
-        {
-          $group: {
-            _id: '$order_product.product_id', // Gom nhóm theo product_id
-            totalQuantity: { $sum: '$order_product.quantity' }, // Tổng số lượng
-            productName: { $first: '$order_product.product_name' }, // Lấy tên món (nếu cần)
-            product_thumb: { $first: '$order_product.product_thumb' },
-          },
-        },
-        // Bước 4: Sắp xếp theo số lượng giảm dần (tùy chọn)
-        {
-          $sort: { totalQuantity: -1 },
-        },
-      ]);
-  
-      // Định dạng thời gian cho kết quả (nếu cần hiển thị thời gian)
-      const formattedSummary = summary.map((item) => ({
-        ...item,
-        generatedAt: formatTimeToISO(new Date()), // Thêm thời gian tạo báo cáo
-      }));
-  
-      return formattedSummary;
-    } catch (error) {
-      console.error('Error fetching summary:', error);
-      throw error;
-    }
-}
-const getSideDishSummaryForToday = async (days,shop) => {
+  return moment.tz(date, "Asia/Ho_Chi_Minh").format("YYYY-MM-DDTHH:mm:ss");
+};
+const getSummaryForToday = async (days, shop) => {
   // Lấy thời gian đầu ngày và cuối ngày theo múi giờ Việt Nam
-  const startOfDay = moment.tz('Asia/Ho_Chi_Minh').add(days, 'days').startOf('day').toDate();
-  const endOfDay = moment.tz('Asia/Ho_Chi_Minh').add(days, 'days').endOf('day').toDate();
+  const startOfDay = moment
+    .tz("Asia/Ho_Chi_Minh")
+    .add(days, "days")
+    .startOf("day")
+    .toDate();
+  const endOfDay = moment
+    .tz("Asia/Ho_Chi_Minh")
+    .add(days, "days")
+    .endOf("day")
+    .toDate();
+
+  try {
+    // Sử dụng aggregation để gom nhóm món ăn
+    const summary = await orderModel.aggregate([
+      // Bước 1: Lọc các đơn hàng trong ngày dựa trên estimated_delivery_time
+      {
+        $match: {
+          "order_payment.payment_status": "Success",
+          order_shopId: shop._id,
+          order_status: "success",
+          estimated_delivery_time: {
+            $gte: formatTimeToISO(startOfDay), // So sánh thời gian ước tính giao hàng lớn hơn hoặc bằng đầu ngày
+            $lte: formatTimeToISO(endOfDay), // So sánh thời gian ước tính giao hàng nhỏ hơn hoặc bằng cuối ngày
+          },
+        },
+      },
+      // Bước 2: Giải phẳng mảng order_product để xử lý từng món
+      {
+        $unwind: "$order_product",
+      },
+      // Bước 3: Gom nhóm theo product_id và tính tổng số lượng
+      {
+        $group: {
+          _id: "$order_product.product_id", // Gom nhóm theo product_id
+          totalQuantity: { $sum: "$order_product.quantity" }, // Tổng số lượng
+          productName: { $first: "$order_product.product_name" }, // Lấy tên món (nếu cần)
+          product_thumb: { $first: "$order_product.product_thumb" },
+        },
+      },
+      // Bước 4: Sắp xếp theo số lượng giảm dần (tùy chọn)
+      {
+        $sort: { totalQuantity: -1 },
+      },
+    ]);
+
+    // Định dạng thời gian cho kết quả (nếu cần hiển thị thời gian)
+    const formattedSummary = summary.map((item) => ({
+      ...item,
+      generatedAt: formatTimeToISO(new Date()), // Thêm thời gian tạo báo cáo
+    }));
+
+    return formattedSummary;
+  } catch (error) {
+    console.error("Error fetching summary:", error);
+    throw error;
+  }
+};
+const getSideDishSummaryForToday = async (days, shop) => {
+  // Lấy thời gian đầu ngày và cuối ngày theo múi giờ Việt Nam
+  const startOfDay = moment
+    .tz("Asia/Ho_Chi_Minh")
+    .add(days, "days")
+    .startOf("day")
+    .toDate();
+  const endOfDay = moment
+    .tz("Asia/Ho_Chi_Minh")
+    .add(days, "days")
+    .endOf("day")
+    .toDate();
 
   try {
     // Sử dụng aggregation để gom nhóm món phụ
@@ -965,32 +982,32 @@ const getSideDishSummaryForToday = async (days,shop) => {
       // Bước 1: Lọc các đơn hàng trong ngày dựa trên estimated_delivery_time
       {
         $match: {
-          'order_payment.payment_status': 'Success',
+          "order_payment.payment_status": "Success",
           order_shopId: shop._id,
-          order_status: 'pending',
+          order_status: "pending",
           estimated_delivery_time: {
             $gte: formatTimeToISO(startOfDay), // So sánh thời gian ước tính giao hàng lớn hơn hoặc bằng đầu ngày
-            $lte: formatTimeToISO(endOfDay),   // So sánh thời gian ước tính giao hàng nhỏ hơn hoặc bằng cuối ngày
+            $lte: formatTimeToISO(endOfDay), // So sánh thời gian ước tính giao hàng nhỏ hơn hoặc bằng cuối ngày
           },
         },
       },
       // Bước 2: Giải phẳng mảng order_product để xử lý từng món
       {
-        $unwind: '$order_product',
+        $unwind: "$order_product",
       },
       // Bước 3: Giải phẳng mảng extra (món phụ)
       {
         $unwind: {
-          path: '$order_product.extra',
+          path: "$order_product.extra",
           preserveNullAndEmptyArrays: true, // Giữ lại những món không có món phụ
         },
       },
       // Bước 4: Gom nhóm theo sideDish_id và tính tổng số lượng
       {
         $group: {
-          _id: '$order_product.extra.sideDish_id', // Gom nhóm theo sideDish_id
-          totalQuantity: { $sum: '$order_product.extra.quantity' }, // Tổng số lượng món phụ
-          sideDishName: { $first: '$order_product.extra.sideDish_name' }, // Lấy tên món phụ
+          _id: "$order_product.extra.sideDish_id", // Gom nhóm theo sideDish_id
+          totalQuantity: { $sum: "$order_product.extra.quantity" }, // Tổng số lượng món phụ
+          sideDishName: { $first: "$order_product.extra.sideDish_name" }, // Lấy tên món phụ
         },
       },
       // Bước 5: Sắp xếp theo số lượng giảm dần
@@ -1007,26 +1024,28 @@ const getSideDishSummaryForToday = async (days,shop) => {
 
     return formattedSummary;
   } catch (error) {
-    console.error('Error fetching summary:', error);
+    console.error("Error fetching summary:", error);
     throw error;
   }
 };
-const getOrderDetailsStatusSuccess = async (order_id)=>{
-  if(!order_id){
-    throw new NotFoundError ('Mã đơn hàng không tồn tại');
+const getOrderDetailsStatusSuccess = async (order_id) => {
+  if (!order_id) {
+    throw new NotFoundError("Mã đơn hàng không tồn tại");
   }
-  const orderDetails = await orderModel.findOne({
-    _id: order_id,
-    order_status: 'success',
-  }).populate({
-    path: 'order_userId',
-    select: 'name email',
-  })
+  const orderDetails = await orderModel
+    .findOne({
+      _id: order_id,
+      order_status: "success",
+    })
+    .populate({
+      path: "order_userId",
+      select: "name email",
+    });
   if (!orderDetails) {
-    throw new NotFoundError ('Mã đơn hàng không tồn tại');
-  }  
+    throw new NotFoundError("Mã đơn hàng không tồn tại");
+  }
   return orderDetails;
-}
+};
 module.exports = {
   listOrderPendingOfUser,
   listOrderCompletedOfUser,
@@ -1043,12 +1062,10 @@ module.exports = {
   listBestSellingProductsInShop,
   getTotalRevenueInShop,
 
-
   getStatistics,
   getBestSellingProducts,
   getCategorySales,
 
-  
   getStatisticsOfShop,
   getBestSellingProductsOfShop,
   getCategorySalesOfShop,
@@ -1056,5 +1073,5 @@ module.exports = {
   getSummaryForToday,
   getSideDishSummaryForToday,
 
-  getOrderDetailsStatusSuccess
+  getOrderDetailsStatusSuccess,
 };
