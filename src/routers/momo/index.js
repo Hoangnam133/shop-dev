@@ -44,7 +44,7 @@ router.get("/getSuccess", async (req, res) => {
       // Lấy thông tin đơn hàng chi tiết
       const customerName = orderDetails.order_userId.name;
       const products = orderDetails.order_product
-        .map((product) => product.name)
+        .map((product) => product.product_name)
         .join(", ");
       const totalAmount = orderDetails.order_checkout.finalPrice;
 
@@ -55,7 +55,7 @@ router.get("/getSuccess", async (req, res) => {
       });
 
       // Gửi sự kiện payment_success cho tất cả các client sau khi gửi phản hồi thành công
-      io.emit("payment_success", {
+      emitEvent("payment_success", {
         orderId: orderInfo,
         customerName,
         products,
