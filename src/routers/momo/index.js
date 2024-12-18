@@ -8,6 +8,7 @@ const { authentication, authorizeRoles } = require("../../auth/authUtils");
 const axios = require("axios");
 const moMoRefundController = require("../../controllers/moMoRefundController");
 const { emitEvent } = require("../../../socketio");
+const userModel = require("../../models/userModel");
 
 router.post(
   "/refunds",
@@ -42,7 +43,7 @@ router.get("/getSuccess", async (req, res) => {
       }
 
       // Lấy thông tin đơn hàng chi tiết
-      const customerName = orderDetails.order_userId.name;
+      const customerName = await userModel.findById(orderDetails.order_userId);
       const products = orderDetails.order_product
         .map((product) => product.product_name)
         .join(", ");
@@ -56,8 +57,7 @@ router.get("/getSuccess", async (req, res) => {
 
       // Gửi sự kiện payment_success cho tất cả các client sau khi gửi phản hồi thành công
       emitEvent("payment_success", {
-        orderId: orderInfo,
-        customerName,
+        customerName: customerName.name,
         products,
         amount: totalAmount,
       });
