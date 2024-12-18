@@ -54,6 +54,7 @@ const moment = require("moment-timezone");
 const { calculateDistance } = require("../utils/Distance");
 const locationModel = require("../models/locationModel");
 const { toObjectId } = require("../utils");
+const { emitEvent } = require("../../socketio");
 class OrderServiceV5 {
   static async getOrderDetailsStatusSuccess(order_id) {
     return await getOrderDetailsStatusSuccess(order_id);
@@ -322,10 +323,12 @@ class OrderServiceV5 {
       totalMinutes,
       pointsEarned,
     } = await OrderServiceV5.checkoutPreview({ user, shop, discount_code });
+
     let estimated_delivery, options_delivery;
     if (!dineOption) {
       dineOption = dine_in;
     }
+
     if (selectedDeliveryTime) {
       const checkTime = await checkDeliveryTimeForShop({
         shop_id: shop._id,
@@ -342,12 +345,14 @@ class OrderServiceV5 {
       if (!userLat || !userLon) {
         throw new BadRequestError("vui lòng bật vị trí của bạn");
       }
+
       const findLocation = await locationModel.findById(shop.location_id);
       if (!findLocation) {
         throw new NotFoundError(
           "có một chút lỗi xảy ra. Vui lòng liên hệ hỗ trợ để được xử lí"
         );
       }
+
       const caDistance = calculateDistance({
         userLat,
         userLon,
@@ -360,6 +365,7 @@ class OrderServiceV5 {
           "Địa chỉ của bạn nằm ngoài phạm vi 5km. Vui lòng chọn một tùy chọn khác"
         );
       }
+
       const checkTimeImmediate = await checkImmediateDeliveryTime({
         shop_id: shop._id,
         totalMinutes,
@@ -373,9 +379,11 @@ class OrderServiceV5 {
         options_delivery = "asap";
       }
     }
+
     const order_time = moment
       .tz("Asia/Ho_Chi_Minh")
       .format("YYYY-MM-DDTHH:mm:ss");
+
     const payload = {
       shop_id: shop._id,
       order_checkout: {
@@ -385,7 +393,7 @@ class OrderServiceV5 {
       },
       order_payment: {
         payment_method: "online_payment",
-        payment_status: "pending",
+        payment_status: "Success",
       },
       options_delivery,
       order_product: productCheckout,
@@ -398,24 +406,34 @@ class OrderServiceV5 {
       note,
       dineOption,
     };
+
     const createOrder = await orderModel.create(payload);
     if (!createOrder) {
       throw new BadRequestError(
         "Không thể đặt hàng, vui lòng liên hệ hỗ trợ để được xử lý"
       );
     }
-    const deeplink = await processMoMoPayment({
+
+    // Gửi thông báo lên web qua socket
+    const orderDetails = await orderModel
+      .findById(createOrder._id)
+      .populate("order_product");
+    const customerName = user.name; 
+    const products = createOrder.order_product
+      .map((product) => product.product_name)
+      .join(", ");
+    console.log("PRODUCT:" + products);
+
+    const totalAmount = createOrder.order_checkout.finalPrice;
+
+    emitEvent("order_created", {
       orderId: createOrder._id,
-      totalPrice: createOrder.order_checkout.finalPrice,
-      shop_id: shop._id,
+      customerName,
+      products,
+      amount: totalAmount,
     });
-    if (!deeplink) {
-      await orderModel.deleteOne({
-        _id: createOrder._id,
-      });
-      throw new BadRequestError("không thể thanh toán vui lòng thử lại sau");
-    }
-    return deeplink;
+
+    return createOrder;
   }
 
   static async cancelOrder({ order_id, user }) {

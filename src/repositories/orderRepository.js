@@ -128,7 +128,7 @@ const updateStatusSuccess = async (order_id) => {
     }. Bạn có thể nhận hàng bất cứ lúc nào`;
     const data = {
       order_id: updateOrder._id,
-      status: "completed",
+      status: "success",
     };
     const payload = {
       title: title,
